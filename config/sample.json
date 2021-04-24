@@ -1,0 +1,8 @@
+{
+    "Discord": {
+        "token": "BOT TOKEN"
+    },
+    "Command": {
+        "prefix": "!"
+    }
+}

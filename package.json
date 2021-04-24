@@ -1,0 +1,28 @@
+{
+  "name": "blazeislebot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "blazeislebot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SanchoBlaze/blazeislebot.git"
+  },
+  "author": "Simon McLaughlin <me@sanchoblaze.com> (https://sanchoblaze.com)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SanchoBlaze/blazeislebot/issues"
+  },
+  "homepage": "https://github.com/SanchoBlaze/blazeislebot#readme",
+  "dependencies": {
+    "@discordjs/opus": "^0.5.0",
+    "config": "^3.3.6",
+    "discord.js": "^12.5.3",
+    "zlib-sync": "^0.1.7"
+  },
+  "devDependencies": {
+    "eslint": "^7.25.0"
+  }
+}
