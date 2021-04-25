@@ -40,10 +40,10 @@ client.on('guildMemberAdd', member => {
     if (!channel) return;
     // Send the message, mentioning the member
     const embed = new Discord.MessageEmbed()
-        .setTitle(`Hey ${member.user.username}`)
-        .setDescription(`Welcome to **${member.guild}**`)
+        .setTitle(`Welcome to **${member.guild}**`)
+        .setDescription(`Hey ${member.user.toString()}, thanks for joining!`)
         .setColor(0x009900)
-        .setThumbnail(member.displayAvatarURL());
+        .setThumbnail(member.user.displayAvatarURL());
     channel.send(embed);
 });
 
