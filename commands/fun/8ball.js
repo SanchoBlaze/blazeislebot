@@ -2,10 +2,10 @@ const Discord = require('discord.js');
 
 module.exports = {
     name: '8ball',
-    description: 'Ask the magic 8 ball a question.',
-    args: true,
+    description: 'Ask the magic 🎱 ball a question.',
+    //args: true,
     execute(message, args) {
-        if (!args[0]) return message.reply('Please ask a question!');
+        if (!args[0]) return message.reply('🎱 Please ask a question!');
         const replies = ['As I see it, yes.',
             'Ask again later.',
             'Better not tell you now.',
