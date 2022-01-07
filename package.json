@@ -1,7 +1,7 @@
 {
   "name": "blazeislebot",
   "version": "1.0.6",
-  "description": "",
+  "description": "A bot for the Blaze Isle Discord server.",
   "main": "blazeislebot.js",
   "scripts": {
     "eslint": "eslint blazeislebot.js",

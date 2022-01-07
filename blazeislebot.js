@@ -7,6 +7,7 @@
 const config = require('config');
 const Discord = require('discord.js');
 const fs = require('fs');
+const { Colours } = require('./modules/colours');
 
 // Create an instance of a Discord client
 const client = new Discord.Client();
@@ -35,7 +36,7 @@ client.on('guildMemberAdd', member => {
     const embed = new Discord.MessageEmbed()
         .setTitle(`Welcome to **${member.guild}**`)
         .setDescription(`Hey ${member.user.toString()}, thanks for joining!`)
-        .setColor(0x009900)
+        .setColor(Colours.WELCOME_GREEN)
         .setThumbnail(member.user.displayAvatarURL());
     channel.send(embed);
 });

@@ -1,9 +1,9 @@
 const Discord = require('discord.js');
+const { Colours } = require('../../modules/colours');
 
 module.exports = {
     name: '8ball',
     description: 'Ask the magic 🎱 ball a question.',
-    //args: true,
     execute(message, args) {
         if (!args[0]) return message.reply('🎱 Please ask a question!');
         const replies = ['As I see it, yes.',
@@ -32,7 +32,8 @@ module.exports = {
 
         const embed = new Discord.MessageEmbed()
             .setAuthor(message.author.username + ' asks: ' + question)
-            .addField('Answer', replies[result] + '');
+            .addField('Answer', replies[result] + '')
+            .setColor(Colours.DARK_COLOURLESS);
 
         message.channel.send(embed);
     },

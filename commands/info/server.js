@@ -1,4 +1,5 @@
 const Discord = require('discord.js');
+const { Colours } = require('../../modules/colours');
 
 module.exports = {
     name: 'server',
@@ -58,6 +59,7 @@ module.exports = {
             .addField('Channels', message.guild.channels.cache.size, true)
             .addField('Roles', message.guild.roles.cache.size, true)
             .addField('Creation Date', `${message.channel.guild.createdAt.toUTCString().substr(0, 16)} (${checkDays(message.channel.guild.createdAt)})`, true)
+            .setColor(Colours.DARK_COLOURLESS)
             .setThumbnail(message.guild.iconURL());
         message.channel.send({ embed });
     },

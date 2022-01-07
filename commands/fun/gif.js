@@ -12,9 +12,7 @@ module.exports = {
             rating: 'pg-13',
             fmt: 'json',
         }, function(error, response) {
-            message.channel.send(response.data.image_url);
+            message.channel.send(response.data.url);
         });
-
-
     },
 };

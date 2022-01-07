@@ -1,4 +1,5 @@
 const Discord = require('discord.js');
+const { Colours } = require('../../modules/colours');
 
 module.exports = {
     name: 'help',
@@ -10,7 +11,7 @@ module.exports = {
         const helpEmbed = new Discord.MessageEmbed()
             .setTitle(`${message.client.user.username} Help`)
             .setDescription('List of all commands')
-            .setColor('#F8AA2A');
+            .setColor(Colours.LIGHT_ORANGE);
 
         commands.forEach((cmd) => {
             helpEmbed.addField(
