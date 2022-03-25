@@ -1,11 +1,14 @@
+const { SlashCommandBuilder } = require('@discordjs/builders');
+
 module.exports = {
-    name: 'bunny',
-    description: 'Display a random picture of a bunny.',
-    execute(message) {
+    data: new SlashCommandBuilder()
+        .setName('bunny')
+        .setDescription('Display a random picture of a bunny.'),
+    execute(interaction) {
         const sa = require('superagent');
         sa.get('https://api.bunnies.io/v2/loop/random/?media=gif,png')
             .end((err, response) => {
-                message.channel.send(response.body.media.poster);
+                return interaction.reply(response.body.media.poster);
             });
     },
 };

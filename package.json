@@ -8,7 +8,8 @@
     "test": "npm run eslint",
     "preversion": "npm run test",
     "version": "",
-    "postversion": "git commit && git push"
+    "postversion": "git commit && git push",
+    "dev": "nodemon blazeislebot.js"
   },
   "repository": {
     "type": "git",
@@ -22,10 +23,14 @@
   "homepage": "https://github.com/SanchoBlaze/blazeislebot#readme",
   "dependencies": {
     "@discordjs/opus": "^0.5.0",
+    "@discordjs/rest": "^0.2.0-canary.0",
+    "@discordjs/voice": "^0.7.5",
     "canvas": "^2.7.0",
     "config": "^3.3.6",
-    "discord.js": "^12.5.3",
+    "discord-api-types": "^0.26.1",
+    "discord.js": "^13.5.1",
     "giphy-api": "^2.0.1",
+    "nodemon": "^2.0.15",
     "optionator": "^0.9.1",
     "superagent": "^6.1.0",
     "zlib-sync": "^0.1.7"

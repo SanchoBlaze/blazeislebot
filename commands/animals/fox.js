@@ -1,11 +1,14 @@
+const { SlashCommandBuilder } = require('@discordjs/builders');
+
 module.exports = {
-    name: 'fox',
-    description: 'Display a random picture of a fox.',
-    execute(message) {
+    data: new SlashCommandBuilder()
+        .setName('fox')
+        .setDescription('Display a random picture of a fox.'),
+    async execute(interaction) {
         const sa = require('superagent');
         sa.get('https://randomfox.ca/floof/')
             .end((err, response) => {
-                message.channel.send(response.body.image);
+                interaction.reply(response.body.image);
             });
     },
 };

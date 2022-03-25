@@ -1,4 +1,5 @@
 const Discord = require('discord.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const path = require('path');
 const { createCanvas, loadImage } = require('canvas');
 
@@ -11,14 +12,17 @@ const context = canvas.getContext('2d');
 const imagePath = path.join(__dirname, '..', '..', 'assets', 'batslap.jpg');
 
 module.exports = {
-    name: 'batslap',
-    description: 'Bat Slap someone.',
-    async execute(message) {
-        if (!message.mentions.users.size) {
-            return message.channel.send('"Please mention a user!');
-        }
-        const batman = message.author.displayAvatarURL({ format: 'png', dynamic: false, size: 64 });
-        const robin = message.mentions.users.first().displayAvatarURL({ format: 'png', dynamic: false, size: 64 });
+    data: new SlashCommandBuilder()
+        .setName('batslap')
+        .setDescription('Bat Slap someone.')
+        .addUserOption((option) =>
+            option.setName('target')
+                .setDescription('User to Bat Slap.')
+                .setRequired(true)),
+    async execute(interaction) {
+        const user = interaction.options.getUser('target');
+        const batman = interaction.user.displayAvatarURL({ format: 'png', dynamic: false, size: 64 });
+        const robin = user.displayAvatarURL({ format: 'png', dynamic: false, size: 64 });
 
         const batmanFace = await loadImage(batman);
         const robinFace = await loadImage(robin);
@@ -31,6 +35,6 @@ module.exports = {
 
         const buffer = canvas.toBuffer();
         const attachment = new Discord.MessageAttachment(buffer, 'batslap.png');
-        message.channel.send(attachment);
+        await interaction.reply({ content: `${interaction.user.username} Bat Slapped ${user}`, files: [attachment] });
     },
 };

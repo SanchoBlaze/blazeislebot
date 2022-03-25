@@ -1,11 +1,17 @@
 const Discord = require('discord.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Colours } = require('../../modules/colours');
 
 module.exports = {
-    name: '8ball',
-    description: 'Ask the magic 🎱 ball a question.',
-    execute(message, args) {
-        if (!args[0]) return message.reply('🎱 Please ask a question!');
+    data: new SlashCommandBuilder()
+        .setName('8ball')
+        .setDescription('Ask the magic 🎱 ball a question.')
+        .addStringOption(option =>
+            option.setName('question')
+                .setDescription('Question to ask the magic 🎱 ball.')
+                .setRequired(true)),
+    async execute(interaction) {
+        const question = interaction.options.getString('question');
         const replies = ['As I see it, yes.',
             'Ask again later.',
             'Better not tell you now.',
@@ -28,13 +34,11 @@ module.exports = {
             'You may rely on it.'];
         const result = Math.floor((Math.random() * replies.length));
 
-        const question = args.slice().join(' ');
-
         const embed = new Discord.MessageEmbed()
-            .setAuthor(message.author.username + ' asks: ' + question)
+            .setTitle(interaction.user.username + ' asks: ' + question)
             .addField('Answer', replies[result] + '')
             .setColor(Colours.DARK_COLOURLESS);
 
-        message.channel.send(embed);
+        await interaction.reply({ embeds: [embed] });
     },
 };

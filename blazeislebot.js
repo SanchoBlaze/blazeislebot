@@ -10,7 +10,7 @@ const fs = require('fs');
 const { Colours } = require('./modules/colours');
 
 // Create an instance of a Discord client
-const client = new Discord.Client();
+const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MEMBERS, Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.DIRECT_MESSAGE_REACTIONS] });
 client.commands = new Discord.Collection();
 client.cooldowns = new Discord.Collection();
 client.prefix = config.get('Command.prefix');
@@ -18,19 +18,22 @@ client.prefix = config.get('Command.prefix');
 const commandFolders = fs.readdirSync('./commands');
 
 for (const folder of commandFolders) {
-    const commandFiles = fs.readdirSync(`./commands/${folder}`).filter(file => file.endsWith('.js'));
-    for (const file of commandFiles) {
-        const command = require(`./commands/${folder}/${file}`);
-        client.commands.set(command.name, command);
+    if(folder != 'utility') {
+        const commandFiles = fs.readdirSync(`./commands/${folder}`).filter(file => file.endsWith('.js'));
+        for (const file of commandFiles) {
+            const command = require(`./commands/${folder}/${file}`);
+            client.commands.set(command.data.name, command);
+        }
     }
 }
 
-client.on('ready', () => {
-    console.log('I am ready!');
+
+client.once('ready', () => {
+    console.log('Ready!');
 });
 
 
-client.on('guildMemberAdd', member => {
+client.on('guildMemberAdd', (member) => {
     const channel = member.guild.channels.cache.find(ch => ch.name === 'general');
     if (!channel) return;
     const embed = new Discord.MessageEmbed()
@@ -38,9 +41,38 @@ client.on('guildMemberAdd', member => {
         .setDescription(`Hey ${member.user.toString()}, thanks for joining!`)
         .setColor(Colours.WELCOME_GREEN)
         .setThumbnail(member.user.displayAvatarURL());
-    channel.send(embed);
+    channel.send({ embeds: [embed] });
 });
 
+
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isCommand()) return;
+
+    const command = client.commands.get(interaction.commandName);
+
+    if (!command) return;
+
+    if (command.guildOnly && interaction.channel.type === 'dm') {
+        return interaction.reply('I can\'t execute that command inside DMs!');
+    }
+
+    if (command.role) {
+        if (!interaction.member.roles.cache.some(role => role.name === command.role)) {
+            return interaction.reply('You can not do this!');
+        }
+    }
+
+    try {
+        await command.execute(interaction);
+    }
+    catch (error) {
+        console.error(error);
+        return interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+    }
+});
+
+
+/*
 client.on('message', message => {
     if (!message.content.startsWith(client.prefix) || message.author.bot) return;
 
@@ -109,5 +141,6 @@ client.on('message', message => {
         message.reply('there was an error trying to execute that command!');
     }
 });
+*/
 
 client.login(config.get('Discord.token'));

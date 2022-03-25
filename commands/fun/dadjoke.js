@@ -1,11 +1,14 @@
+const { SlashCommandBuilder } = require('@discordjs/builders');
+
 module.exports = {
-    name: 'dadjoke',
-    description: 'Tells you a dad joke.',
-    execute(message) {
+    data: new SlashCommandBuilder()
+        .setName('dadjoke')
+        .setDescription('Tells you a dad joke.'),
+    async execute(interaction) {
         const sa = require('superagent');
         sa.get('https://icanhazdadjoke.com/slack')
             .end((err, response) => {
-                message.channel.send(response.body.attachments.map(a => a.text));
+                interaction.reply(response.body.attachments[0].text);
             });
     },
 };

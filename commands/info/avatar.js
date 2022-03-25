@@ -1,15 +1,13 @@
+const { SlashCommandBuilder } = require('@discordjs/builders');
+
 module.exports = {
-    name: 'avatar',
-    description: 'Get the avatar URL of the tagged user(s), or your own avatar.',
-    execute(message) {
-        if (!message.mentions.users.size) {
-            return message.channel.send(`Your avatar: ${message.author.displayAvatarURL({ dynamic: true })}`);
-        }
-
-        const avatarList = message.mentions.users.map(user => {
-            return `${user.username}'s avatar: ${user.displayAvatarURL({ dynamic: true })}`;
-        });
-
-        message.channel.send(avatarList);
+    data: new SlashCommandBuilder()
+        .setName('avatar')
+        .setDescription('Get the avatar URL of the tagged user, or your own avatar.')
+        .addUserOption(option => option.setName('target').setDescription('The user\'s avatar to show')),
+    async execute(interaction) {
+        const user = interaction.options.getUser('target');
+        if (user) return interaction.reply(`${user.username}'s avatar: ${user.displayAvatarURL({ dynamic: true })}`);
+        return interaction.reply(`Your avatar: ${interaction.user.displayAvatarURL({ dynamic: true })}`);
     },
 };

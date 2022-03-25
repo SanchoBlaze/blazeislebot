@@ -1,18 +1,23 @@
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const giphy = require('giphy-api')('MinvYb8r3K6yKZQmbKggyIM1HmgkihRP');
 
 module.exports = {
-    name: 'gif',
-    description: 'Display a random gif based on your search term.',
-    args: true,
-    execute(message, args) {
-        if (!args[0]) return message.reply('Please enter a search term!');
-        const search = args.slice().join(' ');
+    data: new SlashCommandBuilder()
+        .setName('gif')
+        .setDescription('Display a random gif based on your search term.')
+        .addStringOption(option =>
+            option.setName('search')
+                .setDescription('Search term.')
+                .setRequired(true)),
+    execute(interaction) {
+        const search = interaction.options.getString('search');
+        console.log(search);
         giphy.random({
             tag: search,
             rating: 'pg-13',
             fmt: 'json',
         }, function(error, response) {
-            message.channel.send(response.data.url);
+            return interaction.reply('Search: ' + search + ' ' + response.data.url);
         });
     },
 };

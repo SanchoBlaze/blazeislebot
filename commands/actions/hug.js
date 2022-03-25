@@ -1,16 +1,15 @@
+const { SlashCommandBuilder } = require('@discordjs/builders');
+
 module.exports = {
-    name: 'hug',
-    description: 'Send hug(s).',
-    args: true,
-    execute(message) {
-        if (!message.mentions.users.size) {
-            return message.channel.send('"Please mention one or more users!');
-        }
-
-        const hugList = message.mentions.users.map(user => {
-            return `${message.author.toString()} hugs ${user.toString()} :people_hugging:`;
-        });
-
-        message.channel.send(hugList);
+    data: new SlashCommandBuilder()
+        .setName('hug')
+        .setDescription('Hug someone.')
+        .addUserOption((option) =>
+            option.setName('target')
+                .setDescription('User to hug')
+                .setRequired(true)),
+    execute(interaction) {
+        const user = interaction.options.getUser('target');
+        return interaction.reply(`${interaction.user.username} hugs ${user} :people_hugging:`);
     },
 };
