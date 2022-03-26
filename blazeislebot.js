@@ -88,11 +88,11 @@ client.on('interactionCreate', async interaction => {
         if (!score) {
             score = { id: `${interaction.guild.id}-${interaction.user.id}`, user: interaction.user.id, guild: interaction.guild.id, points: 0, level: 1 };
         }
-        score.points++;
+        // score.points++;
         const curLevel = Math.floor(0.1 * Math.sqrt(score.points));
         if (score.level < curLevel) {
             score.level++;
-            interaction.reply(`You've leveled up to level **${curLevel}**! Ain't that dandy?`);
+            interaction.reply(`${interaction.user} leveled up to level **${curLevel}**! Ain't that dandy?`);
         }
         client.setScore.run(score);
     }
