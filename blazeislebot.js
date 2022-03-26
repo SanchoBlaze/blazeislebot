@@ -8,9 +8,12 @@ const config = require('config');
 const Discord = require('discord.js');
 const fs = require('fs');
 const { Colours } = require('./modules/colours');
+const SQLite = require('better-sqlite3');
+const sql = new SQLite('./scores.sqlite');
 
 // Create an instance of a Discord client
-const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MEMBERS, Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.DIRECT_MESSAGE_REACTIONS] });
+const intents = new Discord.Intents(8);
+const client = new Discord.Client({ intents: [intents, Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Discord.Intents.FLAGS.GUILD_MEMBERS, Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.DIRECT_MESSAGE_REACTIONS] });
 client.commands = new Discord.Collection();
 client.cooldowns = new Discord.Collection();
 client.prefix = config.get('Command.prefix');
@@ -30,6 +33,20 @@ for (const folder of commandFolders) {
 
 client.once('ready', () => {
     console.log('Ready!');
+
+    const table = sql.prepare('SELECT count(*) FROM sqlite_master WHERE type=\'table\' AND name = \'scores\';').get();
+    if (!table['count(*)']) {
+        // If the table isn't there, create it and setup the database correctly.
+        sql.prepare('CREATE TABLE scores (id TEXT PRIMARY KEY, user TEXT, guild TEXT, points INTEGER, level INTEGER);').run();
+        // Ensure that the "id" row is always unique and indexed.
+        sql.prepare('CREATE UNIQUE INDEX idx_scores_id ON scores (id);').run();
+        sql.pragma('synchronous = 1');
+        sql.pragma('journal_mode = wal');
+    }
+
+    // And then we have two prepared statements to get and set the score data.
+    client.getScore = sql.prepare('SELECT * FROM scores WHERE user = ? AND guild = ?');
+    client.setScore = sql.prepare('INSERT OR REPLACE INTO scores (id, user, guild, points, level) VALUES (@id, @user, @guild, @points, @level);');
 });
 
 
@@ -43,7 +60,6 @@ client.on('guildMemberAdd', (member) => {
         .setThumbnail(member.user.displayAvatarURL());
     channel.send({ embeds: [embed] });
 });
-
 
 client.on('interactionCreate', async interaction => {
     if (!interaction.isCommand()) return;
@@ -60,6 +76,24 @@ client.on('interactionCreate', async interaction => {
         if (!interaction.member.roles.cache.some(role => role.name === command.role)) {
             return interaction.reply('You can not do this!');
         }
+    }
+
+    if (interaction.user.bot) return;
+
+    let score;
+
+    if (interaction.guild) {
+        score = client.getScore.get(interaction.user.id, interaction.guild.id);
+        if (!score) {
+            score = { id: `${interaction.guild.id}-${interaction.user.id}`, user: interaction.user.id, guild: interaction.guild.id, points: 0, level: 1 };
+        }
+        score.points++;
+        const curLevel = Math.floor(0.1 * Math.sqrt(score.points));
+        if (score.level < curLevel) {
+            score.level++;
+            interaction.reply(`You've leveled up to level **${curLevel}**! Ain't that dandy?`);
+        }
+        client.setScore.run(score);
     }
 
     try {
