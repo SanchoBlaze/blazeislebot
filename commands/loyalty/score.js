@@ -3,7 +3,7 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('score')
-        .setDescription('Get the score tagged user, or your own score.')
+        .setDescription('Get the score of the tagged user, or your own score.')
         .addUserOption(option => option.setName('target').setDescription('The user to show score for.')),
     async execute(interaction) {
         let reply = 'Your score is: ';

@@ -31,4 +31,5 @@ exports.Colours = {
     WELCOME_GREEN: 0x009900,
     DARK_COLOURLESS: 0x36393F,
     LIGHT_ORANGE: 0xf8aa2a,
+    LIGHT_GREEN: 0x00AE86,
 };

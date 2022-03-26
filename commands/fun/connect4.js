@@ -5,7 +5,7 @@ const { Colours } = require('../../modules/colours');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('connect4')
-        .setDescription('Play Connect4.')
+        .setDescription('Play Connect4 against the tagged user.')
         .addUserOption((option) =>
             option.setName('opponent')
                 .setDescription('User to challenge.')

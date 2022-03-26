@@ -9,7 +9,7 @@ const Discord = require('discord.js');
 const fs = require('fs');
 const { Colours } = require('./modules/colours');
 const SQLite = require('better-sqlite3');
-const sql = new SQLite('./scores.sqlite');
+const sql = new SQLite('./db/scores.sqlite');
 
 // Create an instance of a Discord client
 const intents = new Discord.Intents(8);
@@ -17,6 +17,7 @@ const client = new Discord.Client({ intents: [intents, Discord.Intents.FLAGS.GUI
 client.commands = new Discord.Collection();
 client.cooldowns = new Discord.Collection();
 client.prefix = config.get('Command.prefix');
+client.sql = sql;
 
 const commandFolders = fs.readdirSync('./commands');
 

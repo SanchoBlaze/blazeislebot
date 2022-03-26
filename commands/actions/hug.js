@@ -3,7 +3,7 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('hug')
-        .setDescription('Hug someone.')
+        .setDescription('Hug someone :people_hugging:.')
         .addUserOption((option) =>
             option.setName('target')
                 .setDescription('User to hug')
