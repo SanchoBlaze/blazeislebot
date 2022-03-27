@@ -33,7 +33,7 @@ for (const folder of commandFolders) {
 
 
 client.once('ready', () => {
-    console.log('Ready!');
+    console.log('Blaze Isle Bot Online!');
 
     const table = sql.prepare('SELECT count(*) FROM sqlite_master WHERE type=\'table\' AND name = \'scores\';').get();
     if (!table['count(*)']) {

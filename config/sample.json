@@ -2,6 +2,9 @@
     "Discord": {
         "token": "BOT TOKEN"
     },
+    "Giphy": {
+        "key": "API KEY"
+    },
     "Command": {
         "prefix": "!"
     }
