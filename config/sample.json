@@ -5,7 +5,7 @@
     "Giphy": {
         "key": "API KEY"
     },
-    "Command": {
-        "prefix": "!"
+    "Enviroment": {
+        "live": false
     }
 }
