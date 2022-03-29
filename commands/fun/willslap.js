@@ -3,8 +3,8 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const path = require('path');
 const { createCanvas, loadImage } = require('canvas');
 
-const width = 500;
-const height = 250;
+const width = 497;
+const height = 353;
 
 const canvas = createCanvas(width, height);
 const context = canvas.getContext('2d');
@@ -30,8 +30,8 @@ module.exports = {
         const background = await loadImage(imagePath);
         context.drawImage(background, 0, 0, canvas.width, canvas.height);
 
-        context.drawImage(willFace, 300, 20, 64, 64);
-        context.drawImage(chrisFace, 70, 30, 64, 64);
+        context.drawImage(willFace, 300, 35, 64, 64);
+        context.drawImage(chrisFace, 70, 60, 64, 64);
 
         const buffer = canvas.toBuffer();
         const attachment = new Discord.MessageAttachment(buffer, 'willslap.png');
