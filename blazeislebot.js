@@ -13,7 +13,7 @@ const sql = new SQLite('./db/scores.sqlite');
 
 // Create an instance of a Discord client
 const intents = new Discord.Intents(8);
-const client = new Discord.Client({ intents: [intents, Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Discord.Intents.FLAGS.GUILD_MEMBERS, Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.DIRECT_MESSAGE_REACTIONS] });
+const client = new Discord.Client({ partials: ['CHANNEL'], intents: [intents, Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Discord.Intents.FLAGS.GUILD_MEMBERS, Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.DIRECT_MESSAGE_REACTIONS] });
 client.commands = new Discord.Collection();
 client.cooldowns = new Discord.Collection();
 client.sql = sql;
@@ -21,12 +21,11 @@ client.sql = sql;
 const commandFolders = fs.readdirSync('./commands');
 
 for (const folder of commandFolders) {
-    if(folder != 'utility') {
-        const commandFiles = fs.readdirSync(`./commands/${folder}`).filter(file => file.endsWith('.js'));
-        for (const file of commandFiles) {
-            const command = require(`./commands/${folder}/${file}`);
-            client.commands.set(command.data.name, command);
-        }
+    const commandFiles = fs.readdirSync(`./commands/${folder}`).filter(file => file.endsWith('.js'));
+    for (const file of commandFiles) {
+        const command = require(`./commands/${folder}/${file}`);
+        command.category = folder;
+        client.commands.set(command.data.name, command);
     }
 }
 

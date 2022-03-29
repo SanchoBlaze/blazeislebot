@@ -17,7 +17,7 @@ module.exports = {
             'Better not tell you now.',
             'Cannot predict now.',
             'Concentrate and ask again.',
-            'Don’t count on it.',
+            'Don\'t count on it.',
             'It is certain.',
             'It is decidedly so.',
             'Most likely.',
@@ -30,15 +30,18 @@ module.exports = {
             'Very doubtful.',
             'Without a doubt.',
             'Yes.',
-            'Yes – definitely.',
+            'Yes - definitely.',
             'You may rely on it.'];
         const result = Math.floor((Math.random() * replies.length));
+
+        const file = new Discord.MessageAttachment('assets/eightball.png');
 
         const embed = new Discord.MessageEmbed()
             .setTitle(interaction.user.username + ' asks: ' + question)
             .addField('Answer', replies[result] + '')
+            .setImage('attachment://eightball.png')
             .setColor(Colours.DARK_COLOURLESS);
 
-        await interaction.reply({ embeds: [embed] });
+        await interaction.reply({ embeds: [embed], files: [file] });
     },
 };

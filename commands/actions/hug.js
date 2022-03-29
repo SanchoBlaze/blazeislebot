@@ -8,6 +8,7 @@ module.exports = {
             option.setName('target')
                 .setDescription('User to hug')
                 .setRequired(true)),
+    guildOnly: true,
     execute(interaction) {
         const user = interaction.options.getUser('target');
 

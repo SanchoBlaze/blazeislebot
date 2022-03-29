@@ -105,3 +105,4 @@ dist
 
 # Config Files
 config/default.json
+commands/loyalty/test.js
