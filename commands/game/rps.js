@@ -18,11 +18,6 @@ module.exports = {
             return rps.includes(reaction.emoji.name) && user.id === interaction.user.id;
         };
 
-        let score = interaction.client.getScore.get(interaction.user.id, interaction.guild.id);
-        if (!score) {
-            score = { id: `${interaction.guild.id}-${interaction.user.id}`, user: interaction.user.id, guild: interaction.guild.id, points: 0, level: 1 };
-        }
-
         message.awaitReactions({ filter: filter, max: 1, time: 10000 })
             .then(collected => {
                 const reaction = collected.first();
@@ -31,27 +26,28 @@ module.exports = {
                 message.reactions.removeAll().catch(error => console.error('Failed to clear reactions:', error));
 
                 const choices = `You chose ${choice} and I chose ${botChoice}. `;
+                let points = 10;
 
                 if(choice === '✊' && botChoice === '✌️') {
                     interaction.followUp(choices + 'You win!');
-                    score.points += 10;
                 }
                 else if (choice === '✋' && botChoice === '✊') {
                     interaction.followUp(choices + 'You win! ');
-                    score.points += 10;
                 }
                 else if (choice === '✌️' && botChoice === '✋') {
                     interaction.followUp(choices + 'You win!');
-                    score.points += 10;
                 }
                 else if (choice === botChoice) {
                     interaction.followUp(choices + 'It\'s a tie!');
+                    points = 0;
                 }
                 else {
                     interaction.followUp(choices + 'You lost!');
+                    points = 0;
                 }
 
-                interaction.client.setScore.run(score);
+                interaction.client.loyalty.addXp(points, interaction.user, interaction.guild);
+
             })
             .catch(error => console.error('One of the emojis failed to react:', error));
 

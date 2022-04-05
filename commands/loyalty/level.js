@@ -18,13 +18,8 @@ module.exports = {
             user = interaction.user;
         }
 
-        let userScore = interaction.client.getScore.get(user.id, interaction.guild.id);
+        const userLevel = interaction.client.loyalty.getLevel(user, interaction.guild);
 
-        if (!userScore) {
-            userScore = { id: `${interaction.guild.id}-${user.id}`, user: user.id, guild: interaction.guild.id, points: 0, level: 1 };
-            interaction.client.setScore.run(userScore);
-        }
-
-        return interaction.reply(`${reply} ${userScore.level}`);
+        return interaction.reply(`${reply} ${userLevel}`);
     },
 };

@@ -228,14 +228,7 @@ class ConnectFour {
                                 embedColour = Colours.YELLOW;
                             }
 
-
-                            let score = msg.client.getScore.get(gameData[player].member.id, msg.guild.id);
-                            if (!score) {
-                                score = { id: `${msg.guild.id}-${gameData[player].member.id}`, user: gameData[player].member.id, guild: msg.guild.id, points: 0, level: 1 };
-                            }
-                            score.points += 50;
-
-                            msg.client.setScore.run(score);
+                            msg.client.loyalty.addXp(50, gameData[player].member, msg.guild);
 
                             const WinEmbed = new discord.MessageEmbed()
                                 .setTitle(`${gameData[player].member.username} has won the game!`)

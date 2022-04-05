@@ -66,7 +66,7 @@ class TicTacToe {
         );
 
 
-        const gameFilter = (action) => (action.user.id === opponent.id || action.user.id === challenger.id);
+        const gameFilter = (action) => ((action.user.id === opponent.id || action.user.id === challenger.id)) && ['ttt11', 'ttt12', 'ttt13', 'ttt21', 'ttt22', 'ttt23', 'ttt31', 'ttt32', 'ttt33'].includes(action.customId);
         const collector = interaction.channel.createMessageComponentCollector({
             filter: gameFilter,
         });
@@ -167,13 +167,7 @@ class TicTacToe {
                             }
                         }
 
-                        let score = message.client.getScore.get(gameData[player].member.id, message.guild.id);
-                        if (!score) {
-                            score = { id: `${message.guild.id}-${gameData[player].member.id}`, user: gameData[player].member.id, guild: message.guild.id, points: 0, level: 1 };
-                        }
-                        score.points += 50;
-
-                        message.client.setScore.run(score);
+                        message.client.loyalty.addXp(50, gameData[player].member, message.guild);
 
                         collector.stop(gameData[player].member.username + ' won.');
                         message.edit({ content: `${gameData[player].playerSymbol} - ${gameData[player].member} won!`, components: message.components });

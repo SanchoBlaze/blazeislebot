@@ -67,12 +67,9 @@ module.exports = {
                     points = 0;
                 }
 
-                let score = interaction.client.getScore.get(interaction.user.id, interaction.guild.id);
-                if (!score) {
-                    score = { id: `${interaction.guild.id}-${interaction.user.id}`, user: interaction.user.id, guild: interaction.guild.id, points: 0, level: 1 };
+                if(points) {
+                    interaction.client.loyalty.addXp(points, interaction.user, interaction.guild);
                 }
-                score.points += points;
-                interaction.client.setScore.run(score);
 
             })
             .catch(error => console.error('One of the emojis failed to react:', error));
