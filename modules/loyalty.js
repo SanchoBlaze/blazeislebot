@@ -1,30 +1,30 @@
 const SQLite = require('better-sqlite3');
-const sql = new SQLite('./db/loyalty.sqlite');
+const loyaltySQL = new SQLite('./db/loyalty.sqlite');
 
 class Loyalty {
 
     constructor() {
-        const table = sql.prepare('SELECT count(*) FROM sqlite_master WHERE type=\'table\' AND name = \'loyalty\';').get();
+        const table = loyaltySQL.prepare('SELECT count(*) FROM sqlite_master WHERE type=\'table\' AND name = \'loyalty\';').get();
         if (!table['count(*)']) {
             // If the table isn't there, create it and setup the database correctly.
-            sql.prepare('CREATE TABLE loyalty (id TEXT PRIMARY KEY, user TEXT, guild TEXT, xp INTEGER, level INTEGER);').run();
+            loyaltySQL.prepare('CREATE TABLE loyalty (id TEXT PRIMARY KEY, user TEXT, guild TEXT, xp INTEGER, level INTEGER);').run();
             // Ensure that the "id" row is always unique and indexed.
-            sql.prepare('CREATE UNIQUE INDEX idx_loyalty_id ON loyalty (id);').run();
-            sql.pragma('synchronous = 1');
-            sql.pragma('journal_mode = wal');
+            loyaltySQL.prepare('CREATE UNIQUE INDEX idx_loyalty_id ON loyalty (id);').run();
+            loyaltySQL.pragma('synchronous = 1');
+            loyaltySQL.pragma('journal_mode = wal');
         }
     }
 
     getLoyalty(user, guild) {
-        return sql.prepare('SELECT * FROM loyalty WHERE user = ? AND guild = ?').get(user, guild);
+        return loyaltySQL.prepare('SELECT * FROM loyalty WHERE user = ? AND guild = ?').get(user, guild);
     }
 
     setLoyalty(loyalty) {
-        return sql.prepare('INSERT OR REPLACE INTO loyalty (id, user, guild, xp, level) VALUES (@id, @user, @guild, @xp, @level);').run(loyalty);
+        return loyaltySQL.prepare('INSERT OR REPLACE INTO loyalty (id, user, guild, xp, level) VALUES (@id, @user, @guild, @xp, @level);').run(loyalty);
     }
 
     getLeaders(guild) {
-        return sql.prepare('SELECT * FROM loyalty WHERE guild = ? ORDER BY xp DESC LIMIT 10;').all(guild.id);
+        return loyaltySQL.prepare('SELECT * FROM loyalty WHERE guild = ? ORDER BY xp DESC LIMIT 10;').all(guild.id);
     }
 
     addUser(user, guild) {
