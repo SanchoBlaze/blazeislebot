@@ -37,6 +37,6 @@ module.exports = {
             console.log(`Page: ${page}, Side: ${side}, Pocket: ${pocket}, number ${i}\n`);
         }
 
-        return interaction.reply(`Page: ${page}, Side: ${side}, Pocket: ${pocket}`);
+        return interaction.reply(`Card ${number} goes in Page: ${page}, Side: ${side}, Pocket: ${pocket}`);
     },
 };
