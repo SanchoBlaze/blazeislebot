@@ -17,7 +17,7 @@ module.exports = {
         let pocket = 1;
         let count = 1;
 
-        for (let i = 1; i < number; i++) {
+        for (let i = 1; i <= number; i++) {
 
             if(pocket > 9) pocket = 1;
             if(count > 9) side = 2;
@@ -29,12 +29,10 @@ module.exports = {
                 count = 1;
             }
 
-            if(i < number - 1) {
+            if(i < number) {
                 pocket++;
                 count++;
             }
-
-            console.log(`Page: ${page}, Side: ${side}, Pocket: ${pocket}, number ${i}\n`);
         }
 
         return interaction.reply(`Card ${number} goes in Page: ${page}, Side: ${side}, Pocket: ${pocket}`);
