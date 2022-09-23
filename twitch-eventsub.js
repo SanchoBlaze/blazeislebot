@@ -92,6 +92,10 @@ app.post('/notification', (req, res) => {
     }
 });
 
+app.get('/', (req, res) => {
+    res.send('Hello World!');
+});
+
 app.listen(port, () => {
     console.log(`Twitch Webhook Example listening at http://localhost:${port}`);
 });
