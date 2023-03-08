@@ -38,7 +38,7 @@ module.exports = {
 
         const embed = new Discord.MessageEmbed()
             .setTitle(interaction.user.username + ' asks: ' + question)
-            .addField('Answer', replies[result] + '')
+            .addFields('Answer', replies[result] + '')
             .setImage('attachment://eightball.png')
             .setColor(Colours.DARK_COLOURLESS);
 
