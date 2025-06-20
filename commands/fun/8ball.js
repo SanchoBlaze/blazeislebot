@@ -1,6 +1,7 @@
 const Discord = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Colours } = require('../../modules/colours');
+const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -34,11 +35,11 @@ module.exports = {
             'You may rely on it.'];
         const result = Math.floor((Math.random() * replies.length));
 
-        const file = new Discord.MessageAttachment('assets/eightball.png');
+        const file = new AttachmentBuilder('assets/eightball.png');
 
-        const embed = new Discord.MessageEmbed()
+        const embed = new EmbedBuilder()
             .setTitle(interaction.user.username + ' asks: ' + question)
-            .addField('Answer', replies[result] + '')
+            .addFields({ name: 'Answer', value: replies[result] + '' })
             .setImage('attachment://eightball.png')
             .setColor(Colours.DARK_COLOURLESS);
 

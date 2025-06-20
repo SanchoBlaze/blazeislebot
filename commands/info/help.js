@@ -2,6 +2,7 @@ const Discord = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Colours } = require('../../modules/colours');
 const paginator = require('../../modules/paginator');
+const { EmbedBuilder } = require('discord.js');
 
 Object.defineProperty(String.prototype, 'ucfirst', {
     value: function() {
@@ -90,12 +91,10 @@ module.exports = {
 };
 
 function getEmbed(interaction, page, totalPages) {
-
-    const embed = new Discord.MessageEmbed()
+    const embed = new EmbedBuilder()
         .setTitle('Blaze Isle Bot Commands Help')
         .setDescription(`Page ${page} of  ${totalPages}`)
         .setColor(Colours.LIGHT_ORANGE)
         .setThumbnail(interaction.client.user.displayAvatarURL({ dynamic: true }));
-
     return embed;
 }

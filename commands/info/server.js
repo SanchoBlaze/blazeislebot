@@ -1,6 +1,7 @@
 const Discord = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Colours } = require('../../modules/colours');
+const { EmbedBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -92,18 +93,20 @@ module.exports = {
         const voiceChannels = channels.filter(channel => channel.type === 'GUILD_VOICE');
         const channelTotal = textChannels.size + voiceChannels.size;
 
-        const embed = new Discord.MessageEmbed()
+        const embed = new EmbedBuilder()
             .setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() })
-            .addField('Name', interaction.guild.name, true)
-            .addField('ID', interaction.guild.id, true)
-            .addField('Owner', owner.user.username, true)
-            .addField('Total | Humans | Bots', `${interaction.guild.members.cache.size} | ${interaction.guild.members.cache.filter(member => !member.user.bot).size} | ${interaction.guild.members.cache.filter(member => member.user.bot).size}`, true)
-            .addField('Verification Level', verL, true)
-            .addField('Channels | Text | Voice', channelTotal + ' | ' + textChannels.size + ' | ' + voiceChannels.size, true)
-            .addField('Roles', roles.size.toString(), true)
-            .addField('Boost Tier', `${interaction.guild.premiumTier}`, true)
-            .addField('Boost Level', `${interaction.guild.premiumSubscriptionCount}`, true)
-            .addField('Creation Date', `${interaction.channel.guild.createdAt.toUTCString().substr(0, 16)} (${checkDays(interaction.channel.guild.createdAt)})`, true)
+            .addFields(
+                { name: 'Name', value: interaction.guild.name, inline: true },
+                { name: 'ID', value: interaction.guild.id, inline: true },
+                { name: 'Owner', value: owner.user.username, inline: true },
+                { name: 'Total | Humans | Bots', value: `${interaction.guild.members.cache.size} | ${interaction.guild.members.cache.filter(member => !member.user.bot).size} | ${interaction.guild.members.cache.filter(member => member.user.bot).size}`, inline: true },
+                { name: 'Verification Level', value: verL, inline: true },
+                { name: 'Channels | Text | Voice', value: channelTotal + ' | ' + textChannels.size + ' | ' + voiceChannels.size, inline: true },
+                { name: 'Roles', value: roles.size.toString(), inline: true },
+                { name: 'Boost Tier', value: `${interaction.guild.premiumTier}`, inline: true },
+                { name: 'Boost Level', value: `${interaction.guild.premiumSubscriptionCount}`, inline: true },
+                { name: 'Creation Date', value: `${interaction.channel.guild.createdAt.toUTCString().substr(0, 16)} (${checkDays(interaction.channel.guild.createdAt)})`, inline: true }
+            )
             .setColor(Colours.DARK_COLOURLESS)
             .setThumbnail(interaction.guild.iconURL());
         return interaction.reply({ embeds: [embed] });

@@ -1,6 +1,7 @@
 const Discord = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Colours } = require('../../modules/colours');
+const { EmbedBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -12,7 +13,7 @@ module.exports = {
         const members = await interaction.guild.members.fetch();
 
         // Now shake it and show it! (as a nice embed, too!)
-        const embed = new Discord.MessageEmbed()
+        const embed = new EmbedBuilder()
             .setTitle(interaction.guild.name + ' Leader board')
             .setDescription('Our top 10 XP leaders!')
             .setColor(Colours.LIGHT_GREEN);

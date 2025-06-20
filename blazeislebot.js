@@ -4,20 +4,29 @@
  * A bot for the Blaze Isle Discord server.
  */
 
+const { Client, GatewayIntentBits, Partials, Collection, EmbedBuilder } = require('discord.js');
 const config = require('config');
-const Discord = require('discord.js');
 const fs = require('fs');
 const Colours = require('./modules/colours');
 const Loyalty = require('./modules/loyalty');
 
 
 // Create an instance of a Discord client
-const intents = new Discord.Intents(8);
-const client = new Discord.Client({ partials: ['CHANNEL'], intents: [intents, Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Discord.Intents.FLAGS.GUILD_MEMBERS, Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.DIRECT_MESSAGE_REACTIONS] });
+const client = new Client({
+    partials: [Partials.Channel],
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildMessageReactions,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.DirectMessages,
+        GatewayIntentBits.DirectMessageReactions
+    ]
+});
 
 
-client.commands = new Discord.Collection();
-client.cooldowns = new Discord.Collection();
+client.commands = new Collection();
+client.cooldowns = new Collection();
 
 const loyalty = new Loyalty();
 client.loyalty = loyalty;
@@ -53,7 +62,7 @@ client.on('interactionCreate', async interaction => {
 
     if (!command) return;
 
-    if (command.guildOnly && interaction.channel.type === 'dm') {
+    if (command.guildOnly && interaction.channel.type === 1) { // 1 = DM in v14
         return interaction.reply('I can\'t execute that command inside DMs!');
     }
 
@@ -94,7 +103,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
             // Send welcome message in #general
             const channel = guild.channels.cache.find(ch => ch.name === 'general');
             if (channel) {
-                const embed = new Discord.MessageEmbed()
+                const embed = new EmbedBuilder()
                     .setTitle(`Welcome to **${guild}**`)
                     .setDescription(`Hey ${user.toString()}, thanks for joining!`)
                     .setColor(Colours.WELCOME_GREEN)

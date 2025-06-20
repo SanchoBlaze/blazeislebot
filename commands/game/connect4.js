@@ -1,6 +1,7 @@
 const discord = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Colours } = require('../../modules/colours');
+const { EmbedBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -52,7 +53,7 @@ class ConnectFour {
 
         const initialState = renderBoard(boardLayout);
 
-        const initial = new discord.MessageEmbed()
+        const initial = new EmbedBuilder()
             .setTitle(`🔴 ${msg.user.username} its your turn!`)
             .setDescription(initialState)
             .setColor(embedColour)
@@ -206,7 +207,7 @@ class ConnectFour {
 
                     if(tieCheck()) {
                         gameMessage.reactions.removeAll();
-                        const TieEmbed = new discord.MessageEmbed()
+                        const TieEmbed = new EmbedBuilder()
                             .setTitle('The game ended, it is Tie!')
                             .setDescription(renderBoard(boardLayout))
                             .setColor(embedColour)
@@ -230,7 +231,7 @@ class ConnectFour {
 
                             msg.client.loyalty.addXp(50, gameData[player].member, msg.guild);
 
-                            const WinEmbed = new discord.MessageEmbed()
+                            const WinEmbed = new EmbedBuilder()
                                 .setTitle(`${gameData[player].member.username} has won the game!`)
                                 .setDescription(renderBoard(boardLayout))
                                 .setColor(embedColour)
@@ -242,7 +243,7 @@ class ConnectFour {
 
                     player = (player + 1) % 2;
 
-                    const newEmbed = new discord.MessageEmbed()
+                    const newEmbed = new EmbedBuilder()
                         .setTitle(`${gameData[player].playerColor} - ${gameData[player].member.username} its your turn!`)
                         .setDescription(renderBoard(boardLayout))
                         .setColor(embedColour)
