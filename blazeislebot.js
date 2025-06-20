@@ -9,6 +9,7 @@ const config = require('config');
 const fs = require('fs');
 const Colours = require('./modules/colours');
 const Loyalty = require('./modules/loyalty');
+const TwitchManager = require('./modules/twitch');
 
 
 // Create an instance of a Discord client
@@ -29,7 +30,9 @@ client.commands = new Collection();
 client.cooldowns = new Collection();
 
 const loyalty = new Loyalty();
+const twitchManager = new TwitchManager();
 client.loyalty = loyalty;
+client.twitch = twitchManager;
 
 
 const commandFolders = fs.readdirSync('./commands');
@@ -46,6 +49,9 @@ for (const folder of commandFolders) {
 
 client.once('ready', () => {
     console.log('Blaze Isle Bot Online!');
+    
+    // Start Twitch stream checking
+    startTwitchChecker();
 });
 
 
@@ -142,5 +148,87 @@ client.on('messageReactionAdd', async (reaction, user) => {
         }
     }
 });
+
+// Twitch stream checker
+function startTwitchChecker() {
+    // Check if Twitch credentials are configured
+    const clientId = config.get('Twitch.client_id');
+    const clientSecret = config.get('Twitch.secret');
+    
+    if (!clientId || !clientSecret) {
+        console.log('Twitch credentials not configured - Twitch stream checking disabled');
+        return;
+    }
+    
+    console.log('Starting Twitch stream checker...');
+    
+    setInterval(async () => {
+        try {
+            const subscriptions = await twitchManager.getAllSubscriptions();
+            
+            if (subscriptions.length === 0) {
+                return; // No subscriptions to check
+            }
+            
+            for (const username of subscriptions) {
+                const currentStatus = await twitchManager.getStreamStatus(username);
+                const newStatus = await twitchManager.checkStreamStatus(username);
+                
+                // Update status in database
+                await twitchManager.updateStreamStatus(username, newStatus);
+                
+                // Check if stream just went live
+                if (newStatus && (!currentStatus || !currentStatus.is_live)) {
+                    await sendStreamNotification(username, newStatus);
+                }
+            }
+        } catch (error) {
+            console.error('Error in Twitch checker:', error);
+        }
+    }, 1 * 60 * 1000); // Check every 5 minutes
+}
+
+async function sendStreamNotification(twitchUsername, streamData) {
+    try {
+        const streamsChannelId = config.get('streamsChannelId');
+        if (!streamsChannelId) {
+            console.error('streamsChannelId not configured');
+            return;
+        }
+
+        const subscriptions = await twitchManager.getSubscriptionsForUser(twitchUsername);
+        
+        for (const subscription of subscriptions) {
+            const guild = client.guilds.cache.get(subscription.guild_id);
+            if (!guild) continue;
+            
+            const channel = guild.channels.cache.get(streamsChannelId);
+            if (!channel) {
+                console.error(`Streams channel not found in guild ${guild.name}`);
+                continue;
+            }
+            
+            const embed = new EmbedBuilder()
+                .setTitle('🔴 LIVE NOW!')
+                .setDescription(`**${twitchUsername}** is now live on Twitch!`)
+                .addFields(
+                    { name: 'Title', value: streamData.title || 'No title', inline: true },
+                    { name: 'Game', value: streamData.game_name || 'No game', inline: true },
+                    { name: 'Viewers', value: streamData.viewer_count?.toString() || 'Unknown', inline: true }
+                )
+                .setColor(Colours.Colours.RED)
+                .setTimestamp()
+                .setURL(`https://twitch.tv/${twitchUsername}`)
+                .setThumbnail(`https://static-cdn.jtvnw.net/previews-ttv/live_user_${twitchUsername}-320x180.jpg`);
+            
+            await channel.send({ 
+                content: `🎉 **${twitchUsername}** is now live! <https://twitch.tv/${twitchUsername}>`,
+                embeds: [embed] 
+            });
+        }
+    } catch (error) {
+        console.error('Error sending stream notification:', error);
+    }
+}
 
 client.login(config.get('Discord.token'));

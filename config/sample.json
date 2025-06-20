@@ -1,6 +1,8 @@
 {
     "Discord": {
-        "token": "BOT TOKEN"
+        "token": "BOT TOKEN",
+        "clientId": "YOUR_CLIENT_ID",
+        "guildId": "YOUR_GUILD_ID"
     },
     "Giphy": {
         "key": "API KEY"
@@ -10,5 +12,8 @@
     },
     "rulesChannelId": "YOUR_RULES_CHANNEL_ID",
     "rulesMessageId": "YOUR_RULES_MESSAGE_ID",
-    "membersRoleId": "YOUR_MEMBERS_ROLE_ID"
+    "membersRoleId": "YOUR_MEMBERS_ROLE_ID",
+    "streamsChannelId": "YOUR_STREAMS_CHANNEL_ID",
+    "adminRoleId": "YOUR_ADMIN_ROLE_ID",
+    "modRoleId": "YOUR_MOD_ROLE_ID"
 }

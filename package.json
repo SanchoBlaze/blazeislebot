@@ -1,6 +1,6 @@
 {
   "name": "blazeislebot",
-  "version": "2.1.2",
+  "version": "2.2.0",
   "description": "A bot for the Blaze Isle Discord server.",
   "main": "blazeislebot.js",
   "scripts": {
@@ -9,7 +9,11 @@
     "preversion": "npm run test",
     "version": "",
     "postversion": "git commit && git push",
-    "dev": "nodemon blazeislebot.js"
+    "dev": "nodemon blazeislebot.js",
+    "deploy:global": "node deploy-commands.js global",
+    "deploy:guild": "node deploy-commands.js guild",
+    "remove:global": "node remove-commands.js global",
+    "remove:guild": "node remove-commands.js guild"
   },
   "repository": {
     "type": "git",
