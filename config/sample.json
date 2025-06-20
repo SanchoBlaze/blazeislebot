@@ -7,5 +7,8 @@
     },
     "Enviroment": {
         "live": false
-    }
+    },
+    "rulesChannelId": "YOUR_RULES_CHANNEL_ID",
+    "rulesMessageId": "YOUR_RULES_MESSAGE_ID",
+    "membersRoleId": "YOUR_MEMBERS_ROLE_ID"
 }

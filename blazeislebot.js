@@ -41,16 +41,8 @@ client.once('ready', () => {
 
 
 client.on('guildMemberAdd', (member) => {
-    const channel = member.guild.channels.cache.find(ch => ch.name === 'general');
-    if (!channel) return;
-    const embed = new Discord.MessageEmbed()
-        .setTitle(`Welcome to **${member.guild}**`)
-        .setDescription(`Hey ${member.user.toString()}, thanks for joining!`)
-        .setColor(Colours.WELCOME_GREEN)
-        .setThumbnail(member.user.displayAvatarURL());
-    channel.send({ embeds: [embed] });
-
-    client.loyalty.addUser(member.user, member.guild);
+    // Do not send welcome message here; wait until rules are accepted
+    // client.loyalty.addUser will also be called after rules acceptance
 });
 
 client.on('interactionCreate', async interaction => {
@@ -83,76 +75,41 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
+client.on('messageReactionAdd', async (reaction, user) => {
+    // Ignore bot reactions
+    if (user.bot) return;
 
-/*
-client.on('message', message => {
-    if (!message.content.startsWith(client.prefix) || message.author.bot) return;
-
-    const args = message.content.slice(client.prefix.length).trim().split(/ +/);
-    const commandName = args.shift().toLowerCase();
-
-    const command = client.commands.get(commandName)
-		|| client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
-
-    if (!command) return;
-
-    if (command.guildOnly && message.channel.type === 'dm') {
-        return message.reply('I can\'t execute that command inside DMs!');
-    }
-
-    if (command.permissions) {
-        const authorPerms = message.channel.permissionsFor(message.author);
-        if (!authorPerms || !authorPerms.has(command.permissions)) {
-            return message.reply('You can not do this!');
+    // Only proceed if the reaction is in the rules channel and on the rules message
+    if (
+        reaction.message.channel.id === config.get('rulesChannelId') &&
+        reaction.message.id === config.get('rulesMessageId') &&
+        (reaction.emoji.name === '✅' || reaction.emoji.id === 'white_check_mark')
+    ) {
+        const guild = reaction.message.guild;
+        if (!guild) return;
+        const member = await guild.members.fetch(user.id);
+        const roleId = config.get('membersRoleId');
+        if (!member.roles.cache.has(roleId)) {
+            await member.roles.add(roleId, 'Accepted rules');
+            // Send welcome message in #general
+            const channel = guild.channels.cache.find(ch => ch.name === 'general');
+            if (channel) {
+                const embed = new Discord.MessageEmbed()
+                    .setTitle(`Welcome to **${guild}**`)
+                    .setDescription(`Hey ${user.toString()}, thanks for joining!`)
+                    .setColor(Colours.WELCOME_GREEN)
+                    .setThumbnail(user.displayAvatarURL());
+                channel.send({ embeds: [embed] });
+            }
+            // Add user to loyalty system
+            client.loyalty.addUser(user, guild);
+            try {
+                await user.send(`You have accepted the rules and have been given the Members role in **${guild.name}**. Welcome!`);
+            } catch (e) {
+                // Ignore if DM fails
+            }
         }
-    }
-
-    if (command.role) {
-        if (!message.member.roles.cache.some(role => role.name === command.role)) {
-            return message.reply('You can not do this!');
-        }
-    }
-
-    if (command.args && !args.length) {
-        let reply = `You didn't provide any arguments, ${message.author}!`;
-
-        if (command.usage) {
-            reply += `\nThe proper usage would be: \`${client.prefix}${command.name} ${command.usage}\``;
-        }
-
-        return message.channel.send(reply);
-    }
-
-    const { cooldowns } = client;
-
-    if (!cooldowns.has(command.name)) {
-        cooldowns.set(command.name, new Discord.Collection());
-    }
-
-    const now = Date.now();
-    const timestamps = cooldowns.get(command.name);
-    const cooldownAmount = (command.cooldown || 3) * 1000;
-
-    if (timestamps.has(message.author.id)) {
-        const expirationTime = timestamps.get(message.author.id) + cooldownAmount;
-
-        if (now < expirationTime) {
-            const timeLeft = (expirationTime - now) / 1000;
-            return message.reply(`please wait ${timeLeft.toFixed(1)} more second(s) before reusing the \`${command.name}\` command.`);
-        }
-    }
-
-    timestamps.set(message.author.id, now);
-    setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
-
-    try {
-        command.execute(message, args);
-    }
-    catch (error) {
-        console.error(error);
-        message.reply('there was an error trying to execute that command!');
     }
 });
-*/
 
 client.login(config.get('Discord.token'));
