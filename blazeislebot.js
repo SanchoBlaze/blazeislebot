@@ -13,7 +13,7 @@ const Loyalty = require('./modules/loyalty');
 
 // Create an instance of a Discord client
 const client = new Client({
-    partials: [Partials.Channel],
+    partials: [Partials.Channel, Partials.Message, Partials.Reaction],
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
@@ -88,25 +88,47 @@ client.on('messageReactionAdd', async (reaction, user) => {
     // Ignore bot reactions
     if (user.bot) return;
 
+    // Handle partials
+    if (reaction.partial) {
+        try {
+            await reaction.fetch();
+        } catch (error) {
+            console.error('Error fetching reaction:', error);
+            return;
+        }
+    }
+    if (reaction.message.partial) {
+        try {
+            await reaction.message.fetch();
+        } catch (error) {
+            console.error('Error fetching message:', error);
+            return;
+        }
+    }
+
     // Only proceed if the reaction is in the rules channel and on the rules message
     if (
         reaction.message.channel.id === config.get('rulesChannelId') &&
         reaction.message.id === config.get('rulesMessageId') &&
-        (reaction.emoji.name === '✅' || reaction.emoji.id === 'white_check_mark')
+        reaction.emoji.name === '✅'
     ) {
         const guild = reaction.message.guild;
         if (!guild) return;
         const member = await guild.members.fetch(user.id);
         const roleId = config.get('membersRoleId');
         if (!member.roles.cache.has(roleId)) {
-            await member.roles.add(roleId, 'Accepted rules');
+            try {
+                await member.roles.add(roleId, 'Accepted rules');
+            } catch (err) {
+                console.error(`Failed to add Members role to ${user.tag} (${user.id}):`, err);
+            }
             // Send welcome message in #general
             const channel = guild.channels.cache.find(ch => ch.name === 'general');
             if (channel) {
                 const embed = new EmbedBuilder()
                     .setTitle(`Welcome to **${guild}**`)
                     .setDescription(`Hey ${user.toString()}, thanks for joining!`)
-                    .setColor(Colours.WELCOME_GREEN)
+                    .setColor(Colours.Colours.WELCOME_GREEN)
                     .setThumbnail(user.displayAvatarURL());
                 channel.send({ embeds: [embed] });
             }

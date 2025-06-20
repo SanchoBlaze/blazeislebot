@@ -41,7 +41,7 @@ module.exports = {
             .setTitle(interaction.user.username + ' asks: ' + question)
             .addFields({ name: 'Answer', value: replies[result] + '' })
             .setImage('attachment://eightball.png')
-            .setColor(Colours.DARK_COLOURLESS);
+            .setColor(Colours.Colours.DARK_COLOURLESS);
 
         await interaction.reply({ embeds: [embed], files: [file] });
     },

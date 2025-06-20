@@ -107,7 +107,7 @@ module.exports = {
                 { name: 'Boost Level', value: `${interaction.guild.premiumSubscriptionCount}`, inline: true },
                 { name: 'Creation Date', value: `${interaction.channel.guild.createdAt.toUTCString().substr(0, 16)} (${checkDays(interaction.channel.guild.createdAt)})`, inline: true }
             )
-            .setColor(Colours.DARK_COLOURLESS)
+            .setColor(Colours.Colours.DARK_COLOURLESS)
             .setThumbnail(interaction.guild.iconURL());
         return interaction.reply({ embeds: [embed] });
     },
