@@ -13,7 +13,7 @@ module.exports = {
         const sa = require('superagent');
         sa.get('https://cataas.com/cat?json=true')
             .end((err, response) => {
-                interaction.reply('https://cataas.com' + response.body.url);
+                interaction.reply(response.body.url);
             });
     },
 };
