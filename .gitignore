@@ -107,5 +107,5 @@ dist
 config/default.json
 commands/loyalty/test.js
 
-.idea/
-.vscode/
+.idea
+.vscode
