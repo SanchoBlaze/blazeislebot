@@ -34,9 +34,13 @@ A feature-rich Node.js Discord bot for the Blaze Isle community.
 4. **For Twitch integration:**
    - Get your Twitch Client ID and Secret from [Twitch Developer Console](https://dev.twitch.tv/console)
    - Add them to your config file
-5. (Optional) Deploy slash commands:
+5. **Deploy slash commands** (see Command Management section below):
    ```bash
-   node deploy-commands.js
+   # For testing (guild commands update immediately):
+   npm run deploy:guild
+   
+   # For production (global commands take up to 1 hour):
+   npm run deploy:global
    ```
 6. Start the bot:
    ```bash
