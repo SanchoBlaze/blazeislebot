@@ -28,6 +28,9 @@
     "url": "https://github.com/SanchoBlaze/blazeislebot/issues"
   },
   "homepage": "https://github.com/SanchoBlaze/blazeislebot#readme",
+  "engines": {
+    "node": ">=22.16.0"
+  },
   "dependencies": {
     "@discordjs/opus": "^0.10.0",
     "@discordjs/rest": "^2.5.1",

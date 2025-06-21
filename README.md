@@ -15,7 +15,7 @@ A feature-rich Node.js Discord bot for the Blaze Isle community.
 ## Getting Started
 
 ### Prerequisites
-- Node.js (v16 or higher recommended)
+- Node.js (v22.16.0 or higher)
 - npm
 - A Discord bot token ([How to create a bot](https://discordjs.guide/preparations/setting-up-a-bot-application.html))
 - Twitch API credentials (for stream notifications)
