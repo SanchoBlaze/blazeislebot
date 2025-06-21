@@ -43,8 +43,19 @@ A feature-rich Node.js Discord bot for the Blaze Isle community.
    npm run deploy:global
    ```
 6. Start the bot:
+   To run the bot in a production environment, it is recommended to use PM2, a process manager for Node.js applications.
    ```bash
-   node blazeislebot.js
+   # Install PM2 globally
+   npm install -g pm2
+   
+   # Start the bot
+   npm start
+   
+   # To view logs with timestamps
+   pm2 logs BlazeIsleBot
+   
+   # To stop the bot
+   npm stop
    ```
 
 ### Command Management
