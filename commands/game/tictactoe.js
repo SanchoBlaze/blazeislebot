@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { MessageActionRow, MessageButton } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -22,47 +22,47 @@ class TicTacToe {
         const opponent = interaction.options.getUser('opponent');
         const challenger = interaction.user;
 
-        const row1 = new MessageActionRow().addComponents(
-            new MessageButton()
+        const row1 = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
                 .setCustomId('ttt11')
                 .setLabel('_')
-                .setStyle('SECONDARY'),
-            new MessageButton()
+                .setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder()
                 .setCustomId('ttt12')
                 .setLabel('_')
-                .setStyle('SECONDARY'),
-            new MessageButton()
+                .setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder()
                 .setCustomId('ttt13')
                 .setLabel('_')
-                .setStyle('SECONDARY'),
+                .setStyle(ButtonStyle.Secondary),
         );
-        const row2 = new MessageActionRow().addComponents(
-            new MessageButton()
+        const row2 = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
                 .setCustomId('ttt21')
                 .setLabel('_')
-                .setStyle('SECONDARY'),
-            new MessageButton()
+                .setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder()
                 .setCustomId('ttt22')
                 .setLabel('_')
-                .setStyle('SECONDARY'),
-            new MessageButton()
+                .setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder()
                 .setCustomId('ttt23')
                 .setLabel('_')
-                .setStyle('SECONDARY'),
+                .setStyle(ButtonStyle.Secondary),
         );
-        const row3 = new MessageActionRow().addComponents(
-            new MessageButton()
+        const row3 = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
                 .setCustomId('ttt31')
                 .setLabel('_')
-                .setStyle('SECONDARY'),
-            new MessageButton()
+                .setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder()
                 .setCustomId('ttt32')
                 .setLabel('_')
-                .setStyle('SECONDARY'),
-            new MessageButton()
+                .setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder()
                 .setCustomId('ttt33')
                 .setLabel('_')
-                .setStyle('SECONDARY'),
+                .setStyle(ButtonStyle.Secondary),
         );
 
 
@@ -80,56 +80,56 @@ class TicTacToe {
 
         const checkThree = (a, b, c) => (a === b) && (b === c) && (a !== '_');
 
-        const horizontalCheck = (msg) => {
+        const horizontalCheck = (rows) => {
 
             for (let i = 0; i < 3; i++) {
-                if(checkThree(msg.components[i].components[0].label, msg.components[i].components[1].label, msg.components[i].components[2].label)) {
-                    msg.components[i].components[0].style = 'SUCCESS';
-                    msg.components[i].components[1].style = 'SUCCESS';
-                    msg.components[i].components[2].style = 'SUCCESS';
+                if(checkThree(rows[i].components[0].data.label, rows[i].components[1].data.label, rows[i].components[2].data.label)) {
+                    rows[i].components[0].setStyle(ButtonStyle.Success);
+                    rows[i].components[1].setStyle(ButtonStyle.Success);
+                    rows[i].components[2].setStyle(ButtonStyle.Success);
                     return true;
                 }
             }
             return false;
         };
 
-        const verticalCheck = (msg) => {
+        const verticalCheck = (rows) => {
 
             for (let j = 0; j < 3; j++) {
-                if(checkThree(msg.components[0].components[j].label, msg.components[1].components[j].label, msg.components[2].components[j].label)) {
-                    msg.components[0].components[j].style = 'SUCCESS';
-                    msg.components[1].components[j].style = 'SUCCESS';
-                    msg.components[2].components[j].style = 'SUCCESS';
+                if(checkThree(rows[0].components[j].data.label, rows[1].components[j].data.label, rows[2].components[j].data.label)) {
+                    rows[0].components[j].setStyle(ButtonStyle.Success);
+                    rows[1].components[j].setStyle(ButtonStyle.Success);
+                    rows[2].components[j].setStyle(ButtonStyle.Success);
                     return true;
                 }
             }
             return false;
         };
 
-        const diagonalCheck = (msg) => {
+        const diagonalCheck = (rows) => {
 
-            if(checkThree(msg.components[0].components[0].label, msg.components[1].components[1].label, msg.components[2].components[2].label)) {
-                msg.components[0].components[0].style = 'SUCCESS';
-                msg.components[1].components[1].style = 'SUCCESS';
-                msg.components[2].components[2].style = 'SUCCESS';
+            if(checkThree(rows[0].components[0].data.label, rows[1].components[1].data.label, rows[2].components[2].data.label)) {
+                rows[0].components[0].setStyle(ButtonStyle.Success);
+                rows[1].components[1].setStyle(ButtonStyle.Success);
+                rows[2].components[2].setStyle(ButtonStyle.Success);
                 return true;
             }
 
-            if(checkThree(msg.components[0].components[2].label, msg.components[1].components[1].label, msg.components[2].components[0].label)) {
-                msg.components[0].components[2].style = 'SUCCESS';
-                msg.components[1].components[1].style = 'SUCCESS';
-                msg.components[2].components[0].style = 'SUCCESS';
+            if(checkThree(rows[0].components[2].data.label, rows[1].components[1].data.label, rows[2].components[0].data.label)) {
+                rows[0].components[2].setStyle(ButtonStyle.Success);
+                rows[1].components[1].setStyle(ButtonStyle.Success);
+                rows[2].components[0].setStyle(ButtonStyle.Success);
                 return true;
             }
 
             return false;
         };
 
-        const tieCheck = (msg) => {
+        const tieCheck = (rows) => {
             let count = 0;
             for (let i = 0; i < 3; i++) {
                 for (let j = 0; j < 3; j++) {
-                    if(msg.components[i].components[j].label !== '_') count++;
+                    if(rows[i].components[j].data.label !== '_') count++;
                 }
             }
             if(count === 9) return true;
@@ -150,42 +150,65 @@ class TicTacToe {
                 const i = parseInt(buttonClicked.customId[3]),
                     j = parseInt(buttonClicked.customId[4]);
 
-                const buttonPressed = message.components[i - 1].components[j - 1];
-
-                buttonPressed.label = gameData[player].playerSymbol;
-                buttonPressed.style = 'SECONDARY';
-                buttonPressed.disabled = true;
+                // Create new button components with updated state
+                const newRows = [];
+                for (let row = 0; row < 3; row++) {
+                    const newRow = new ActionRowBuilder();
+                    for (let col = 0; col < 3; col++) {
+                        const buttonId = `ttt${row + 1}${col + 1}`;
+                        const existingButton = message.components[row].components[col];
+                        
+                        const newButton = new ButtonBuilder()
+                            .setCustomId(buttonId)
+                            .setLabel(existingButton.label)
+                            .setStyle(existingButton.style)
+                            .setDisabled(existingButton.disabled);
+                        
+                        // Update the clicked button
+                        if (row === i - 1 && col === j - 1) {
+                            newButton.setLabel(gameData[player].playerSymbol);
+                            newButton.setStyle(ButtonStyle.Secondary);
+                            newButton.setDisabled(true);
+                        }
+                        
+                        newRow.addComponents(newButton);
+                    }
+                    newRows.push(newRow);
+                }
 
                 for (const func of checks) {
 
-                    const data = func(message);
+                    const data = func(newRows);
 
                     if(data) {
+                        // Disable all remaining empty buttons
                         for (let x = 0; x < 3; x++) {
                             for (let y = 0; y < 3; y++) {
-                                if(message.components[x].components[y].label === '_') message.components[x].components[y].disabled = true;
+                                if(newRows[x].components[y].data.label === '_') {
+                                    newRows[x].components[y].setDisabled(true);
+                                }
                             }
                         }
 
                         message.client.loyalty.addXp(50, gameData[player].member, message.guild);
 
                         collector.stop(gameData[player].member.username + ' won.');
-                        message.edit({ content: `${gameData[player].playerSymbol} - ${gameData[player].member} won!`, components: message.components });
+                        message.edit({ content: `${gameData[player].playerSymbol} - ${gameData[player].member} won!`, components: newRows });
                         buttonClicked.deferUpdate();
                         return;
                     }
                 }
 
-                if(tieCheck(message)) {
+                if(tieCheck(newRows)) {
                     collector.stop('Tie game.');
-                    message.edit({ content: 'The game ended, it is Tie!', components: message.components });
+                    message.edit({ content: 'The game ended, it is Tie!', components: newRows });
                     buttonClicked.deferUpdate();
                     return;
                 }
 
                 player = (player + 1) % 2;
 
-                message.edit({ content: `${gameData[player].playerSymbol} - ${gameData[player].member} its your turn!`, components: message.components });
+                message.edit({ content: `${gameData[player].playerSymbol} - ${gameData[player].member} its your turn!`, components: newRows });
 
                 buttonClicked.deferUpdate();
             }
