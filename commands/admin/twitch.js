@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const { Colours } = require('../../modules/colours');
 const config = require('config');
 
@@ -37,17 +37,16 @@ module.exports = {
                         .setRequired(true))),
     guildOnly: true,
     async execute(interaction) {
-        // Check if user has Admin or Mod role
-        const adminRoleId = config.get('adminRoleId');
-        const modRoleId = config.get('modRoleId');
-        
-        const hasAdminRole = interaction.member.roles.cache.has(adminRoleId);
-        const hasModRole = interaction.member.roles.cache.has(modRoleId);
-        
-        if (!hasAdminRole && !hasModRole) {
-            return interaction.reply({ 
-                content: 'You need Admin or Mod permissions to use this command.', 
-                ephemeral: true 
+        const settings = interaction.client.settings.get(interaction.guild.id);
+        const modRoleId = settings.mod_role_id;
+
+        const isAdministrator = interaction.member.permissions.has(PermissionFlagsBits.Administrator);
+        const hasModRole = modRoleId ? interaction.member.roles.cache.has(modRoleId) : false;
+
+        if (!isAdministrator && !hasModRole) {
+            return interaction.reply({
+                content: 'You need to be a server Administrator or have the configured Mod role to use this command.',
+                ephemeral: true
             });
         }
 
@@ -64,9 +63,18 @@ module.exports = {
         try {
             switch (subcommand) {
                 case 'add': {
+                    const streamsChannelId = settings.streams_channel_id;
+                    if (!streamsChannelId) {
+                        return interaction.reply({
+                            content: 'The streams channel is not configured for this server. Please use the `/config` command.',
+                            ephemeral: true
+                        });
+                    }
+
                     const username = interaction.options.getString('username');
                     const success = await twitchManager.addSubscription(
                         interaction.guild.id,
+                        streamsChannelId,
                         username,
                         interaction.user.id
                     );

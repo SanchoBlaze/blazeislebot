@@ -66,10 +66,18 @@ A feature-rich Node.js Discord bot for the Blaze Isle community.
 
 **Note:** Global commands can take up to 1 hour to update across all servers, while guild commands update immediately.
 
-## Configuration
-- All configuration is handled in `config/default.json` (not tracked by git).
-- Set your Discord bot token, rules channel/message IDs, Members role ID, and streams channel ID as described in the config file.
-- **Twitch credentials:** Add your Twitch Client ID and Secret for stream notifications.
+## Guild Setup
+Once the bot is running and has been invited to a new server, an Administrator must configure it using the `/config` command. This is required for most features to work correctly.
+
+- `/config view` - Displays the current settings for the server.
+- `/config set <key> <value>` - Sets a specific configuration value. The value should be the ID of the channel, message, or role.
+
+### Required Settings
+- `rules_channel_id`: The channel where your rules message is.
+- `rules_message_id`: The ID of the message that users must react to.
+- `members_role_id`: The role to grant users after they accept the rules.
+- `streams_channel_id`: The channel where Twitch stream notifications will be posted.
+- `mod_role_id`: The role that has permission to use the `/twitch` command (in addition to Administrators).
 
 ## Twitch Stream Notifications
 Moderators and admins can manage Twitch stream notifications using the `/twitch` command:

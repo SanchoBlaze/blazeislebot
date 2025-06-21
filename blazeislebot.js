@@ -23,6 +23,7 @@ const { Client, GatewayIntentBits, Partials, Collection, EmbedBuilder } = requir
 const Colours = require('./modules/colours');
 const Loyalty = require('./modules/loyalty');
 const TwitchManager = require('./modules/twitch');
+const GuildSettings = require('./modules/guildSettings');
 
 
 // Create an instance of a Discord client
@@ -46,6 +47,7 @@ const loyalty = new Loyalty();
 const twitchManager = new TwitchManager();
 client.loyalty = loyalty;
 client.twitch = twitchManager;
+client.settings = new GuildSettings(client);
 
 
 const commandFolders = fs.readdirSync('./commands');
@@ -126,19 +128,27 @@ client.on('messageReactionAdd', async (reaction, user) => {
         }
     }
 
+    const settings = client.settings.get(reaction.message.guild.id);
+    const rulesChannelId = settings.rules_channel_id;
+    const rulesMessageId = settings.rules_message_id;
+    const membersRoleId = settings.members_role_id;
+
+    if (!rulesChannelId || !rulesMessageId || !membersRoleId) {
+        return; // Guild not configured for this feature
+    }
+
     // Only proceed if the reaction is in the rules channel and on the rules message
     if (
-        reaction.message.channel.id === config.get('rulesChannelId') &&
-        reaction.message.id === config.get('rulesMessageId') &&
+        reaction.message.channel.id === rulesChannelId &&
+        reaction.message.id === rulesMessageId &&
         reaction.emoji.name === '✅'
     ) {
         const guild = reaction.message.guild;
         if (!guild) return;
         const member = await guild.members.fetch(user.id);
-        const roleId = config.get('membersRoleId');
-        if (!member.roles.cache.has(roleId)) {
+        if (!member.roles.cache.has(membersRoleId)) {
             try {
-                await member.roles.add(roleId, 'Accepted rules');
+                await member.roles.add(membersRoleId, 'Accepted rules');
             } catch (err) {
                 console.error(`Failed to add Members role to ${user.tag} (${user.id}):`, err);
             }
@@ -204,21 +214,15 @@ function startTwitchChecker() {
 
 async function sendStreamNotification(twitchUsername, streamData) {
     try {
-        const streamsChannelId = config.get('streamsChannelId');
-        if (!streamsChannelId) {
-            console.error('streamsChannelId not configured');
-            return;
-        }
-
         const subscriptions = await twitchManager.getSubscriptionsForUser(twitchUsername);
         
         for (const subscription of subscriptions) {
             const guild = client.guilds.cache.get(subscription.guild_id);
             if (!guild) continue;
             
-            const channel = guild.channels.cache.get(streamsChannelId);
+            const channel = guild.channels.cache.get(subscription.channel_id);
             if (!channel) {
-                console.error(`Streams channel not found in guild ${guild.name}`);
+                console.error(`Streams channel with ID ${subscription.channel_id} not found in guild ${guild.name}`);
                 continue;
             }
             

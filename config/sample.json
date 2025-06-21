@@ -1,11 +1,15 @@
 {
     "Discord": {
-        "token": "BOT TOKEN",
-        "clientId": "YOUR_CLIENT_ID",
-        "guildId": "YOUR_GUILD_ID"
+        "token": "YOUR_DISCORD_BOT_TOKEN",
+        "clientId": "YOUR_DISCORD_CLIENT_ID",
+        "guildId": "YOUR_TEST_GUILD_ID"
+    },
+    "Twitch": {
+        "client_id": "YOUR_TWITCH_CLIENT_ID",
+        "secret": "YOUR_TWITCH_SECRET"
     },
     "Giphy": {
-        "key": "API KEY"
+        "key": "YOUR_GIPHY_API_KEY"
     },
     "Enviroment": {
         "live": false
