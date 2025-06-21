@@ -1,8 +1,6 @@
 const config = require('config');
-
-const Discord = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
-
+const { AttachmentBuilder } = require('discord.js');
 const giphy = require('giphy-api')(config.get('Giphy.key'));
 const path = require('path');
 const imagePath = path.join(__dirname, '..', '..', 'assets', 'giphy.gif');
@@ -16,9 +14,7 @@ module.exports = {
                 .setDescription('Search term.')
                 .setRequired(true)),
     async execute(interaction) {
-
-        // const background = await loadImage(imagePath);
-        const attachment = new Discord.MessageAttachment(imagePath);
+        const attachment = new AttachmentBuilder(imagePath);
         const search = interaction.options.getString('search');
         await interaction.reply({ content: `Searched for: ${search}`, files: [attachment] });
 
