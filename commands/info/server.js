@@ -1,114 +1,62 @@
-const Discord = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { EmbedBuilder, ChannelType } = require('discord.js');
 const { Colours } = require('../../modules/colours');
-const { EmbedBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('server')
-        .setDescription('Display info about this server.'),
-    guildOnly: true,
+        .setDescription('Displays detailed information about this server.'),
     async execute(interaction) {
-        function checkDays(date) {
-            const now = new Date();
-            const diff = now.getTime() - date.getTime();
-            const days = Math.floor(diff / 86400000);
-            return days + (days == 1 ? ' day' : ' days') + ' ago';
-        }
+        const { guild } = interaction;
 
-        const serv = interaction.guild;
-        let verL = 'None (No Restriction)';
-        switch(serv.verificationLevel) {
-        case '1':
-            verL = 'Low (Verified Account)';
-            break;
-        case '2':
-            verL = 'Medium (Verified Account for 5 minutes+)';
-            break;
-        case '3':
-            verL = 'Secure (Verified Account & Guild member for 10+ minutes)';
-            break;
-        case '4':
-            verL = 'Intense (Verified Account & Verified Phone linked)';
-            break;
+        // Fetch all members to ensure accurate counts
+        await guild.members.fetch();
+        const owner = await guild.fetchOwner();
 
-        }
-        /*
-        const region = {
-            'brazil': ':flag_br: Brazil',
-            'eu-central': ':flag_eu: Central Europe',
-            'singapore': ':flag_sg: Singapore',
-            'us-central': ':flag_us: U.S. Central',
-            'sydney': ':flag_au: Sydney',
-            'us-east': ':flag_us: U.S. East',
-            'us-south': ':flag_us: U.S. South',
-            'us-west': ':flag_us: U.S. West',
-            'eu-west': ':flag_eu: Western Europe',
-            'vip-us-east': ':flag_us: VIP U.S. East',
-            'london': ':flag_gb: London',
-            'amsterdam': ':flag_nl: Amsterdam',
-            'hongkong': ':flag_hk: Hong Kong',
-            'russia': ':flag_ru: Russia',
-            'southafrica': ':flag_za:  South Africa',
+        // Channel counts
+        const channels = guild.channels.cache;
+        const textChannels = channels.filter(c => c.type === ChannelType.GuildText).size;
+        const voiceChannels = channels.filter(c => c.type === ChannelType.GuildVoice).size;
+        const categoryChannels = channels.filter(c => c.type === ChannelType.GuildCategory).size;
+        const stageChannels = channels.filter(c => c.type === ChannelType.GuildStageVoice).size;
+
+        // Member counts
+        const totalMembers = guild.memberCount;
+        const humanMembers = guild.members.cache.filter(member => !member.user.bot).size;
+        const botMembers = totalMembers - humanMembers;
+
+        // Verification Level
+        const verificationLevels = {
+            0: 'None',
+            1: 'Low',
+            2: 'Medium',
+            3: 'High',
+            4: 'Very High',
         };
-
-        const local = {
-            'da' : 'Danish',
-            'de' : 'German',
-            'en-GB' : ':flag_gb: English, UK',
-            'en-US' : 'English, US',
-            'es-ES' : 'Spanish',
-            'fr' : 'French',
-            'hr' : 'Croatian',
-            'it' : 'Italian',
-            'lt' : 'Lithuanian',
-            'hu' : 'Hungarian',
-            'nl' : ':flag_nl: Dutch',
-            'no' : 'Norwegian',
-            'pl' : 'Polish',
-            'pt-BR' : ':flag_br: Portuguese, Brazilian',
-            'ro' : 'Romanian, Romania',
-            'fi' : 'Finnish',
-            'sv-SE' : 'Swedish',
-            'vi' : 'Vietnamese',
-            'tr' : 'Turkish',
-            'cs' : 'Czech',
-            'el' : 'Greek',
-            'bg' : 'Bulgarian',
-            'ru' : 'Russian',
-            'uk' : 'Ukrainian',
-            'hi' : 'Hindi',
-            'th' : 'Thai',
-            'zh-CN' : 'Chinese, China',
-            'ja' : 'Japanese',
-            'zh-TW' : 'Chinese, Taiwan',
-            'ko' : 'Korean',
-        };
-*/
-        const roles = await interaction.guild.roles.fetch();
-        const members = await interaction.guild.members.fetch();
-        const channels = await interaction.guild.channels.fetch();
-        const owner = members.find(member => member.id === interaction.guild.ownerId);
-        const textChannels = channels.filter(channel => channel.type === 'GUILD_TEXT');
-        const voiceChannels = channels.filter(channel => channel.type === 'GUILD_VOICE');
-        const channelTotal = textChannels.size + voiceChannels.size;
 
         const embed = new EmbedBuilder()
-            .setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() })
+            .setColor(Colours.BLUE)
+            .setTitle(`Server Info: ${guild.name}`)
+            .setThumbnail(guild.iconURL({ dynamic: true }))
             .addFields(
-                { name: 'Name', value: interaction.guild.name, inline: true },
-                { name: 'ID', value: interaction.guild.id, inline: true },
-                { name: 'Owner', value: owner.user.username, inline: true },
-                { name: 'Total | Humans | Bots', value: `${interaction.guild.members.cache.size} | ${interaction.guild.members.cache.filter(member => !member.user.bot).size} | ${interaction.guild.members.cache.filter(member => member.user.bot).size}`, inline: true },
-                { name: 'Verification Level', value: verL, inline: true },
-                { name: 'Channels | Text | Voice', value: channelTotal + ' | ' + textChannels.size + ' | ' + voiceChannels.size, inline: true },
-                { name: 'Roles', value: roles.size.toString(), inline: true },
-                { name: 'Boost Tier', value: `${interaction.guild.premiumTier}`, inline: true },
-                { name: 'Boost Level', value: `${interaction.guild.premiumSubscriptionCount}`, inline: true },
-                { name: 'Creation Date', value: `${interaction.channel.guild.createdAt.toUTCString().substr(0, 16)} (${checkDays(interaction.channel.guild.createdAt)})`, inline: true }
+                { name: 'Owner', value: owner.user.tag, inline: true },
+                { name: 'Created On', value: `<t:${Math.floor(guild.createdTimestamp / 1000)}:D>`, inline: true },
+                { name: 'Verification Level', value: verificationLevels[guild.verificationLevel], inline: true },
+                
+                { name: '\u200B', value: '\u200B' }, // Spacer
+
+                { name: `👥 Members (${totalMembers})`, value: `**Humans:** ${humanMembers}\n**Bots:** ${botMembers}`, inline: true },
+                { name: `📁 Channels (${channels.size})`, value: `**Text:** ${textChannels}\n**Voice:** ${voiceChannels}\n**Stages:** ${stageChannels}\n**Categories:** ${categoryChannels}`, inline: true },
+                { name: `💎 Boosts`, value: `**Tier:** ${guild.premiumTier}\n**Count:** ${guild.premiumSubscriptionCount}`, inline: true },
+
+                { name: '\u200B', value: '\u200B' }, // Spacer
+                
+                { name: 'Server ID', value: `\`${guild.id}\``, inline: true },
+                { name: 'Owner ID', value: `\`${guild.ownerId}\``, inline: true },
             )
-            .setColor(Colours.DARK_COLOURLESS)
-            .setThumbnail(interaction.guild.iconURL());
-        return interaction.reply({ embeds: [embed] });
+            .setTimestamp()
+            .setFooter({ text: `Requested by ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL({ dynamic: true }) });
+
+        await interaction.reply({ embeds: [embed] });
     },
 };
