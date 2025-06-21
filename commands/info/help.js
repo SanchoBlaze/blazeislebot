@@ -58,8 +58,10 @@ module.exports = {
                     fields = 0;
                 }
 
-                embed.addField('\u200B', '\u200B');
-                embed.addField(`**${category}**`, `${category} commands.`);
+                embed.addFields(
+                    { name: '\u200B', value: '\u200B' },
+                    { name: `**${category}**`, value: `${category} commands.` }
+                );
                 lastCategory = category;
             }
             fields += 1;
@@ -69,16 +71,14 @@ module.exports = {
                 page++;
                 embed = getEmbed(interaction, page, totalPages);
 
-                embed.addField('\u200B', '\u200B');
-                embed.addField(`**${category}**`, `${category} commands continued.`);
+                embed.addFields(
+                    { name: '\u200B', value: '\u200B' },
+                    { name: `**${category}**`, value: `${category} commands continued.` }
+                );
                 fields = 0;
             }
 
-            embed.addField(
-                `**/${cmd.data.name}**`,
-                `${cmd.data.description}`,
-                true,
-            );
+            embed.addFields({ name: `**/${cmd.data.name}**`, value: `${cmd.data.description}`, inline: true });
         });
 
         embed.setTimestamp();
