@@ -10,6 +10,9 @@
     "Enviroment": {
         "live": false
     },
+    "DNS": {
+        "servers": []
+    },
     "rulesChannelId": "YOUR_RULES_CHANNEL_ID",
     "rulesMessageId": "YOUR_RULES_MESSAGE_ID",
     "membersRoleId": "YOUR_MEMBERS_ROLE_ID",

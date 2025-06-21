@@ -4,9 +4,22 @@
  * A bot for the Blaze Isle Discord server.
  */
 
-const { Client, GatewayIntentBits, Partials, Collection, EmbedBuilder } = require('discord.js');
-const config = require('config');
 const fs = require('fs');
+const config = require('config');
+const dns = require('dns');
+
+// Set custom DNS servers if configured
+try {
+    const dnsServers = config.get('DNS.servers');
+    if (dnsServers && Array.isArray(dnsServers) && dnsServers.length > 0) {
+        dns.setServers(dnsServers);
+        console.log(`Custom DNS servers set: ${dnsServers.join(', ')}`);
+    }
+} catch (e) {
+    // DNS config does not exist, do nothing.
+}
+
+const { Client, GatewayIntentBits, Partials, Collection, EmbedBuilder } = require('discord.js');
 const Colours = require('./modules/colours');
 const Loyalty = require('./modules/loyalty');
 const TwitchManager = require('./modules/twitch');
