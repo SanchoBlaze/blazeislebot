@@ -17,7 +17,6 @@ module.exports = {
 
     },
 };
-
 class ConnectFour {
 
     constructor() {
@@ -28,7 +27,7 @@ class ConnectFour {
 
         const challenger = msg.user;
         const opponent = msg.options.getUser('opponent');
-        let embedColour = Colours.Colours.BLUE;
+        let embedColour = Colours.BLUE;
 
         msg.reply(`${msg.user.username} has challenged ${opponent} to Connect4!`);
 
@@ -56,7 +55,7 @@ class ConnectFour {
         const initial = new EmbedBuilder()
             .setTitle(`🔴 ${msg.user.username} its your turn!`)
             .setDescription(initialState)
-            .setColor(Colours.Colours.BLUE)
+            .setColor(Colours.BLUE)
             .setFooter({ text: `${challenger.username} vs ${opponent.username}` });
         msg.channel.send({ embeds : [initial] }).then(gameMessage => {
 
@@ -223,10 +222,10 @@ class ConnectFour {
                             gameMessage.reactions.removeAll();
 
                             if(gameData[player].playerColor === '🔴') {
-                                embedColour = Colours.Colours.RED;
+                                embedColour = Colours.RED;
                             }
                             else {
-                                embedColour = Colours.Colours.YELLOW;
+                                embedColour = Colours.YELLOW;
                             }
 
                             msg.client.loyalty.addXp(50, gameData[player].member, msg.guild);
@@ -257,3 +256,4 @@ class ConnectFour {
 
 
 }
+

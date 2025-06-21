@@ -134,7 +134,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
                 const embed = new EmbedBuilder()
                     .setTitle(`Welcome to **${guild}**`)
                     .setDescription(`Hey ${user.toString()}, thanks for joining!`)
-                    .setColor(Colours.Colours.WELCOME_GREEN)
+                    .setColor(Colours.WELCOME_GREEN)
                     .setThumbnail(user.displayAvatarURL());
                 channel.send({ embeds: [embed] });
             }
@@ -216,7 +216,7 @@ async function sendStreamNotification(twitchUsername, streamData) {
                     { name: 'Game', value: streamData.game_name || 'No game', inline: true },
                     { name: 'Viewers', value: streamData.viewer_count?.toString() || 'Unknown', inline: true }
                 )
-                .setColor(Colours.Colours.RED)
+                .setColor(Colours.RED)
                 .setTimestamp()
                 .setURL(`https://twitch.tv/${twitchUsername}`)
                 .setThumbnail(`https://static-cdn.jtvnw.net/previews-ttv/live_user_${twitchUsername}-320x180.jpg`);

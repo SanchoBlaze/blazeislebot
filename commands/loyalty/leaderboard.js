@@ -16,7 +16,7 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setTitle(interaction.guild.name + ' Leader board')
             .setDescription('Our top 10 XP leaders!')
-            .setColor(Colours.Colours.LIGHT_GREEN);
+            .setColor(Colours.LIGHT_GREEN);
 
         for (const data of top10) {
             embed.addFields({ name:  members.find(member => member.id === data.user).user.username, value: `${data.xp} XP (level ${data.level})` });

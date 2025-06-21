@@ -94,7 +94,7 @@ function getEmbed(interaction, page, totalPages) {
     const embed = new EmbedBuilder()
         .setTitle('Blaze Isle Bot Commands Help')
         .setDescription(`Page ${page} of  ${totalPages}`)
-        .setColor(Colours.Colours.LIGHT_ORANGE)
+        .setColor(Colours.LIGHT_ORANGE)
         .setThumbnail(interaction.client.user.displayAvatarURL({ dynamic: true }));
     return embed;
 }
