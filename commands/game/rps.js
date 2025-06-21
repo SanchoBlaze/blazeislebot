@@ -5,14 +5,15 @@ module.exports = {
         .setName('rps')
         .setDescription('Play rock ✊, paper ✋, scissors ✌️.'),
     async execute(interaction) {
+        await interaction.reply({ content: 'Let\'s play a game of rock ✊, paper ✋, scissors ✌️!\nPlease choose using the emojis below!' });
+        const message = await interaction.fetchReply();
+        await message.react('✊');
+        await message.react('✋');
+        await message.react('✌️');
 
         const rps = ['✊', '✋', '✌️'];
 
         const botChoice = rps[Math.floor(Math.random() * rps.length)];
-
-        const message = await interaction.reply({ content: 'Let\'s play a game of rock ✊, paper ✋, scissors ✌️!\nPlease choose using the emojis below!', fetchReply: true });
-
-        message.react('✊').then(() => message.react('✋')).then(() => message.react('✌️'));
 
         const filter = (reaction, user) => {
             return rps.includes(reaction.emoji.name) && user.id === interaction.user.id;

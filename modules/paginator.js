@@ -21,7 +21,8 @@ const paginator = async (interaction, pages) => {
                 .setDisabled(page === pages.length - 1)
         );
 
-    const message = await interaction.reply({ embeds: [pages[page]], components: [getButtons()], fetchReply: true });
+    await interaction.reply({ embeds: [pages[page]], components: [getButtons()]});
+    const message = await interaction.fetchReply();
     
     const collector = message.createMessageComponentCollector({
         componentType: ComponentType.Button,
