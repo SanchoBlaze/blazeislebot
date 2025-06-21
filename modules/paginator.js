@@ -1,48 +1,65 @@
-const { MessageButton, MessageActionRow } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
 
-const paginator = async (msg, pages) => {
+const paginator = async (interaction, pages) => {
+
+    if (pages.length === 1) {
+        return interaction.reply({ embeds: [pages[0]] });
+    }
 
     let page = 0;
-    const leftButton = new MessageButton().setLabel('🡠').setCustomId('leftPaginationButton').setStyle('SECONDARY');
-    const rightButton = new MessageButton().setLabel('🡢').setCustomId('rightPaginationButton').setStyle('SECONDARY');
-    const row = new MessageActionRow().addComponents([leftButton, rightButton]);
+    const getButtons = () => new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('leftPaginationButton')
+                .setLabel('🡠')
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(page === 0),
+            new ButtonBuilder()
+                .setCustomId('rightPaginationButton')
+                .setLabel('🡢')
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(page === pages.length - 1)
+        );
 
-    msg.reply({ embeds: [pages[page]], components: [row] });
-    const filters = (b) => ['leftPaginationButton', 'rightPaginationButton'].includes(b.customId);
-    const pageCollector = await msg.channel.createMessageComponentCollector({ filter: filters });
-
-    pageCollector.on('collect', clickedButton => {
-        const message = clickedButton.message;
-
-        if(clickedButton.user.id === msg.user.id) {
-
-            if(clickedButton.customId === 'leftPaginationButton') {
-                page = page > 0 ? --page : pages.length - 1;
-            }
-            else if(clickedButton.customId === 'rightPaginationButton') {
-                page = page + 1 < pages.length ? ++page : 0;
-            }
-
-            message.edit({ embeds: [pages[page]], components: [row] });
-
-            clickedButton.deferUpdate();
-        }
+    const message = await interaction.reply({ embeds: [pages[page]], components: [getButtons()], fetchReply: true });
+    
+    const collector = message.createMessageComponentCollector({
+        componentType: ComponentType.Button,
+        time: 60000 // 1 minute
     });
 
-    pageCollector.on('end', (collected, reason) => {
-        console.log(collected);
-        console.log(reason);
-        if(!msg.deleted) {
-
-            row.components[0].disabled = true;
-            row.components[1].disabled = true;
-
-            // msg.client.channels.cache.get(msg.channel.id).fetch(msgg => msgg.id === msg.id).then(message => message.edit({ embeds: [pages[page]], component: row }));
-            // msg.edit({ embeds: [pages[page]], component: row });
+    collector.on('collect', async i => {
+        if (i.user.id !== interaction.user.id) {
+            return i.reply({ content: 'You cannot use this button.', ephemeral: true });
         }
+        
+        await i.deferUpdate();
+
+        if (i.customId === 'leftPaginationButton') {
+            page = page > 0 ? --page : pages.length - 1;
+        } else if (i.customId === 'rightPaginationButton') {
+            page = page + 1 < pages.length ? ++page : 0;
+        }
+        
+        await i.editReply({ embeds: [pages[page]], components: [getButtons()] });
     });
 
-    return msg;
+    collector.on('end', () => {
+        const disabledRow = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('leftPaginationButton')
+                    .setLabel('🡠')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(true),
+                new ButtonBuilder()
+                    .setCustomId('rightPaginationButton')
+                    .setLabel('🡢')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(true)
+            );
+        interaction.editReply({ components: [disabledRow] });
+    });
 };
 
 module.exports = paginator;
