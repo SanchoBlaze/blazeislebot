@@ -19,7 +19,9 @@ module.exports = {
             .setColor(Colours.LIGHT_GREEN);
 
         for (const data of top10) {
-            embed.addFields({ name:  members.find(member => member.id === data.user).user.username, value: `${data.xp} XP (level ${data.level})` });
+            const member = members.find(member => member.id === data.user);
+            const username = member ? member.user.username : `Unknown User (${data.user})`;
+            embed.addFields({ name: username, value: `${data.xp} XP (level ${data.level})` });
         }
 
         return interaction.reply({ embeds: [embed] });
