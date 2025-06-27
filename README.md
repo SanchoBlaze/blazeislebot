@@ -154,10 +154,10 @@ The bot features a sophisticated leveling system designed to reward active commu
 - **Efficient calculation**: Uses binary search algorithm for optimal performance
 
 #### XP Sources & Rewards
-- **Chat activity**: Earn XP by participating in conversations
-- **Game victories**: Win games like RPS, TicTacToe, Connect4 for bonus XP
-- **Social interactions**: Hug and comfort commands reward community engagement
-- **Animal commands**: Small XP rewards for using fun animal picture commands
+- **Chat activity**: 1 XP per message for participating in conversations
+- **Game victories**: 10-50 XP for winning games (RPS: 10 XP, TicTacToe/Connect4: 50 XP)
+- **Social interactions**: 25 XP for hug and comfort commands
+- **Animal commands**: 3 XP for cute animal picture commands (cat, dog, fox, bunny, duck)
 
 #### Level Categories & Badges
 - **🌱 Newcomer** (Levels 1-9): New community members

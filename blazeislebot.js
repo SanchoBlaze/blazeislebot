@@ -264,6 +264,25 @@ client.on('messageReactionAdd', async (reaction, user) => {
     }
 });
 
+// Chat activity XP system
+client.on('messageCreate', async message => {
+    // Don't give XP to bots
+    if (message.author.bot) return;
+    
+    // Only in guilds
+    if (!message.guild) return;
+    
+    // Don't give XP for commands (they have their own XP rewards)
+    if (message.content.startsWith('/')) return;
+    
+    // Add XP for chat activity (small amount to encourage conversation)
+    try {
+        await client.loyalty.addXp(1, message.author, message.guild);
+    } catch (error) {
+        console.error('Error adding XP for chat activity:', error);
+    }
+});
+
 // Twitch stream checker
 function startTwitchChecker() {
     // Check if Twitch credentials are configured
