@@ -3,7 +3,9 @@
 A feature-rich Node.js Discord bot for the Blaze Isle community, built with discord.js v14.
 
 ## Features
-- **Modal-based configuration system** for easy server setup
+- **Modal-based configuration system** with intelligent validation
+- **Automatic owner notifications** when configuration is needed
+- **Crash-proof operation** with graceful fallbacks for missing settings
 - Rules acceptance with ✅ reaction to gain access
 - **Configurable welcome messages** sent to designated channel
 - **Advanced Twitch stream notifications** with real-time monitoring
@@ -71,8 +73,11 @@ A feature-rich Node.js Discord bot for the Blaze Isle community, built with disc
 
 ## Guild Setup
 
+### Automatic Setup Guidance
+When the bot joins your server, **the server owner automatically receives a welcome DM** with complete setup instructions. No more guessing what needs to be configured!
+
 ### Easy Configuration with Modals
-Once the bot is running and has been invited to a new server, an Administrator must configure it using the **new modal-based `/config` command**. This provides an intuitive interface for setting up all bot features.
+The bot uses an **intelligent configuration system** that prevents crashes and guides you through setup. The **modal-based `/config` command** provides an intuitive interface for setting up all bot features with built-in validation.
 
 #### Configuration Commands
 - `/config view` - Displays the current settings for the server
@@ -95,6 +100,25 @@ Once the bot is running and has been invited to a new server, an Administrator m
 - **📺 Streams Channel**: The channel where Twitch stream notifications will be posted
 - **🛡️ Mod Role**: The role that has permission to use moderation commands
 - **👋 Welcome Channel**: The channel where welcome messages are sent
+
+### Smart Configuration Validation
+The bot features an **intelligent configuration system** that ensures stability and user experience:
+
+#### Automatic Validation
+- **Real-time checks**: All features validate their configuration before executing
+- **Graceful fallbacks**: Missing configuration won't crash the bot or spam errors
+- **Feature-specific validation**: Each feature only requires its relevant settings
+
+#### Owner Notifications
+- **Welcome DM**: New server owners receive comprehensive setup instructions
+- **Missing config alerts**: Owners are notified when users try to use unconfigured features
+- **Anti-spam protection**: Each notification is sent only once per feature
+- **Clear guidance**: Rich embeds explain exactly what's missing and how to fix it
+
+#### User Experience
+- **Helpful error messages**: Users get clear feedback when features aren't configured
+- **No crashes**: Bot continues working even with partial configuration
+- **Professional presentation**: All notifications are well-formatted and informative
 
 ## Advanced Features
 
@@ -147,8 +171,42 @@ The bot uses SQLite with the following tables:
 ### Modular Architecture
 - Commands organized by category in `/commands/` subdirectories
 - Separate modules for loyalty, Twitch, colors, and database operations
+- **Configuration validation system** with feature-specific checks
+- **Owner notification system** with anti-spam protection
 - Easy to extend with new commands and features
-- Clean separation of concerns and error handling
+- Clean separation of concerns and comprehensive error handling
+
+### Reliability Features
+- **Crash-proof operation**: All features validate configuration before executing
+- **Graceful degradation**: Bot continues working with partial configuration
+- **Automatic migrations**: Database schema updates are handled automatically
+- **Comprehensive logging**: Detailed logs for debugging and monitoring
+- **Error recovery**: Robust error handling throughout the codebase
+
+## Troubleshooting
+
+### Common Issues
+
+#### "This server is not configured for [feature]"
+This message appears when trying to use a feature that requires configuration. **The server owner has automatically been notified** with setup instructions.
+
+**Solution:** Run `/config set` and configure the required settings for that feature.
+
+#### Features Not Working
+If bot features aren't working as expected:
+
+1. **Check configuration**: Run `/config view` to see current settings
+2. **Verify permissions**: Ensure the bot has necessary permissions in configured channels
+3. **Check channels/roles**: Make sure configured channels and roles still exist
+4. **Owner notification**: If settings are missing, the owner will receive a DM with guidance
+
+#### Bot Joined But No Welcome Message
+This is normal! The bot sends setup instructions via **DM to the server owner** instead of posting in channels. Check your DMs for the welcome message with configuration instructions.
+
+### Getting Help
+- **Join our Discord**: [Blaze Isle Community](https://discord.gg/ztBrtkHkwd)
+- **Check logs**: The bot provides detailed console logs for debugging
+- **Configuration guide**: All setup instructions are provided via DM when needed
 
 ## Join Us
 Want to see the bot in action or join the Blaze Isle community?
