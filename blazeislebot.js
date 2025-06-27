@@ -20,7 +20,7 @@ try {
 }
 
 const { Client, GatewayIntentBits, Partials, Collection, EmbedBuilder, ModalBuilder, ActionRowBuilder, TextInputBuilder, TextInputStyle, ButtonBuilder, ButtonStyle } = require('discord.js');
-const Colours = require('./modules/colours');
+const { Colours } = require('./modules/colours');
 const Loyalty = require('./modules/loyalty');
 const TwitchManager = require('./modules/twitch');
 const GuildSettings = require('./modules/guildSettings');
@@ -191,15 +191,20 @@ client.on('messageReactionAdd', async (reaction, user) => {
             } catch (err) {
                 console.error(`Failed to add Members role to ${user.tag} (${user.id}):`, err);
             }
-            // Send welcome message in #general
-            const channel = guild.channels.cache.find(ch => ch.name === 'general');
-            if (channel) {
-                const embed = new EmbedBuilder()
-                    .setTitle(`Welcome to **${guild}**`)
-                    .setDescription(`Hey ${user.toString()}, thanks for joining!`)
-                    .setColor(Colours.WELCOME_GREEN)
-                    .setThumbnail(user.displayAvatarURL());
-                channel.send({ embeds: [embed] });
+            // Send welcome message in configured welcome channel
+            const welcomeChannelId = settings.welcome_channel_id;
+            if (welcomeChannelId) {
+                const welcomeChannel = guild.channels.cache.get(welcomeChannelId);
+                if (welcomeChannel) {
+                    const embed = new EmbedBuilder()
+                        .setTitle(`Welcome to **${guild}**`)
+                        .setDescription(`Hey ${user.toString()}, thanks for joining!`)
+                        .setColor(Colours.Colours.WELCOME_GREEN)
+                        .setThumbnail(user.displayAvatarURL());
+                    welcomeChannel.send({ embeds: [embed] });
+                } else {
+                    console.log(`Welcome channel with ID ${welcomeChannelId} not found in guild ${guild.name}`);
+                }
             }
             // Add user to loyalty system
             client.loyalty.addUser(user, guild);
