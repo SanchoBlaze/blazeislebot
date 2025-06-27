@@ -19,7 +19,7 @@ try {
     // DNS config does not exist, do nothing.
 }
 
-const { Client, GatewayIntentBits, Partials, Collection, EmbedBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, Collection, EmbedBuilder, ModalBuilder, ActionRowBuilder, TextInputBuilder, TextInputStyle, ButtonBuilder, ButtonStyle } = require('discord.js');
 const Colours = require('./modules/colours');
 const Loyalty = require('./modules/loyalty');
 const TwitchManager = require('./modules/twitch');
@@ -77,14 +77,13 @@ client.on('guildMemberAdd', (member) => {
 });
 
 client.on('interactionCreate', async interaction => {
-
-    if (!interaction.isCommand()) return;
-
+    // Handle slash commands
+    if (interaction.isChatInputCommand()) {
     const command = client.commands.get(interaction.commandName);
 
     if (!command) return;
 
-    if (command.guildOnly && interaction.channel.type === 1) { // 1 = DM in v14
+        if (command.guildOnly && interaction.channel.type === 1) { // 1 = DM in v14
         return interaction.reply('I can\'t execute that command inside DMs!');
     }
 
@@ -96,13 +95,53 @@ client.on('interactionCreate', async interaction => {
 
     if (interaction.user.bot) return;
 
-
     try {
         await command.execute(interaction);
     }
     catch (error) {
         console.error(error);
         return interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+    }
+    }
+
+    // Handle button interactions
+    if (interaction.isButton()) {
+        try {
+            // Check if any command wants to handle this button interaction
+            const configCommand = client.commands.get('config');
+            if (configCommand && configCommand.handleButtonInteraction) {
+                const handled = await configCommand.handleButtonInteraction(interaction);
+                if (handled) return;
+            }
+        } catch (error) {
+            console.error('Error handling button interaction:', error);
+            if (!interaction.replied) {
+                await interaction.reply({ 
+                    content: 'There was an error processing your request!', 
+                    ephemeral: true 
+                });
+            }
+        }
+    }
+
+    // Handle modal submissions
+    if (interaction.isModalSubmit()) {
+        try {
+            // Check if any command wants to handle this modal submission
+            const configCommand = client.commands.get('config');
+            if (configCommand && configCommand.handleModalSubmit) {
+                const handled = await configCommand.handleModalSubmit(interaction);
+                if (handled) return;
+            }
+        } catch (error) {
+            console.error('Error handling modal submission:', error);
+            if (!interaction.replied) {
+                await interaction.reply({ 
+                    content: 'There was an error processing your submission!', 
+                    ephemeral: true 
+                });
+            }
+        }
     }
 });
 
