@@ -17,12 +17,26 @@ class GuildSettings {
                     rules_message_id TEXT,
                     members_role_id TEXT,
                     streams_channel_id TEXT,
-                    mod_role_id TEXT
+                    mod_role_id TEXT,
+                    welcome_channel_id TEXT
                 )
             `).run();
             this.db.pragma('synchronous = 1');
             this.db.pragma('journal_mode = wal');
             console.log('Created guild_settings table.');
+        } else {
+            // Migration: Add welcome_channel_id column if it doesn't exist
+            try {
+                const columnCheck = this.db.prepare("PRAGMA table_info(guild_settings)").all();
+                const hasWelcomeChannel = columnCheck.some(col => col.name === 'welcome_channel_id');
+                
+                if (!hasWelcomeChannel) {
+                    this.db.prepare('ALTER TABLE guild_settings ADD COLUMN welcome_channel_id TEXT').run();
+                    console.log('Added welcome_channel_id column to guild_settings table.');
+                }
+            } catch (error) {
+                console.error('Error checking/adding welcome_channel_id column:', error);
+            }
         }
     }
 
@@ -39,7 +53,7 @@ class GuildSettings {
         // Ensure the guild exists
         this.get(guildId);
         
-        const validKeys = ['rules_channel_id', 'rules_message_id', 'members_role_id', 'streams_channel_id', 'mod_role_id'];
+        const validKeys = ['rules_channel_id', 'rules_message_id', 'members_role_id', 'streams_channel_id', 'mod_role_id', 'welcome_channel_id'];
         if (!validKeys.includes(key)) {
             throw new Error(`Invalid setting key: ${key}`);
         }
