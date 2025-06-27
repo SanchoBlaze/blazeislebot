@@ -150,7 +150,7 @@ The bot features a sophisticated leveling system designed to reward active commu
 
 #### Scaled Leveling Formula
 - **Exponential progression**: Level requirements scale with formula `level^2.5 * 100`
-- **Progressive difficulty**: Level 1 needs 100 XP, Level 2 needs 566 XP, Level 3 needs 1,548 XP
+- **Progressive difficulty**: Level 0 starts at 0 XP, Level 1 needs 100 XP, Level 2 needs 566 XP, Level 3 needs 1,548 XP
 - **Multi-level jumping**: Users can gain multiple levels from large XP amounts
 - **Efficient calculation**: Uses binary search algorithm for optimal performance
 
@@ -161,9 +161,10 @@ The bot features a sophisticated leveling system designed to reward active commu
 - **Animal commands**: 3 XP for cute animal picture commands (cat, dog, fox, bunny, duck)
 
 #### Level Categories & Badges
-- **🌱 Newcomer** (Levels 1-9): New community members
-- **🥉 Bronze** (Levels 10-19): Regular participants  
-- **🥈 Silver** (Levels 20-29): Active community members
+- **🥚 Starting** (Level 0): Brand new members (0-99 XP)
+- **🌱 Newcomer** (Levels 1-4): New community members
+- **🥉 Bronze** (Levels 5-14): Regular participants  
+- **🥈 Silver** (Levels 15-29): Active community members
 - **🏆 Gold** (Levels 30-49): Dedicated contributors
 - **💎 Diamond** (Levels 50+): Elite community champions
 

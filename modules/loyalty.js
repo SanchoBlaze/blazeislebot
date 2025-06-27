@@ -14,19 +14,38 @@ class Loyalty {
             sql.pragma('synchronous = 1');
             sql.pragma('journal_mode = wal');
         }
+        
+        // Migration: Update existing users to correct levels based on new level 0 system
+        this.migrateLevels();
+    }
+
+    migrateLevels() {
+        try {
+            const allUsers = sql.prepare('SELECT * FROM loyalty').all();
+            for (const user of allUsers) {
+                const correctLevel = this.getLevelFromXp(user.xp);
+                if (user.level !== correctLevel) {
+                    console.log(`Migrating user ${user.user} from level ${user.level} to ${correctLevel} (${user.xp} XP)`);
+                    sql.prepare('UPDATE loyalty SET level = ? WHERE id = ?').run(correctLevel, user.id);
+                }
+            }
+            console.log('Level migration completed.');
+        } catch (error) {
+            console.error('Error during level migration:', error);
+        }
     }
 
     // Calculate XP required for a specific level
     // Uses exponential scaling: XP = level^2.5 * 100
-    // Level 1: 100 XP, Level 2: 566 XP, Level 3: 1,548 XP, Level 4: 3,200 XP, etc.
+    // Level 0: 0 XP, Level 1: 100 XP, Level 2: 566 XP, Level 3: 1,548 XP, etc.
     getXpForLevel(level) {
-        if (level <= 1) return 0;
+        if (level <= 0) return 0;
         return Math.floor(Math.pow(level, 2.5) * 100);
     }
 
     // Calculate level from total XP
     getLevelFromXp(xp) {
-        if (xp < 100) return 1;
+        if (xp < 100) return 0;
         
         // Binary search to find the correct level
         let low = 1;
@@ -80,7 +99,7 @@ class Loyalty {
         if (guild) {
             let loyalty = this.getLoyalty(user.id, guild.id);
             if (!loyalty) {
-                loyalty = { id: `${guild.id}-${user.id}`, user: user.id, guild: guild.id, xp: 0, level: 1 };
+                loyalty = { id: `${guild.id}-${user.id}`, user: user.id, guild: guild.id, xp: 0, level: 0 };
             }
 
             this.setLoyalty(loyalty);

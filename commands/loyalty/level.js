@@ -17,14 +17,19 @@ module.exports = {
         // Calculate level milestones
         const currentLevelXp = interaction.client.loyalty.getXpForLevel(userLevel);
         const nextLevelXp = interaction.client.loyalty.getXpForLevel(userLevel + 1);
+        
+        // Calculate XP needed for each individual level
+        const currentLevelRequirement = userLevel === 0 ? 0 : interaction.client.loyalty.getXpForLevel(userLevel);
+        const nextLevelRequirement = interaction.client.loyalty.getXpForLevel(userLevel + 1);
         const progress = interaction.client.loyalty.getXpProgress(userXp, userLevel);
         
         // Create level badges based on level ranges
-        let levelBadge = '🌱'; // Newcomer
+        let levelBadge = '🥚'; // Starting
         if (userLevel >= 50) levelBadge = '💎'; // Diamond
         else if (userLevel >= 30) levelBadge = '🏆'; // Gold
         else if (userLevel >= 15) levelBadge = '🥈'; // Silver
         else if (userLevel >= 5) levelBadge = '🥉'; // Bronze
+        else if (userLevel >= 1) levelBadge = '🌱'; // Newcomer
 
         // Create progress bar
         const progressBarLength = 15;
@@ -47,7 +52,7 @@ module.exports = {
                 },
                 {
                     name: '🏅 Level Milestones',
-                    value: `**Current:** ${currentLevelXp.toLocaleString()} XP\n**Next:** ${nextLevelXp.toLocaleString()} XP`,
+                    value: `**Level ${userLevel}:** ${currentLevelRequirement.toLocaleString()} XP needed\n**Level ${userLevel + 1}:** ${nextLevelRequirement.toLocaleString()} XP needed`,
                     inline: true
                 },
                 {
@@ -68,5 +73,6 @@ function getLevelRange(level) {
     if (level >= 30) return '🏆 Gold (30-49)';
     if (level >= 15) return '🥈 Silver (15-29)';
     if (level >= 5) return '🥉 Bronze (5-14)';
-    return '🌱 Newcomer (1-4)';
+    if (level >= 1) return '🌱 Newcomer (1-4)';
+    return '🥚 Starting (0)';
 }
