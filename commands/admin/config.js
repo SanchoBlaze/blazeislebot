@@ -48,7 +48,7 @@ module.exports = {
                 });
             }
             
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: 64 }); // MessageFlags.Ephemeral
         }
 
         if (subcommand === 'set') {
@@ -119,7 +119,7 @@ module.exports = {
             await interaction.reply({ 
                 embeds: [configEmbed], 
                 components: [configButtons1, configButtons2, configButtons3],
-                ephemeral: true 
+                flags: 64 // MessageFlags.Ephemeral
             });
         }
     },
@@ -250,18 +250,18 @@ module.exports = {
             const successEmbed = new EmbedBuilder()
                 .setTitle('✅ Configuration Updated')
                 .setDescription(`Successfully set **${settingName}** to ${displayValue}`)
-                .setColor(Colours.Colours.GREEN)
+                .setColor(Colours.GREEN)
                 .setTimestamp();
 
-            await interaction.reply({ embeds: [successEmbed], ephemeral: true });
+            await interaction.reply({ embeds: [successEmbed], flags: 64 }); // MessageFlags.Ephemeral
         } catch (error) {
             const errorEmbed = new EmbedBuilder()
                 .setTitle('❌ Configuration Error')
                 .setDescription(`Failed to set configuration: ${error.message}`)
-                .setColor(Colours.Colours.RED)
+                .setColor(Colours.RED)
                 .setTimestamp();
 
-            await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
+            await interaction.reply({ embeds: [errorEmbed], flags: 64 }); // MessageFlags.Ephemeral
         }
 
         return true;
