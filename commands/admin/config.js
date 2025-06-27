@@ -63,7 +63,8 @@ module.exports = {
                     { name: '👥 Members Role', value: 'Role given when users accept rules', inline: true },
                     { name: '📺 Streams Channel', value: 'Channel for Twitch stream notifications', inline: true },
                     { name: '🛡️ Mod Role', value: 'Role for moderators', inline: true },
-                    { name: '👋 Welcome Channel', value: 'Channel for welcome messages', inline: true }
+                    { name: '👋 Welcome Channel', value: 'Channel for welcome messages', inline: true },
+                    { name: '🎉 Loyalty Channel', value: 'Channel for level-up notifications', inline: true }
                 )
                 .setFooter({ text: 'Click a button below to set the corresponding value' });
 
@@ -106,9 +107,18 @@ module.exports = {
                         .setEmoji('👋')
                 );
 
+            const configButtons3 = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('config_set_loyalty_channel_id')
+                        .setLabel('Loyalty Channel')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setEmoji('🎉')
+                );
+
             await interaction.reply({ 
                 embeds: [configEmbed], 
-                components: [configButtons1, configButtons2],
+                components: [configButtons1, configButtons2, configButtons3],
                 ephemeral: true 
             });
         }

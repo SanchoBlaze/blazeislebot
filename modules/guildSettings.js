@@ -19,24 +19,31 @@ class GuildSettings {
                     members_role_id TEXT,
                     streams_channel_id TEXT,
                     mod_role_id TEXT,
-                    welcome_channel_id TEXT
+                    welcome_channel_id TEXT,
+                    loyalty_channel_id TEXT
                 )
             `).run();
             this.db.pragma('synchronous = 1');
             this.db.pragma('journal_mode = wal');
             console.log('Created guild_settings table.');
         } else {
-            // Migration: Add welcome_channel_id column if it doesn't exist
+            // Migration: Add welcome_channel_id and loyalty_channel_id columns if they don't exist
             try {
                 const columnCheck = this.db.prepare("PRAGMA table_info(guild_settings)").all();
                 const hasWelcomeChannel = columnCheck.some(col => col.name === 'welcome_channel_id');
+                const hasLoyaltyChannel = columnCheck.some(col => col.name === 'loyalty_channel_id');
                 
                 if (!hasWelcomeChannel) {
                     this.db.prepare('ALTER TABLE guild_settings ADD COLUMN welcome_channel_id TEXT').run();
                     console.log('Added welcome_channel_id column to guild_settings table.');
                 }
+                
+                if (!hasLoyaltyChannel) {
+                    this.db.prepare('ALTER TABLE guild_settings ADD COLUMN loyalty_channel_id TEXT').run();
+                    console.log('Added loyalty_channel_id column to guild_settings table.');
+                }
             } catch (error) {
-                console.error('Error checking/adding welcome_channel_id column:', error);
+                console.error('Error checking/adding columns:', error);
             }
         }
     }
@@ -54,7 +61,7 @@ class GuildSettings {
         // Ensure the guild exists
         this.get(guildId);
         
-        const validKeys = ['rules_channel_id', 'rules_message_id', 'members_role_id', 'streams_channel_id', 'mod_role_id', 'welcome_channel_id'];
+        const validKeys = ['rules_channel_id', 'rules_message_id', 'members_role_id', 'streams_channel_id', 'mod_role_id', 'welcome_channel_id', 'loyalty_channel_id'];
         if (!validKeys.includes(key)) {
             throw new Error(`Invalid setting key: ${key}`);
         }
@@ -74,6 +81,8 @@ class GuildSettings {
                 return !!(settings.streams_channel_id && settings.mod_role_id);
             case 'welcome':
                 return !!(settings.welcome_channel_id);
+            case 'loyalty':
+                return !!(settings.loyalty_channel_id);
             case 'basic':
                 return !!(settings.rules_channel_id && settings.rules_message_id && settings.members_role_id);
             default:
@@ -98,6 +107,9 @@ class GuildSettings {
                 break;
             case 'welcome':
                 if (!settings.welcome_channel_id) missing.push('Welcome Channel');
+                break;
+            case 'loyalty':
+                if (!settings.loyalty_channel_id) missing.push('Loyalty Channel');
                 break;
             case 'basic':
                 if (!settings.rules_channel_id) missing.push('Rules Channel');

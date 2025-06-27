@@ -112,15 +112,24 @@ class Loyalty {
     }
 
     async handleLevelUp(user, guild, oldLevel, newLevel) {
-        // Get configured welcome channel or fallback to general
-        const settings = await this.client.settings.safeGet(guild.id, 'welcome');
+        // Get configured loyalty channel first, then fallback to welcome channel, then general
+        const loyaltySettings = await this.client.settings.safeGet(guild.id, 'loyalty');
         let channel = null;
         
-        if (settings && settings.welcome_channel_id) {
-            channel = guild.channels.cache.get(settings.welcome_channel_id);
+        // Try loyalty channel first
+        if (loyaltySettings && loyaltySettings.loyalty_channel_id) {
+            channel = guild.channels.cache.get(loyaltySettings.loyalty_channel_id);
         }
         
-        // Fallback to general channel if welcome channel not configured
+        // Fallback to welcome channel if loyalty channel not configured
+        if (!channel) {
+            const welcomeSettings = await this.client.settings.safeGet(guild.id, 'welcome');
+            if (welcomeSettings && welcomeSettings.welcome_channel_id) {
+                channel = guild.channels.cache.get(welcomeSettings.welcome_channel_id);
+            }
+        }
+        
+        // Final fallback to general channel
         if (!channel) {
             channel = guild.channels.cache.find(ch => ch.name === 'general');
         }

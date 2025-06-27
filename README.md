@@ -99,6 +99,7 @@ The bot uses an **intelligent configuration system** that prevents crashes and g
 - **📺 Streams Channel**: The channel where Twitch stream notifications will be posted
 - **🛡️ Mod Role**: The role that has permission to use moderation commands
 - **👋 Welcome Channel**: The channel where welcome messages are sent
+- **🎉 Loyalty Channel**: The channel where level-up notifications are sent (optional - falls back to welcome channel)
 
 ### Smart Configuration Validation
 The bot features an **intelligent configuration system** that ensures stability and user experience:
@@ -170,7 +171,7 @@ The bot features a sophisticated leveling system designed to reward active commu
 - **`/xp [user]`**: View your XP and progress with visual progress bar
 - **`/level [user]`**: See detailed level information and category badge
 - **`/leaderboard`**: Top 10 users with XP, levels, and badges
-- **Level-up notifications**: Automatic announcements in welcome channel
+- **Level-up notifications**: Automatic announcements in dedicated loyalty channel (or welcome channel as fallback)
 - **Rich embeds**: Beautiful displays with progress bars and statistics
 - **Persistent storage**: All data safely stored in SQLite database
 
