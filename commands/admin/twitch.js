@@ -37,9 +37,16 @@ module.exports = {
                         .setRequired(true))),
     guildOnly: true,
     async execute(interaction) {
-        const settings = interaction.client.settings.get(interaction.guild.id);
-        const modRoleId = settings.mod_role_id;
+        // Check if guild is configured for Twitch features
+        const settings = await interaction.client.settings.safeGet(interaction.guild.id, 'twitch');
+        if (!settings) {
+            return interaction.reply({
+                content: '⚙️ This server is not configured for Twitch notifications. The server owner has been notified to set up the bot configuration.',
+                ephemeral: true
+            });
+        }
 
+        const modRoleId = settings.mod_role_id;
         const isAdministrator = interaction.member.permissions.has(PermissionFlagsBits.Administrator);
         const hasModRole = modRoleId ? interaction.member.roles.cache.has(modRoleId) : false;
 
@@ -63,15 +70,8 @@ module.exports = {
         try {
             switch (subcommand) {
                 case 'add': {
-                    const streamsChannelId = settings.streams_channel_id;
-                    if (!streamsChannelId) {
-                        return interaction.reply({
-                            content: 'The streams channel is not configured for this server. Please use the `/config` command.',
-                            ephemeral: true
-                        });
-                    }
-
                     const username = interaction.options.getString('username');
+                    const streamsChannelId = settings.streams_channel_id;
                     const success = await twitchManager.addSubscription(
                         interaction.guild.id,
                         streamsChannelId,

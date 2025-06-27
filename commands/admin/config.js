@@ -29,7 +29,23 @@ module.exports = {
 
             for (const [key, value] of Object.entries(guildSettings)) {
                 if (key === 'guild_id') continue;
-                embed.addFields({ name: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), value: value ? `<#${value}>` : 'Not Set' });
+                
+                let displayValue = 'Not Set';
+                if (value) {
+                    if (key.includes('channel')) {
+                        displayValue = `<#${value}>`;
+                    } else if (key.includes('role')) {
+                        displayValue = `<@&${value}>`;
+                    } else {
+                        displayValue = value;
+                    }
+                }
+                
+                embed.addFields({ 
+                    name: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), 
+                    value: displayValue,
+                    inline: true
+                });
             }
             
             return interaction.reply({ embeds: [embed], ephemeral: true });

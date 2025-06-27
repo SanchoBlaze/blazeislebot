@@ -76,6 +76,53 @@ client.on('guildMemberAdd', (member) => {
     // client.loyalty.addUser will also be called after rules acceptance
 });
 
+client.on('guildCreate', async (guild) => {
+    console.log(`Joined new guild: ${guild.name} (${guild.id})`);
+    
+    // Notify owner about configuration after a short delay
+    setTimeout(async () => {
+        try {
+            const owner = await guild.fetchOwner();
+            const embed = {
+                title: '👋 Thanks for adding me to your server!',
+                description: `Hi! I'm now active in **${guild.name}** and ready to help manage your community.`,
+                color: 0x00FF00, // Green
+                fields: [
+                    {
+                        name: '⚙️ Required Setup',
+                        value: `To get started, please run \`/config set\` in your server and configure the following settings:`,
+                        inline: false
+                    },
+                    {
+                        name: '📋 Essential Settings',
+                        value: `• **Rules Channel** - Where your server rules are posted\n• **Rules Message ID** - The message users react to for access\n• **Members Role** - Role given to users who accept rules\n• **Welcome Channel** - Where welcome messages are sent`,
+                        inline: false
+                    },
+                    {
+                        name: '🎯 Optional Features',
+                        value: `• **Streams Channel** - For Twitch notifications\n• **Mod Role** - For moderation command access`,
+                        inline: false
+                    },
+                    {
+                        name: '🔧 How to Configure',
+                        value: `1. Run \`/config set\` in your server\n2. Click the buttons for each setting\n3. Enter the channel/role names or IDs\n4. The bot will validate and save your settings!`,
+                        inline: false
+                    }
+                ],
+                footer: {
+                    text: 'Need help? Join our support server or check the documentation!'
+                },
+                timestamp: new Date().toISOString()
+            };
+
+            await owner.send({ embeds: [embed] });
+            console.log(`Sent welcome configuration message to ${owner.user.tag} for ${guild.name}`);
+        } catch (error) {
+            console.error(`Failed to send welcome message to owner of ${guild.name}:`, error.message);
+        }
+    }, 5000); // 5 second delay to ensure guild is fully loaded
+});
+
 client.on('interactionCreate', async interaction => {
     // Handle slash commands
     if (interaction.isChatInputCommand()) {
@@ -167,14 +214,15 @@ client.on('messageReactionAdd', async (reaction, user) => {
         }
     }
 
-    const settings = client.settings.get(reaction.message.guild.id);
+    // Check if guild is configured for rules feature
+    const settings = await client.settings.safeGet(reaction.message.guild.id, 'rules');
+    if (!settings) {
+        return; // Guild not configured - owner has been notified
+    }
+
     const rulesChannelId = settings.rules_channel_id;
     const rulesMessageId = settings.rules_message_id;
     const membersRoleId = settings.members_role_id;
-
-    if (!rulesChannelId || !rulesMessageId || !membersRoleId) {
-        return; // Guild not configured for this feature
-    }
 
     // Only proceed if the reaction is in the rules channel and on the rules message
     if (
@@ -192,18 +240,18 @@ client.on('messageReactionAdd', async (reaction, user) => {
                 console.error(`Failed to add Members role to ${user.tag} (${user.id}):`, err);
             }
             // Send welcome message in configured welcome channel
-            const welcomeChannelId = settings.welcome_channel_id;
-            if (welcomeChannelId) {
-                const welcomeChannel = guild.channels.cache.get(welcomeChannelId);
+            const welcomeSettings = await client.settings.safeGet(guild.id, 'welcome');
+            if (welcomeSettings && welcomeSettings.welcome_channel_id) {
+                const welcomeChannel = guild.channels.cache.get(welcomeSettings.welcome_channel_id);
                 if (welcomeChannel) {
                     const embed = new EmbedBuilder()
                         .setTitle(`Welcome to **${guild}**`)
                         .setDescription(`Hey ${user.toString()}, thanks for joining!`)
-                        .setColor(Colours.Colours.WELCOME_GREEN)
+                        .setColor(Colours.WELCOME_GREEN)
                         .setThumbnail(user.displayAvatarURL());
                     welcomeChannel.send({ embeds: [embed] });
                 } else {
-                    console.log(`Welcome channel with ID ${welcomeChannelId} not found in guild ${guild.name}`);
+                    console.log(`Welcome channel with ID ${welcomeSettings.welcome_channel_id} not found in guild ${guild.name}`);
                 }
             }
             // Add user to loyalty system
