@@ -1,15 +1,18 @@
 # Blaze Isle Bot
 
-A feature-rich Node.js Discord bot for the Blaze Isle community.
+A feature-rich Node.js Discord bot for the Blaze Isle community, built with discord.js v14.
 
 ## Features
+- **Modal-based configuration system** for easy server setup
 - Rules acceptance with ✅ reaction to gain access
-- Automated welcome messages after rules are accepted
-- **Twitch stream notifications** for mods/admins
+- **Configurable welcome messages** sent to designated channel
+- **Advanced Twitch stream notifications** with real-time monitoring
+- **Comprehensive loyalty/XP system** with leaderboard
 - Fun commands: games (Connect4, TicTacToe, RPS, RPSLS), 8ball, dadjoke, gif, and more
-- Animal facts and images
-- Loyalty/XP system with leaderboard
+- Animal facts and images (cat, dog, fox, bunny, duck)
+- Action commands (hug, comfort)
 - Info commands (server, avatar, help)
+- **Role-based permissions** for moderation commands
 - Modular command structure for easy extension
 
 ## Getting Started
@@ -67,27 +70,85 @@ A feature-rich Node.js Discord bot for the Blaze Isle community.
 **Note:** Global commands can take up to 1 hour to update across all servers, while guild commands update immediately.
 
 ## Guild Setup
-Once the bot is running and has been invited to a new server, an Administrator must configure it using the `/config` command. This is required for most features to work correctly.
 
-- `/config view` - Displays the current settings for the server.
-- `/config set <key> <value>` - Sets a specific configuration value. The value should be the ID of the channel, message, or role.
+### Easy Configuration with Modals
+Once the bot is running and has been invited to a new server, an Administrator must configure it using the **new modal-based `/config` command**. This provides an intuitive interface for setting up all bot features.
 
-### Required Settings
-- `rules_channel_id`: The channel where your rules message is.
-- `rules_message_id`: The ID of the message that users must react to.
-- `members_role_id`: The role to grant users after they accept the rules.
-- `streams_channel_id`: The channel where Twitch stream notifications will be posted.
-- `mod_role_id`: The role that has permission to use the `/twitch` command (in addition to Administrators).
+#### Configuration Commands
+- `/config view` - Displays the current settings for the server
+- `/config set` - Opens an interactive interface with buttons for each setting
 
-## Twitch Stream Notifications
-Moderators and admins can manage Twitch stream notifications using the `/twitch` command:
+#### Interactive Setup Process
+1. Run `/config set` to see all available configuration options
+2. Click the button for the setting you want to configure
+3. A modal will appear with clear instructions and input validation
+4. Enter the channel name, role name, or ID - the bot accepts multiple formats:
+   - **Channel IDs:** `123456789012345678`
+   - **Channel names:** `general` or `#general`
+   - **Role IDs:** `123456789012345678` 
+   - **Role names:** `Moderator` or `@Moderator`
 
-- `/twitch add <username>` - Subscribe to a Twitch channel
+#### Required Settings
+- **📋 Rules Channel**: The channel where your rules message is posted
+- **📝 Rules Message ID**: The ID of the message that users must react to with ✅
+- **👥 Members Role**: The role granted to users after they accept the rules
+- **📺 Streams Channel**: The channel where Twitch stream notifications will be posted
+- **🛡️ Mod Role**: The role that has permission to use moderation commands
+- **👋 Welcome Channel**: The channel where welcome messages are sent
+
+## Advanced Features
+
+### Twitch Stream Notifications
+The bot features a comprehensive Twitch integration system with real-time monitoring:
+
+#### Management Commands (Mod/Admin only)
+- `/twitch add <username>` - Subscribe to a Twitch channel for notifications
 - `/twitch remove <username>` - Unsubscribe from a Twitch channel  
-- `/twitch list` - List all subscribed channels
-- `/twitch status <username>` - Check a channel's current status
+- `/twitch list` - List all subscribed channels with who added them
+- `/twitch status <username>` - Check a channel's current live status
 
-The bot checks for live streams every 5 minutes and posts notifications to the configured streams channel.
+#### Features
+- **Real-time monitoring**: Checks streams every 5 minutes
+- **Smart notifications**: Only notifies when streams go from offline to live
+- **Rich embeds**: Stream notifications include title, game, viewer count, and thumbnail
+- **Database persistence**: All subscriptions and stream states are stored in SQLite
+- **OAuth2 integration**: Uses proper Twitch API authentication
+- **Error handling**: Robust error handling for API failures and missing channels
+
+### Rules & Welcome System
+- **Automated role assignment**: Users get the Members role when they react with ✅ to the rules
+- **Welcome messages**: Sent to the configured welcome channel (not hardcoded to #general)
+- **Loyalty system integration**: New members are automatically added to the XP system
+- **DM notifications**: Users receive a private message confirming rule acceptance
+
+### Loyalty/XP System
+- **Automatic XP gain**: Users earn XP by being active in the server
+- **Level progression**: XP converts to levels with a scaling formula
+- **Leaderboard**: `/leaderboard` shows top users by XP
+- **User stats**: `/xp` and `/level` commands show individual progress
+- **Persistent storage**: All data stored in SQLite database
+
+## Technical Details
+
+### Built With
+- **discord.js v14**: Latest Discord API wrapper with modern features
+- **SQLite3**: Lightweight database for persistence
+- **Node.js v22**: Latest LTS Node.js version
+- **PM2**: Production process management
+- **Twitch API**: Real-time stream data and OAuth2 authentication
+
+### Database Schema
+The bot uses SQLite with the following tables:
+- `guild_settings`: Server-specific configuration
+- `loyalty`: User XP and level data
+- `twitch_subscriptions`: Twitch channel subscriptions
+- `twitch_status`: Current stream status cache
+
+### Modular Architecture
+- Commands organized by category in `/commands/` subdirectories
+- Separate modules for loyalty, Twitch, colors, and database operations
+- Easy to extend with new commands and features
+- Clean separation of concerns and error handling
 
 ## Join Us
 Want to see the bot in action or join the Blaze Isle community?
@@ -95,5 +156,5 @@ Want to see the bot in action or join the Blaze Isle community?
 
 ---
 
-*WIP: This bot is under active development. Contributions and suggestions are welcome!*
+*This bot is under active development. Contributions and suggestions are welcome!*
 
