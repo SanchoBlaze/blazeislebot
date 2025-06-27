@@ -43,11 +43,10 @@ const client = new Client({
 client.commands = new Collection();
 client.cooldowns = new Collection();
 
-const loyalty = new Loyalty();
 const twitchManager = new TwitchManager();
-client.loyalty = loyalty;
 client.twitch = twitchManager;
 client.settings = new GuildSettings(client);
+client.loyalty = new Loyalty(client);
 
 
 const commandFolders = fs.readdirSync('./commands');

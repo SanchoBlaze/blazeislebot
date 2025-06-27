@@ -20,7 +20,7 @@ module.exports = {
         };
 
         message.awaitReactions({ filter: filter, max: 1, time: 10000 })
-            .then(collected => {
+            .then(async collected => {
                 const reaction = collected.first();
                 const choice = reaction.emoji.name;
 
@@ -47,7 +47,7 @@ module.exports = {
                     points = 0;
                 }
 
-                interaction.client.loyalty.addXp(points, interaction.user, interaction.guild);
+                await interaction.client.loyalty.addXp(points, interaction.user, interaction.guild);
 
             })
             .catch(error => console.error('One of the emojis failed to react:', error));

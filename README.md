@@ -9,11 +9,11 @@ A feature-rich Node.js Discord bot for the Blaze Isle community, built with disc
 - Rules acceptance with ✅ reaction to gain access
 - **Configurable welcome messages** sent to designated channel
 - **Advanced Twitch stream notifications** with real-time monitoring
-- **Comprehensive loyalty/XP system** with leaderboard
-- Fun commands: games (Connect4, TicTacToe, RPS, RPSLS), 8ball, dadjoke, gif, and more
-- Animal facts and images (cat, dog, fox, bunny, duck)
-- Action commands (hug, comfort)
-- Info commands (server, avatar, help)
+- **Advanced loyalty/XP system** with scaled leveling and multi-level progression
+- **Engaging games**: Connect4, TicTacToe, RPS, RPSLS with XP rewards for winners
+- **Animal commands**: Cute pictures with small XP rewards (cat, dog, fox, bunny, duck)
+- **Social commands**: Hug and comfort other users for XP and community building
+- **Utility commands**: 8ball, dadjoke, gif, server info, avatar, and help
 - **Role-based permissions** for moderation commands
 - Modular command structure for easy extension
 
@@ -87,11 +87,10 @@ The bot uses an **intelligent configuration system** that prevents crashes and g
 1. Run `/config set` to see all available configuration options
 2. Click the button for the setting you want to configure
 3. A modal will appear with clear instructions and input validation
-4. Enter the channel name, role name, or ID - the bot accepts multiple formats:
+4. Enter the ID:
    - **Channel IDs:** `123456789012345678`
-   - **Channel names:** `general` or `#general`
    - **Role IDs:** `123456789012345678` 
-   - **Role names:** `Moderator` or `@Moderator`
+ 
 
 #### Required Settings
 - **📋 Rules Channel**: The channel where your rules message is posted
@@ -132,7 +131,7 @@ The bot features a comprehensive Twitch integration system with real-time monito
 - `/twitch status <username>` - Check a channel's current live status
 
 #### Features
-- **Real-time monitoring**: Checks streams every 5 minutes
+- **Real-time monitoring**: Checks streams every 1 minutes
 - **Smart notifications**: Only notifies when streams go from offline to live
 - **Rich embeds**: Stream notifications include title, game, viewer count, and thumbnail
 - **Database persistence**: All subscriptions and stream states are stored in SQLite
@@ -145,12 +144,35 @@ The bot features a comprehensive Twitch integration system with real-time monito
 - **Loyalty system integration**: New members are automatically added to the XP system
 - **DM notifications**: Users receive a private message confirming rule acceptance
 
-### Loyalty/XP System
-- **Automatic XP gain**: Users earn XP by being active in the server
-- **Level progression**: XP converts to levels with a scaling formula
-- **Leaderboard**: `/leaderboard` shows top users by XP
-- **User stats**: `/xp` and `/level` commands show individual progress
-- **Persistent storage**: All data stored in SQLite database
+### Advanced Loyalty/XP System
+The bot features a sophisticated leveling system designed to reward active community members:
+
+#### Scaled Leveling Formula
+- **Exponential progression**: Level requirements scale with formula `level^2.5 * 100`
+- **Progressive difficulty**: Level 1 needs 100 XP, Level 2 needs 566 XP, Level 3 needs 1,548 XP
+- **Multi-level jumping**: Users can gain multiple levels from large XP amounts
+- **Efficient calculation**: Uses binary search algorithm for optimal performance
+
+#### XP Sources & Rewards
+- **Chat activity**: Earn XP by participating in conversations
+- **Game victories**: Win games like RPS, TicTacToe, Connect4 for bonus XP
+- **Social interactions**: Hug and comfort commands reward community engagement
+- **Animal commands**: Small XP rewards for using fun animal picture commands
+
+#### Level Categories & Badges
+- **🌱 Newcomer** (Levels 1-9): New community members
+- **🥉 Bronze** (Levels 10-19): Regular participants  
+- **🥈 Silver** (Levels 20-29): Active community members
+- **🏆 Gold** (Levels 30-49): Dedicated contributors
+- **💎 Diamond** (Levels 50+): Elite community champions
+
+#### Commands & Features
+- **`/xp [user]`**: View your XP and progress with visual progress bar
+- **`/level [user]`**: See detailed level information and category badge
+- **`/leaderboard`**: Top 10 users with XP, levels, and badges
+- **Level-up notifications**: Automatic announcements in welcome channel
+- **Rich embeds**: Beautiful displays with progress bars and statistics
+- **Persistent storage**: All data safely stored in SQLite database
 
 ## Technical Details
 
