@@ -22,7 +22,7 @@ module.exports = {
         };
 
         message.awaitReactions({ filter: filter, max: 1, time: 10000 })
-            .then(collected => {
+            .then(async collected => {
                 const reaction = collected.first();
                 const choice = reaction.emoji.name;
 
@@ -71,7 +71,7 @@ module.exports = {
                 }
 
                 if(points) {
-                    interaction.client.loyalty.addXp(points, interaction.user, interaction.guild);
+                    await interaction.client.loyalty.addXp(points, interaction.user, interaction.guild);
                 }
 
             })

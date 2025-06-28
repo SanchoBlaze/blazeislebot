@@ -190,7 +190,7 @@ class TicTacToe {
                             }
                         }
 
-                        message.client.loyalty.addXp(50, gameData[player].member, message.guild);
+                        await message.client.loyalty.addXp(50, gameData[player].member, message.guild);
 
                         collector.stop(gameData[player].member.username + ' won.');
                         message.edit({ content: `${gameData[player].playerSymbol} - ${gameData[player].member} won!`, components: newRows });

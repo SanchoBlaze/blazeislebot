@@ -1,22 +1,14 @@
 {
     "Discord": {
-        "token": "BOT TOKEN",
-        "clientId": "YOUR_CLIENT_ID",
-        "guildId": "YOUR_GUILD_ID"
+        "token": "YOUR_DISCORD_BOT_TOKEN",
+        "clientId": "YOUR_DISCORD_CLIENT_ID",
+        "guildId": "YOUR_TEST_GUILD_ID"
+    },
+    "Twitch": {
+        "client_id": "YOUR_TWITCH_CLIENT_ID",
+        "secret": "YOUR_TWITCH_SECRET"
     },
     "Giphy": {
-        "key": "API KEY"
-    },
-    "Enviroment": {
-        "live": false
-    },
-    "DNS": {
-        "servers": []
-    },
-    "rulesChannelId": "YOUR_RULES_CHANNEL_ID",
-    "rulesMessageId": "YOUR_RULES_MESSAGE_ID",
-    "membersRoleId": "YOUR_MEMBERS_ROLE_ID",
-    "streamsChannelId": "YOUR_STREAMS_CHANNEL_ID",
-    "adminRoleId": "YOUR_ADMIN_ROLE_ID",
-    "modRoleId": "YOUR_MOD_ROLE_ID"
+        "key": "YOUR_GIPHY_API_KEY"
+    }
 }

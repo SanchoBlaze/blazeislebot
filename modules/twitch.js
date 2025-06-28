@@ -95,19 +95,13 @@ class TwitchManager {
         }
     }
 
-    async addSubscription(guildId, twitchUsername, addedBy) {
+    async addSubscription(guildId, channelId, twitchUsername, addedBy) {
         try {
-            const streamsChannelId = config.get('streamsChannelId');
-            if (!streamsChannelId) {
-                console.error('streamsChannelId not configured');
-                return false;
-            }
-
             const stmt = sql.prepare(`
                 INSERT OR REPLACE INTO subscriptions (guild_id, channel_id, twitch_username, added_by)
                 VALUES (?, ?, ?, ?)
             `);
-            stmt.run(guildId, streamsChannelId, twitchUsername.toLowerCase(), addedBy);
+            stmt.run(guildId, channelId, twitchUsername.toLowerCase(), addedBy);
             return true;
         } catch (error) {
             console.error('Error adding subscription:', error);

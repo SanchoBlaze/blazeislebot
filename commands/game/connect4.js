@@ -144,7 +144,7 @@ class ConnectFour {
 
             const checks = [horizontalCheck, verticalCheck, diagonal1, diagonal2];
 
-            gameCollector.on('collect', (reaction, user) => {
+            gameCollector.on('collect', async (reaction, user) => {
 
                 reaction.message.reactions.cache.get(reaction.emoji.name).users.remove(user.id);
 
@@ -228,7 +228,7 @@ class ConnectFour {
                                 embedColour = Colours.YELLOW;
                             }
 
-                            msg.client.loyalty.addXp(50, gameData[player].member, msg.guild);
+                            await msg.client.loyalty.addXp(50, gameData[player].member, msg.guild);
 
                             const WinEmbed = new EmbedBuilder()
                                 .setTitle(`${gameData[player].member.username} has won the game!`)
