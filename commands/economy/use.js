@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -25,8 +25,32 @@ module.exports = {
 
             if (!item) {
                 return interaction.reply({ 
-                    content: `Item "${itemQuery}" not found in your inventory! Use \`/inventory\` to see your items.`, 
-                    ephemeral: true 
+                    content: `❌ Item "${itemQuery}" not found in your inventory!`, 
+                    flags: MessageFlags.Ephemeral 
+                });
+            }
+
+            // Check if item is expired
+            if (item.expires_at && new Date() > new Date(item.expires_at)) {
+                return interaction.reply({ 
+                    content: `❌ This item has expired and cannot be used!`, 
+                    flags: MessageFlags.Ephemeral 
+                });
+            }
+
+            // Check if item has quantity and is not depleted
+            if (item.quantity !== null && item.quantity <= 0) {
+                return interaction.reply({ 
+                    content: `❌ You don't have any "${itemQuery}" left to use!`, 
+                    flags: MessageFlags.Ephemeral 
+                });
+            }
+
+            // Check if item has an effect type
+            if (!item.effect_type) {
+                return interaction.reply({ 
+                    content: `❌ This item cannot be used!`, 
+                    flags: MessageFlags.Ephemeral 
                 });
             }
 
@@ -50,28 +74,28 @@ module.exports = {
             if (error.message === 'Item not in inventory') {
                 await interaction.reply({ 
                     content: `You don't have that item in your inventory! Use \`/inventory\` to see your items.`, 
-                    ephemeral: true 
+                    flags: MessageFlags.Ephemeral 
                 });
             } else if (error.message === 'Item has expired') {
                 await interaction.reply({ 
                     content: `That item has expired and has been removed from your inventory.`, 
-                    ephemeral: true 
+                    flags: MessageFlags.Ephemeral 
                 });
             } else if (error.message === 'Not enough items') {
                 await interaction.reply({ 
                     content: `You don't have enough of that item to use it.`, 
-                    ephemeral: true 
+                    flags: MessageFlags.Ephemeral 
                 });
             } else if (error.message.includes('You already have an active')) {
                 await interaction.reply({ 
                     content: `${error.message} Use \`/effects\` to see your active effects and their remaining time.`, 
-                    ephemeral: true 
+                    flags: MessageFlags.Ephemeral 
                 });
             } else {
                 console.error('Error in use command:', error);
                 await interaction.reply({ 
                     content: 'There was an error using the item!', 
-                    ephemeral: true 
+                    flags: MessageFlags.Ephemeral 
                 });
             }
         }

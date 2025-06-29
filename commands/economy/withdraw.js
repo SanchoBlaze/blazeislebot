@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -30,14 +30,13 @@ module.exports = {
                 .setFooter({ text: 'Your coins are now in your wallet!' })
                 .setTimestamp();
 
-            await interaction.reply({ embeds: [embed], ephemeral: true });
+            await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         } catch (error) {
-            if (error.message === 'Insufficient funds in bank') {
-                const user = interaction.client.economy.getUser(userId, guildId);
+            if (error.message === 'Insufficient bank balance') {
                 const embed = new EmbedBuilder()
-                    .setColor(0xFF6B6B)
-                    .setTitle('❌ Withdrawal Failed')
-                    .setDescription(`You don't have enough coins in your bank!`)
+                    .setColor(0xFF0000)
+                    .setTitle('❌ Insufficient Funds')
+                    .setDescription(`You don't have enough coins in your bank to withdraw ${interaction.client.economy.formatCurrency(amount)}!`)
                     .addFields(
                         { name: '🏦 Your Bank Balance', value: interaction.client.economy.formatCurrency(user.bank), inline: true },
                         { name: '💰 Withdrawal Amount', value: interaction.client.economy.formatCurrency(amount), inline: true }
@@ -45,10 +44,10 @@ module.exports = {
                     .setFooter({ text: 'Make sure you have enough coins in your bank!' })
                     .setTimestamp();
 
-                await interaction.reply({ embeds: [embed], ephemeral: true });
+                await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             } else {
                 console.error('Error in withdraw command:', error);
-                await interaction.reply({ content: 'There was an error processing your withdrawal!', ephemeral: true });
+                await interaction.reply({ content: 'There was an error processing your withdrawal!', flags: MessageFlags.Ephemeral });
             }
         }
     },

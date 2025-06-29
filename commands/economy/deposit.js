@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -27,7 +27,7 @@ module.exports = {
             if (depositAmount <= 0) {
                 return interaction.reply({ 
                     content: 'You don\'t have any coins to deposit!', 
-                    ephemeral: true 
+                    flags: MessageFlags.Ephemeral 
                 });
             }
 
@@ -45,14 +45,13 @@ module.exports = {
                 .setFooter({ text: 'Your money is safe in the bank!' })
                 .setTimestamp();
 
-            await interaction.reply({ embeds: [embed], ephemeral: true });
+            await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         } catch (error) {
-            if (error.message === 'Insufficient funds') {
-                const user = interaction.client.economy.getUser(userId, guildId);
+            if (error.message === 'Insufficient wallet balance') {
                 const embed = new EmbedBuilder()
-                    .setColor(0xFF6B6B)
-                    .setTitle('❌ Deposit Failed')
-                    .setDescription(`You don't have enough coins to deposit!`)
+                    .setColor(0xFF0000)
+                    .setTitle('❌ Insufficient Funds')
+                    .setDescription(`You don't have enough coins in your wallet to deposit ${interaction.client.economy.formatCurrency(amount)}!`)
                     .addFields(
                         { name: '💵 Your Wallet Balance', value: interaction.client.economy.formatCurrency(user.balance), inline: true },
                         { name: '💰 Deposit Amount', value: interaction.client.economy.formatCurrency(amount), inline: true }
@@ -60,13 +59,10 @@ module.exports = {
                     .setFooter({ text: 'Make sure you have enough coins in your wallet!' })
                     .setTimestamp();
 
-                await interaction.reply({ embeds: [embed], ephemeral: true });
+                await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             } else {
                 console.error('Error in deposit command:', error);
-                await interaction.reply({ 
-                    content: 'There was an error processing your deposit!', 
-                    ephemeral: true 
-                });
+                await interaction.reply({ content: 'There was an error processing your deposit!', flags: MessageFlags.Ephemeral });
             }
         }
     },

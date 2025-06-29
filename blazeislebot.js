@@ -6,7 +6,7 @@
 
 const fs = require('fs');
 const config = require('config');
-const { Client, GatewayIntentBits, Partials, Collection, EmbedBuilder, ModalBuilder, ActionRowBuilder, TextInputBuilder, TextInputStyle, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, Collection, EmbedBuilder, ModalBuilder, ActionRowBuilder, TextInputBuilder, TextInputStyle, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const { Colours } = require('./modules/colours');
 const Loyalty = require('./modules/loyalty');
 const TwitchManager = require('./modules/twitch');
@@ -140,7 +140,7 @@ client.on('interactionCreate', async interaction => {
     }
     catch (error) {
         console.error(error);
-        return interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        return interaction.reply({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
     }
     }
 
@@ -165,7 +165,7 @@ client.on('interactionCreate', async interaction => {
             if (!interaction.replied) {
                 await interaction.reply({ 
                     content: 'There was an error processing your request!', 
-                    ephemeral: true 
+                    flags: MessageFlags.Ephemeral 
                 });
             }
         }
@@ -185,7 +185,7 @@ client.on('interactionCreate', async interaction => {
             if (!interaction.replied) {
                 await interaction.reply({ 
                     content: 'There was an error processing your request!', 
-                    ephemeral: true 
+                    flags: MessageFlags.Ephemeral 
                 });
             }
         }
@@ -205,7 +205,7 @@ client.on('interactionCreate', async interaction => {
             if (!interaction.replied) {
                 await interaction.reply({ 
                     content: 'There was an error processing your submission!', 
-                    ephemeral: true 
+                    flags: MessageFlags.Ephemeral 
                 });
             }
         }

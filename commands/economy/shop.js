@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ComponentType } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ComponentType, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -16,7 +16,7 @@ module.exports = {
             if (allItems.length === 0) {
                 return interaction.reply({ 
                     content: 'No items available in the shop! Use `/economy-admin populate-defaults` to add default items.', 
-                    ephemeral: true 
+                    flags: MessageFlags.Ephemeral 
                 });
             }
 
@@ -91,7 +91,7 @@ module.exports = {
             console.error('Error in shop command:', error);
             await interaction.reply({ 
                 content: 'There was an error loading the shop!', 
-                ephemeral: true 
+                flags: MessageFlags.Ephemeral 
             });
         }
     },
@@ -101,7 +101,7 @@ module.exports = {
             return interaction.reply({ 
                 embeds: [pages[0].embed], 
                 components: pages[0].components,
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
 
@@ -124,7 +124,7 @@ module.exports = {
         await interaction.reply({ 
             embeds: [pages[page].embed], 
             components: allComponents,
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
         
         const message = await interaction.fetchReply();
@@ -136,7 +136,7 @@ module.exports = {
 
         collector.on('collect', async i => {
             if (i.user.id !== interaction.user.id) {
-                return i.reply({ content: 'You cannot use this button.', ephemeral: true });
+                return i.reply({ content: 'You cannot use this button.', flags: MessageFlags.Ephemeral });
             }
             
             await i.deferUpdate();
@@ -151,7 +151,7 @@ module.exports = {
             await i.editReply({ 
                 embeds: [pages[page].embed], 
                 components: allComponents,
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         });
 
@@ -172,7 +172,7 @@ module.exports = {
             
             // Keep the dropdown menu but disable pagination buttons
             const finalComponents = [...pages[page].components, disabledRow];
-            interaction.editReply({ components: finalComponents, ephemeral: true });
+            interaction.editReply({ components: finalComponents, flags: MessageFlags.Ephemeral });
         });
     },
 
@@ -195,7 +195,7 @@ module.exports = {
                 if (!item) {
                     await interaction.reply({ 
                         content: 'Item not found!', 
-                        ephemeral: true 
+                        flags: MessageFlags.Ephemeral 
                     });
                     return true;
                 }
@@ -205,7 +205,7 @@ module.exports = {
                 if (user.balance < item.price) {
                     await interaction.reply({ 
                         content: `You don't have enough coins! You need ${interaction.client.economy.formatCurrency(item.price)}.`, 
-                        ephemeral: true 
+                        flags: MessageFlags.Ephemeral 
                     });
                     return true;
                 }
@@ -215,7 +215,7 @@ module.exports = {
                 if (currentQuantity >= item.max_quantity) {
                     await interaction.reply({ 
                         content: `You already have the maximum quantity of ${item.name}! (${item.max_quantity})`, 
-                        ephemeral: true 
+                        flags: MessageFlags.Ephemeral 
                     });
                     return true;
                 }
@@ -242,11 +242,11 @@ module.exports = {
                         .setFooter({ text: 'Use /inventory to view your items, /use to use them!' })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed], ephemeral: true });
+                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
                 } else {
                     await interaction.reply({ 
                         content: 'There was an error processing your purchase!', 
-                        ephemeral: true 
+                        flags: MessageFlags.Ephemeral 
                     });
                 }
 
@@ -255,7 +255,7 @@ module.exports = {
                 console.error('Error processing shop purchase:', error);
                 await interaction.reply({ 
                     content: 'There was an error processing your purchase!', 
-                    ephemeral: true 
+                    flags: MessageFlags.Ephemeral 
                 });
                 return true;
             }

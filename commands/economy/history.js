@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -26,7 +26,7 @@ module.exports = {
             if (transactions.length === 0) {
                 return interaction.reply({ 
                     content: 'No transaction history found!', 
-                    ephemeral: true 
+                    flags: MessageFlags.Ephemeral 
                 });
             }
 
@@ -49,13 +49,10 @@ module.exports = {
                 .setFooter({ text: `Showing last ${transactions.length} transactions` })
                 .setTimestamp();
 
-            await interaction.reply({ embeds: [embed], ephemeral: true });
+            await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         } catch (error) {
-            console.error('Error in economy history command:', error);
-            await interaction.reply({ 
-                content: 'There was an error fetching the transaction history!', 
-                ephemeral: true 
-            });
+            console.error('Error in history command:', error);
+            await interaction.reply({ content: 'There was an error fetching your transaction history!', flags: MessageFlags.Ephemeral });
         }
     },
 }; 

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -43,7 +43,7 @@ module.exports = {
                 });
             }
 
-            await interaction.reply({ embeds: [embed] });
+            await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         } catch (error) {
             if (error.message.includes('Daily reward available in')) {
                 const embed = new EmbedBuilder()
@@ -56,13 +56,10 @@ module.exports = {
                     .setFooter({ text: 'Daily rewards reset every 24 hours' })
                     .setTimestamp();
 
-                await interaction.reply({ embeds: [embed], ephemeral: true });
+                await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             } else {
                 console.error('Error in daily command:', error);
-                await interaction.reply({ 
-                    content: 'There was an error claiming your daily reward!', 
-                    ephemeral: true 
-                });
+                await interaction.reply({ content: 'There was an error processing your daily reward!', flags: MessageFlags.Ephemeral });
             }
         }
     },

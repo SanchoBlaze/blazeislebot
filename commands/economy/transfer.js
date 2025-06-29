@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -24,28 +24,35 @@ module.exports = {
         if (targetUser.id === fromUserId) {
             return interaction.reply({ 
                 content: 'You cannot transfer coins to yourself!', 
-                ephemeral: true 
+                flags: MessageFlags.Ephemeral 
+            });
+        }
+
+        if (amount <= 0) {
+            return interaction.reply({ 
+                content: '❌ Please enter a valid amount greater than 0!', 
+                flags: MessageFlags.Ephemeral 
             });
         }
 
         try {
-            await interaction.client.economy.transfer(fromUserId, targetUser.id, guildId, amount);
+            const result = await interaction.client.economy.transfer(fromUserId, targetUser.id, guildId, amount);
             
             const fromUser = interaction.client.economy.getUser(fromUserId, guildId);
             const toUser = interaction.client.economy.getUser(targetUser.id, guildId);
 
             const embed = new EmbedBuilder()
                 .setColor(0x00FF00)
-                .setTitle('💸 Transfer Successful!')
-                .setDescription(`You transferred **${interaction.client.economy.formatCurrency(amount)}** to ${targetUser}`)
+                .setTitle('💸 Transfer Successful')
+                .setDescription(`Successfully transferred ${interaction.client.economy.formatCurrency(amount)} to ${targetUser.username}!`)
                 .addFields(
-                    { name: '💵 Your New Balance', value: interaction.client.economy.formatCurrency(fromUser.balance), inline: true },
-                    { name: `💵 ${targetUser.username}'s Balance`, value: interaction.client.economy.formatCurrency(toUser.balance), inline: true }
+                    { name: '💰 Your New Balance', value: interaction.client.economy.formatCurrency(result.newBalance), inline: true },
+                    { name: '💸 Transfer Amount', value: interaction.client.economy.formatCurrency(amount), inline: true }
                 )
                 .setFooter({ text: 'Transfer completed successfully!' })
                 .setTimestamp();
 
-            await interaction.reply({ embeds: [embed] });
+            await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         } catch (error) {
             if (error.message === 'Insufficient funds') {
                 const user = interaction.client.economy.getUser(fromUserId, guildId);
@@ -60,13 +67,10 @@ module.exports = {
                     .setFooter({ text: 'Make sure you have enough coins in your wallet!' })
                     .setTimestamp();
 
-                await interaction.reply({ embeds: [embed], ephemeral: true });
+                await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             } else {
                 console.error('Error in transfer command:', error);
-                await interaction.reply({ 
-                    content: 'There was an error processing the transfer!', 
-                    ephemeral: true 
-                });
+                await interaction.reply({ content: 'There was an error processing your transfer!', flags: MessageFlags.Ephemeral });
             }
         }
     },

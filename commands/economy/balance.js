@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -32,10 +32,10 @@ module.exports = {
                 .setFooter({ text: 'Use /daily and /work to earn more coins!' })
                 .setTimestamp();
 
-            await interaction.reply({ embeds: [embed], ephemeral: true });
+            await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         } catch (error) {
-            console.error('Error in balance command:', error);
-            await interaction.reply({ content: 'There was an error checking the balance!', ephemeral: true });
+            console.error('Error checking balance:', error);
+            await interaction.reply({ content: 'There was an error checking the balance!', flags: MessageFlags.Ephemeral });
         }
     },
 }; 

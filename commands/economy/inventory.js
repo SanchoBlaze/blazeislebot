@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -25,7 +25,7 @@ module.exports = {
                     .setFooter({ text: 'Use /shop to buy items' })
                     .setTimestamp();
 
-                return interaction.reply({ embeds: [embed], ephemeral: true });
+                return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             }
 
             // Deduplicate items by id and sum quantities
@@ -80,13 +80,10 @@ module.exports = {
                 .setFooter({ text: 'Use /use <item> to use items, /shop to buy more' })
                 .setTimestamp();
 
-            await interaction.reply({ embeds: [embed], ephemeral: true });
+            await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         } catch (error) {
             console.error('Error in inventory command:', error);
-            await interaction.reply({ 
-                content: 'There was an error fetching the inventory!', 
-                ephemeral: true 
-            });
+            await interaction.reply({ content: 'There was an error fetching the inventory!', flags: MessageFlags.Ephemeral });
         }
     },
 }; 

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -45,10 +45,7 @@ module.exports = {
             await interaction.reply({ embeds: [embed] });
         } catch (error) {
             console.error('Error in economy leaderboard command:', error);
-            await interaction.reply({ 
-                content: 'There was an error fetching the leaderboard!', 
-                ephemeral: true 
-            });
+            await interaction.reply({ content: 'There was an error fetching the leaderboard!', flags: MessageFlags.Ephemeral });
         }
     },
 }; 

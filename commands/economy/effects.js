@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -23,7 +23,7 @@ module.exports = {
                     .setFooter({ text: 'Effects provide temporary bonuses to your earnings and activities' })
                     .setTimestamp();
 
-                await interaction.reply({ embeds: [embed], ephemeral: true });
+                await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
                 return;
             }
 
@@ -73,13 +73,10 @@ module.exports = {
                 });
             }
 
-            await interaction.reply({ embeds: [embed], ephemeral: true });
+            await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         } catch (error) {
             console.error('Error in effects command:', error);
-            await interaction.reply({ 
-                content: 'There was an error checking your effects!', 
-                ephemeral: true 
-            });
+            await interaction.reply({ content: 'There was an error fetching your effects!', flags: MessageFlags.Ephemeral });
         }
     },
 }; 

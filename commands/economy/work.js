@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -52,7 +52,7 @@ module.exports = {
                 });
             }
 
-            await interaction.reply({ embeds: [embed] });
+            await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         } catch (error) {
             if (error.message.includes('Work available in')) {
                 const embed = new EmbedBuilder()
@@ -65,13 +65,10 @@ module.exports = {
                     .setFooter({ text: 'Work has a 1-hour cooldown' })
                     .setTimestamp();
 
-                await interaction.reply({ embeds: [embed], ephemeral: true });
+                await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             } else {
                 console.error('Error in work command:', error);
-                await interaction.reply({ 
-                    content: 'There was an error processing your work!', 
-                    ephemeral: true 
-                });
+                await interaction.reply({ content: 'There was an error processing your work!', flags: MessageFlags.Ephemeral });
             }
         }
     },
