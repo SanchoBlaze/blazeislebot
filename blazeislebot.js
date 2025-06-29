@@ -168,6 +168,26 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
+    // Handle select menu interactions
+    if (interaction.isStringSelectMenu()) {
+        try {
+            // Check for shop command select menu interactions
+            const shopCommand = client.commands.get('shop');
+            if (shopCommand && shopCommand.handleButtonInteraction) {
+                const handled = await shopCommand.handleButtonInteraction(interaction);
+                if (handled) return;
+            }
+        } catch (error) {
+            console.error('Error handling select menu interaction:', error);
+            if (!interaction.replied) {
+                await interaction.reply({ 
+                    content: 'There was an error processing your request!', 
+                    ephemeral: true 
+                });
+            }
+        }
+    }
+
     // Handle modal submissions
     if (interaction.isModalSubmit()) {
         try {
