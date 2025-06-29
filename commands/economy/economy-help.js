@@ -70,7 +70,7 @@ module.exports = {
                 },
                 {
                     name: '💡 Tips',
-                    value: '• Use `/daily` every day to maximize earnings\n• Work regularly with `/work` for steady income\n• Keep some coins in the bank for safety\n• Check `/economy-leaderboard` to see how you rank\n• Use items strategically to boost your earnings',
+                    value: '• Use `/daily` every day to maximize earnings\n• Work regularly with `/work` for steady income\n• Keep some coins in the bank for safety\n• Check `/economy-leaderboard` to see how you rank\n• Use items strategically to boost your earnings\n• **Note**: Only one effect of each type can be active at a time - wait for effects to expire before using new ones',
                     inline: false
                 }
             )

@@ -299,6 +299,21 @@ class Inventory {
             throw new Error('Item has expired');
         }
 
+        // Check for existing effects of the same type
+        if (item.effect_type && ['xp_multiplier', 'work_multiplier', 'daily_multiplier', 'coin_multiplier'].includes(item.effect_type)) {
+            const existingEffect = this.getActiveEffect(userId, guildId, item.effect_type);
+            if (existingEffect) {
+                const effectTypeName = {
+                    'xp_multiplier': 'XP boost',
+                    'work_multiplier': 'work boost',
+                    'daily_multiplier': 'daily multiplier',
+                    'coin_multiplier': 'coin multiplier'
+                }[item.effect_type];
+                
+                throw new Error(`You already have an active ${effectTypeName}! Wait for it to expire before using another.`);
+            }
+        }
+
         // Process item effect
         let result = { success: true, message: '', effect: null };
 
@@ -568,7 +583,7 @@ class Inventory {
 
         try {
             sql.prepare(`
-                INSERT OR REPLACE INTO active_effects (user, guild, effect_type, effect_value, expires_at)
+                INSERT INTO active_effects (user, guild, effect_type, effect_value, expires_at)
                 VALUES (?, ?, ?, ?, ?)
             `).run(userId, guildId, effectType, effectValue, expiresAt);
             

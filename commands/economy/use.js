@@ -62,6 +62,11 @@ module.exports = {
                     content: `You don't have enough of that item to use it.`, 
                     ephemeral: true 
                 });
+            } else if (error.message.includes('You already have an active')) {
+                await interaction.reply({ 
+                    content: `${error.message} Use \`/effects\` to see your active effects and their remaining time.`, 
+                    ephemeral: true 
+                });
             } else {
                 console.error('Error in use command:', error);
                 await interaction.reply({ 

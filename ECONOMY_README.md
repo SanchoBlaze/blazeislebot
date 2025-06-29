@@ -278,6 +278,15 @@ The system is designed to maintain a healthy economy:
 2. **Buy custom roles** - Personalize your experience
 3. **Help others** - Transfer coins to new members
 
+### ⚠️ Effect Management Rules
+- **One Effect Per Type**: You can only have one active effect of each type at a time
+  - **Example**: You cannot use a 1-hour XP boost while a 24-hour XP boost is active
+  - **Example**: You cannot use a work booster while a lucky charm is active
+- **No Effect Replacement**: Using a new effect of the same type will be blocked
+- **Wait for Expiration**: You must wait for the current effect to expire before using another
+- **Check Active Effects**: Use `/effects` to see your active effects and remaining time
+- **Clear Error Messages**: The bot will tell you exactly which effect is blocking usage
+
 ## Security Features
 
 - **Negative Balance Prevention**: Users cannot go below 0 coins
