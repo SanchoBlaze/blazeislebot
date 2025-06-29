@@ -1,18 +1,13 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ComponentType } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('shop')
-        .setDescription('View the economy shop')
-        .addIntegerOption(option =>
-            option.setName('page')
-                .setDescription('Page number to view')
-                .setRequired(false)),
+        .setDescription('View the economy shop'),
 
     async execute(interaction) {
         const guildId = interaction.guild.id;
         const userId = interaction.user.id;
-        const page = interaction.options.getInteger('page') || 1;
 
         try {
             const user = interaction.client.economy.getUser(userId, guildId);
@@ -25,102 +20,73 @@ module.exports = {
                 });
             }
 
-            // Pagination settings
+            // Create pages of items with components
             const itemsPerPage = 8;
-            const totalPages = Math.ceil(allItems.length / itemsPerPage);
-            const currentPage = Math.max(1, Math.min(page, totalPages));
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            const endIndex = startIndex + itemsPerPage;
-            const pageItems = allItems.slice(startIndex, endIndex);
-
-            let description = `**Available Items (Page ${currentPage}/${totalPages}):**\n\n`;
+            const pages = [];
             
-            for (const item of pageItems) {
-                const canAfford = user.balance >= item.price;
-                const status = canAfford ? '✅' : '❌';
-                const rarityEmoji = interaction.client.inventory.getRarityEmoji(item.rarity);
-                const rarityName = item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1);
+            for (let i = 0; i < allItems.length; i += itemsPerPage) {
+                const pageItems = allItems.slice(i, i + itemsPerPage);
+                const pageNumber = Math.floor(i / itemsPerPage) + 1;
+                const totalPages = Math.ceil(allItems.length / itemsPerPage);
                 
-                description += `${status} ${rarityEmoji} **${item.name}** - ${interaction.client.economy.formatCurrency(item.price)}\n`;
-                description += `└ ${rarityName} • ${item.description}\n\n`;
+                let description = `**Available Items (Page ${pageNumber}/${totalPages}):**\n\n`;
+                
+                for (const item of pageItems) {
+                    const canAfford = user.balance >= item.price;
+                    const status = canAfford ? '✅' : '❌';
+                    const rarityEmoji = interaction.client.inventory.getRarityEmoji(item.rarity);
+                    const rarityName = item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1);
+                    
+                    description += `${status} ${rarityEmoji} **${item.name}** - ${interaction.client.economy.formatCurrency(item.price)}\n`;
+                    description += `└ ${rarityName} • ${item.description}\n\n`;
+                }
+
+                const embed = new EmbedBuilder()
+                    .setColor(0xFFD700)
+                    .setTitle('🏪 Economy Shop')
+                    .setDescription(description)
+                    .addFields(
+                        { name: '💵 Your Balance', value: interaction.client.economy.formatCurrency(user.balance), inline: true },
+                        { name: '🏦 Bank Balance', value: interaction.client.economy.formatCurrency(user.bank), inline: true },
+                        { name: '💎 Net Worth', value: interaction.client.economy.formatCurrency(user.balance + user.bank), inline: true },
+                        { name: '📦 Total Items', value: allItems.length.toString(), inline: true },
+                        { name: '📄 Page', value: `${pageNumber}/${totalPages}`, inline: true },
+                        { name: '🛒 How to Buy', value: 'Use the dropdown menu below', inline: true }
+                    )
+                    .setFooter({ text: 'Use the arrow buttons to navigate pages' })
+                    .setTimestamp();
+
+                // Create dropdown menu for item selection
+                const components = [];
+                if (pageItems.length > 0) {
+                    const selectMenu = new StringSelectMenuBuilder()
+                        .setCustomId(`shop_select_${pageNumber}`)
+                        .setPlaceholder('Select an item to purchase...')
+                        .addOptions(
+                            pageItems.map(item => {
+                                const canAfford = user.balance >= item.price;
+                                const rarityEmoji = interaction.client.inventory.getRarityEmoji(item.rarity);
+                                
+                                return {
+                                    label: `${item.name} - ${interaction.client.economy.formatCurrency(item.price)}`,
+                                    description: canAfford ? `${rarityEmoji} ${item.description.substring(0, 50)}...` : `❌ Insufficient funds`,
+                                    value: item.id,
+                                    emoji: canAfford ? '🛒' : '❌',
+                                    default: false
+                                };
+                            })
+                        );
+
+                    const selectRow = new ActionRowBuilder().addComponents(selectMenu);
+                    components.push(selectRow);
+                }
+
+                pages.push({ embed, components });
             }
 
-            const embed = new EmbedBuilder()
-                .setColor(0xFFD700)
-                .setTitle('🏪 Economy Shop')
-                .setDescription(description)
-                .addFields(
-                    { name: '💵 Your Balance', value: interaction.client.economy.formatCurrency(user.balance), inline: true },
-                    { name: '🏦 Bank Balance', value: interaction.client.economy.formatCurrency(user.bank), inline: true },
-                    { name: '💎 Net Worth', value: interaction.client.economy.formatCurrency(user.balance + user.bank), inline: true },
-                    { name: '📦 Total Items', value: allItems.length.toString(), inline: true },
-                    { name: '📄 Page', value: `${currentPage}/${totalPages}`, inline: true },
-                    { name: '🛒 How to Buy', value: 'Use the dropdown menu below', inline: true }
-                )
-                .setFooter({ text: `Use /shop <page> to navigate pages` })
-                .setTimestamp();
-
-            // Create components
-            const components = [];
-
-            // Create dropdown menu for item selection
-            if (pageItems.length > 0) {
-                const selectMenu = new StringSelectMenuBuilder()
-                    .setCustomId(`shop_select_${currentPage}`)
-                    .setPlaceholder('Select an item to purchase...')
-                    .addOptions(
-                        pageItems.map(item => {
-                            const canAfford = user.balance >= item.price;
-                            const rarityEmoji = interaction.client.inventory.getRarityEmoji(item.rarity);
-                            
-                            return {
-                                label: `${item.name} - ${interaction.client.economy.formatCurrency(item.price)}`,
-                                description: canAfford ? `${rarityEmoji} ${item.description.substring(0, 50)}...` : `❌ Insufficient funds`,
-                                value: item.id,
-                                emoji: canAfford ? '🛒' : '❌',
-                                default: false
-                            };
-                        })
-                    );
-
-                const selectRow = new ActionRowBuilder().addComponents(selectMenu);
-                components.push(selectRow);
-            }
-
-            // Create pagination buttons
-            const paginationRow = new ActionRowBuilder();
+            // Use custom shop paginator
+            await this.shopPaginator(interaction, pages);
             
-            if (totalPages > 1) {
-                // Previous page button
-                const prevButton = new ButtonBuilder()
-                    .setCustomId(`shop_prev_${currentPage}`)
-                    .setLabel('◀️ Previous')
-                    .setStyle(ButtonStyle.Secondary)
-                    .setDisabled(currentPage <= 1);
-
-                // Next page button
-                const nextButton = new ButtonBuilder()
-                    .setCustomId(`shop_next_${currentPage}`)
-                    .setLabel('Next ▶️')
-                    .setStyle(ButtonStyle.Secondary)
-                    .setDisabled(currentPage >= totalPages);
-
-                // Page indicator button
-                const pageButton = new ButtonBuilder()
-                    .setCustomId('shop_page_info')
-                    .setLabel(`Page ${currentPage}/${totalPages}`)
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(true);
-
-                paginationRow.addComponents(prevButton, pageButton, nextButton);
-                components.push(paginationRow);
-            }
-
-            await interaction.reply({ 
-                embeds: [embed], 
-                components: components,
-                ephemeral: false 
-            });
         } catch (error) {
             console.error('Error in shop command:', error);
             await interaction.reply({ 
@@ -130,32 +96,89 @@ module.exports = {
         }
     },
 
-    // Handle button and select menu interactions for shop
+    async shopPaginator(interaction, pages) {
+        if (pages.length === 1) {
+            return interaction.reply({ 
+                embeds: [pages[0].embed], 
+                components: pages[0].components 
+            });
+        }
+
+        let page = 0;
+        const getButtons = () => new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('shop_leftPaginationButton')
+                    .setLabel('🡠')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(page === 0),
+                new ButtonBuilder()
+                    .setCustomId('shop_rightPaginationButton')
+                    .setLabel('🡢')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(page === pages.length - 1)
+            );
+
+        const allComponents = [...pages[page].components, getButtons()];
+        await interaction.reply({ 
+            embeds: [pages[page].embed], 
+            components: allComponents 
+        });
+        
+        const message = await interaction.fetchReply();
+        
+        const collector = message.createMessageComponentCollector({
+            componentType: ComponentType.Button,
+            time: 60000 // 1 minute
+        });
+
+        collector.on('collect', async i => {
+            if (i.user.id !== interaction.user.id) {
+                return i.reply({ content: 'You cannot use this button.', ephemeral: true });
+            }
+            
+            await i.deferUpdate();
+
+            if (i.customId === 'shop_leftPaginationButton') {
+                page = page > 0 ? --page : pages.length - 1;
+            } else if (i.customId === 'shop_rightPaginationButton') {
+                page = page + 1 < pages.length ? ++page : 0;
+            }
+            
+            const allComponents = [...pages[page].components, getButtons()];
+            await i.editReply({ 
+                embeds: [pages[page].embed], 
+                components: allComponents 
+            });
+        });
+
+        collector.on('end', () => {
+            const disabledRow = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('shop_leftPaginationButton')
+                        .setLabel('🡠')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setDisabled(true),
+                    new ButtonBuilder()
+                        .setCustomId('shop_rightPaginationButton')
+                        .setLabel('🡢')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setDisabled(true)
+                );
+            
+            // Keep the dropdown menu but disable pagination buttons
+            const finalComponents = [...pages[page].components, disabledRow];
+            interaction.editReply({ components: finalComponents });
+        });
+    },
+
+    // Handle select menu interactions for shop purchases
     async handleButtonInteraction(interaction) {
-        if (!interaction.isButton() && !interaction.isStringSelectMenu()) return false;
+        if (!interaction.isStringSelectMenu()) return false;
         
         const customId = interaction.customId;
         
-        // Handle pagination
-        if (customId.startsWith('shop_prev_') || customId.startsWith('shop_next_')) {
-            const currentPage = parseInt(customId.split('_')[2]);
-            const newPage = customId.startsWith('shop_prev_') ? currentPage - 1 : currentPage + 1;
-            
-            // Re-run the shop command with the new page
-            const command = interaction.client.commands.get('shop');
-            if (command) {
-                // Create a mock interaction with the page option
-                const mockInteraction = {
-                    ...interaction,
-                    options: {
-                        getInteger: (name) => name === 'page' ? newPage : null
-                    }
-                };
-                await command.execute(mockInteraction);
-            }
-            return true;
-        }
-
         // Handle item selection
         if (customId.startsWith('shop_select_')) {
             const selectedItemId = interaction.values[0];

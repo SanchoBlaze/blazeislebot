@@ -53,7 +53,7 @@ The Blaze Isle Bot now includes a comprehensive economy system that allows users
 
 ### 🛒 Shop System
 - **Interactive Dropdown**: Select items from a dropdown menu for purchase
-- **Pagination**: Navigate through unlimited items with page buttons
+- **Pagination**: Navigate through unlimited items with arrow buttons
 - **Item Rarity**: Visual rarity indicators with colors and emojis
 - **Quantity Limits**: Prevent hoarding with maximum quantities
 - **Real-time Validation**: Check affordability and limits before purchase
@@ -85,7 +85,7 @@ The Blaze Isle Bot now includes a comprehensive economy system that allows users
 | `/history` | Show transactions | `/history [user] [limit]` |
 | `/inventory` | View inventory | `/inventory [user]` |
 | `/use` | Use an item | `/use <item>` |
-| `/shop` | View shop | `/shop [page]` |
+| `/shop` | View shop | `/shop` |
 | `/economy-help` | Get help | `/economy-help` |
 
 ### Admin Commands

@@ -50,7 +50,7 @@ module.exports = {
                 },
                 {
                     name: '🛒 Shop & Items',
-                    value: '• **Shop**: `/shop [page]` - View items with pagination and dropdown purchase\n• **Inventory**: `/inventory` - View your items\n• **Use Items**: `/use <item>` - Activate item effects\n• **Item Types**: Roles, XP boosts, work multipliers, mystery boxes',
+                    value: '• **Shop**: `/shop` - View items with pagination and dropdown purchase\n• **Inventory**: `/inventory` - View your items\n• **Use Items**: `/use <item>` - Activate item effects\n• **Item Types**: Roles, XP boosts, work multipliers, mystery boxes',
                     inline: false
                 },
                 {
