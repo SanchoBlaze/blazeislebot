@@ -27,8 +27,13 @@ module.exports = {
                     inline: false
                 },
                 {
+                    name: '📦 Inventory Commands',
+                    value: '• `/inventory [user]` - View your or another user\'s inventory\n• `/use <item>` - Use an item from your inventory\n• `/shop` - View and purchase items from the shop',
+                    inline: false
+                },
+                {
                     name: '📊 Information Commands',
-                    value: '• `/economy-leaderboard [limit]` - Show richest users\n• `/history [user] [limit]` - Show transaction history\n• `/shop` - View the economy shop',
+                    value: '• `/economy-leaderboard [limit]` - Show richest users\n• `/history [user] [limit]` - Show transaction history\n• `/economy-help` - Get help with economy commands',
                     inline: false
                 },
                 {
@@ -40,12 +45,17 @@ module.exports = {
             .addFields(
                 {
                     name: '🎯 How to Earn Coins',
-                    value: '• **Daily Reward**: `/daily` - Get 100 coins every 24 hours\n• **Work**: `/work` - Earn 10-50 coins every hour\n• **Chat Activity**: Earn 1 coin per message (automatic)\n• **Admin Rewards**: Server admins can give you coins',
+                    value: '• **Daily Reward**: `/daily` - Get 100 coins every 24 hours\n• **Work**: `/work` - Earn 10-50 coins every hour\n• **Level Up**: Earn coins when you level up (50-750 coins based on level)\n• **Chat Activity**: Earn 1 coin per message (automatic)\n• **Admin Rewards**: Server admins can give you coins',
+                    inline: false
+                },
+                {
+                    name: '🛒 Shop & Items',
+                    value: '• **Shop**: `/shop` - Buy items with coins\n• **Inventory**: `/inventory` - View your items\n• **Use Items**: `/use <item>` - Activate item effects\n• **Item Types**: Roles, XP boosts, work multipliers, mystery boxes',
                     inline: false
                 },
                 {
                     name: '💡 Tips',
-                    value: '• Use `/daily` every day to maximize earnings\n• Work regularly with `/work` for steady income\n• Keep some coins in the bank for safety\n• Check `/economy-leaderboard` to see how you rank\n• Use `/shop` to spend your coins on rewards',
+                    value: '• Use `/daily` every day to maximize earnings\n• Work regularly with `/work` for steady income\n• Keep some coins in the bank for safety\n• Check `/economy-leaderboard` to see how you rank\n• Use items strategically to boost your earnings',
                     inline: false
                 }
             )

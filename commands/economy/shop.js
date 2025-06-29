@@ -1,47 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
-// Define shop items
-const shopItems = [
-    {
-        id: 'role_1',
-        name: 'Bronze Role',
-        description: 'Get a special bronze role in the server',
-        price: 1000,
-        type: 'role',
-        roleId: null // Will be set by admin
-    },
-    {
-        id: 'role_2',
-        name: 'Silver Role',
-        description: 'Get a special silver role in the server',
-        price: 2500,
-        type: 'role',
-        roleId: null
-    },
-    {
-        id: 'role_3',
-        name: 'Gold Role',
-        description: 'Get a special gold role in the server',
-        price: 5000,
-        type: 'role',
-        roleId: null
-    },
-    {
-        id: 'custom_color',
-        name: 'Custom Color Role',
-        description: 'Get a custom colored role',
-        price: 3000,
-        type: 'custom_role'
-    },
-    {
-        id: 'xp_boost',
-        name: 'XP Boost (1 hour)',
-        description: 'Get 2x XP for 1 hour',
-        price: 500,
-        type: 'xp_boost'
-    }
-];
-
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('shop')
@@ -53,14 +11,25 @@ module.exports = {
 
         try {
             const user = interaction.client.economy.getUser(userId, guildId);
+            const items = interaction.client.inventory.getAllItems();
             
+            if (items.length === 0) {
+                return interaction.reply({ 
+                    content: 'No items available in the shop!', 
+                    ephemeral: true 
+                });
+            }
+
             let description = '**Available Items:**\n\n';
             
-            for (const item of shopItems) {
+            for (const item of items) {
                 const canAfford = user.balance >= item.price;
                 const status = canAfford ? '✅' : '❌';
-                description += `${status} **${item.name}** - ${interaction.client.economy.formatCurrency(item.price)}\n`;
-                description += `└ ${item.description}\n\n`;
+                const rarityEmoji = interaction.client.inventory.getRarityEmoji(item.rarity);
+                const rarityName = item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1);
+                
+                description += `${status} ${rarityEmoji} **${item.name}** - ${interaction.client.economy.formatCurrency(item.price)}\n`;
+                description += `└ ${rarityName} • ${item.description}\n\n`;
             }
 
             const embed = new EmbedBuilder()
@@ -77,8 +46,8 @@ module.exports = {
 
             // Create buttons for quick purchases
             const buttons = [];
-            for (let i = 0; i < Math.min(shopItems.length, 5); i++) {
-                const item = shopItems[i];
+            for (let i = 0; i < Math.min(items.length, 5); i++) {
+                const item = items[i];
                 const canAfford = user.balance >= item.price;
                 
                 buttons.push(
@@ -114,7 +83,7 @@ module.exports = {
         if (!customId.startsWith('buy_')) return false;
 
         const itemId = customId.replace('buy_', '');
-        const item = shopItems.find(i => i.id === itemId);
+        const item = interaction.client.inventory.getItem(itemId);
         
         if (!item) {
             await interaction.reply({ 
@@ -138,49 +107,41 @@ module.exports = {
                 return true;
             }
 
-            // Process the purchase based on item type
-            let success = false;
-            let message = '';
-
-            switch (item.type) {
-                case 'role':
-                    // For now, just give them the coins back as a placeholder
-                    // In a real implementation, you'd add the role here
-                    message = `Role purchase feature coming soon! For now, you can use /economy-admin add to get your coins back.`;
-                    success = false;
-                    break;
-                    
-                case 'custom_role':
-                    message = `Custom role feature coming soon! For now, you can use /economy-admin add to get your coins back.`;
-                    success = false;
-                    break;
-                    
-                case 'xp_boost':
-                    message = `XP boost feature coming soon! For now, you can use /economy-admin add to get your coins back.`;
-                    success = false;
-                    break;
-                    
-                default:
-                    message = `Unknown item type: ${item.type}`;
-                    success = false;
+            // Check if user already has the item and if there's a quantity limit
+            const currentQuantity = interaction.client.inventory.getItemCount(userId, guildId, itemId);
+            if (currentQuantity >= item.max_quantity) {
+                await interaction.reply({ 
+                    content: `You already have the maximum quantity of ${item.name}! (${item.max_quantity})`, 
+                    ephemeral: true 
+                });
+                return true;
             }
 
+            // Process the purchase
+            const success = interaction.client.inventory.addItem(userId, guildId, itemId, 1);
+            
             if (success) {
                 // Deduct coins and log transaction
                 interaction.client.economy.updateBalance(userId, guildId, -item.price, 'balance');
                 interaction.client.economy.logTransaction(userId, guildId, 'shop_purchase', -item.price, `Purchased ${item.name}`);
                 
+                const rarityEmoji = interaction.client.inventory.getRarityEmoji(item.rarity);
                 const embed = new EmbedBuilder()
-                    .setColor(0x00FF00)
+                    .setColor(interaction.client.inventory.getRarityColor(item.rarity))
                     .setTitle('🛒 Purchase Successful!')
-                    .setDescription(`You purchased **${item.name}** for ${interaction.client.economy.formatCurrency(item.price)}`)
-                    .setFooter({ text: 'Thank you for your purchase!' })
+                    .setDescription(`You purchased **${rarityEmoji} ${item.name}** for ${interaction.client.economy.formatCurrency(item.price)}`)
+                    .addFields(
+                        { name: '📦 Item Type', value: item.type.charAt(0).toUpperCase() + item.type.slice(1), inline: true },
+                        { name: '⭐ Rarity', value: item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1), inline: true },
+                        { name: '💵 New Balance', value: interaction.client.economy.formatCurrency(user.balance - item.price), inline: true }
+                    )
+                    .setFooter({ text: 'Use /inventory to view your items, /use to use them!' })
                     .setTimestamp();
 
                 await interaction.reply({ embeds: [embed], ephemeral: true });
             } else {
                 await interaction.reply({ 
-                    content: message, 
+                    content: 'There was an error processing your purchase!', 
                     ephemeral: true 
                 });
             }

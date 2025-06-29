@@ -12,6 +12,7 @@ const Loyalty = require('./modules/loyalty');
 const TwitchManager = require('./modules/twitch');
 const GuildSettings = require('./modules/guildSettings');
 const Economy = require('./modules/economy');
+const Inventory = require('./modules/inventory');
 
 
 // Create an instance of a Discord client
@@ -36,6 +37,7 @@ client.twitch = twitchManager;
 client.settings = new GuildSettings(client);
 client.loyalty = new Loyalty(client);
 client.economy = new Economy(client);
+client.inventory = new Inventory(client);
 
 
 const commandFolders = fs.readdirSync('./commands');

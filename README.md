@@ -207,6 +207,8 @@ The bot features a complete virtual economy system that encourages community eng
 - **`/transfer <user> <amount>`**: Send coins to another user
 - **`/economy-leaderboard [limit]`**: Show richest users
 - **`/history [user] [limit]`**: View transaction history
+- **`/inventory [user]`**: View your or another user's inventory
+- **`/use <item>`**: Use an item from your inventory
 - **`/shop`**: Interactive shop with purchase buttons
 - **`/economy-help`**: Get help with economy commands
 
@@ -218,10 +220,15 @@ The bot features a complete virtual economy system that encourages community eng
 
 #### Shop System
 - **Interactive buttons**: Click to purchase items
+- **Inventory management**: Store and manage your items
+- **Item rarity system**: Common, Uncommon, Rare, Epic, Legendary
+- **Consumable items**: XP boosts, work multipliers, daily doublers
+- **Mystery boxes**: Random item rewards
 - **Role purchases**: Buy special server roles
 - **Custom roles**: Create personalized colored roles
-- **XP boosts**: Temporary experience multipliers
-- **Future features**: Gambling games, investment system, auction house
+- **Item effects**: Temporary boosts and permanent rewards
+- **Quantity limits**: Prevent hoarding with max quantities
+- **Expiration system**: Time-limited items with automatic cleanup
 
 #### Economy Balance
 The system is designed to maintain a healthy economy:
@@ -247,6 +254,8 @@ The bot uses SQLite with the following tables:
 - `loyalty`: User XP and level data
 - `economy`: User wallet, bank, and economy data
 - `transactions`: Economy transaction history
+- `inventory`: User item storage and quantities
+- `items`: Item definitions, prices, and effects
 - `twitch_subscriptions`: Twitch channel subscriptions
 - `twitch_status`: Current stream status cache
 
