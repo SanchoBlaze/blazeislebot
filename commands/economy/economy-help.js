@@ -59,6 +59,12 @@ module.exports = {
                     inline: false
                 }
             )
+            .addFields(
+                { name: '💰 Economy Commands', value: 'Manage your coins and transactions', inline: false },
+                { name: '🛒 Shop System', value: 'Buy items with coins - XP boosts, work multipliers, mystery boxes, and more!', inline: false },
+                { name: '📦 Inventory System', value: 'Store and use items you purchase from the shop', inline: false },
+                { name: '🏆 Level Rewards', value: 'Earn coins when you level up in the loyalty system', inline: false }
+            )
             .setFooter({ text: 'Economy system by Blaze Isle Bot' })
             .setTimestamp();
 

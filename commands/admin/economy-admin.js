@@ -66,8 +66,6 @@ module.exports = {
                         .setDescription('Item type')
                         .setRequired(true)
                         .addChoices(
-                            { name: 'Role', value: 'role' },
-                            { name: 'Custom Role', value: 'custom_role' },
                             { name: 'Consumable', value: 'consumable' },
                             { name: 'Mystery', value: 'mystery' }
                         ))
@@ -102,17 +100,13 @@ module.exports = {
                             { name: 'XP Multiplier', value: 'xp_multiplier' },
                             { name: 'Work Multiplier', value: 'work_multiplier' },
                             { name: 'Daily Multiplier', value: 'daily_multiplier' },
+                            { name: 'Coin Multiplier', value: 'coin_multiplier' },
                             { name: 'Random Item', value: 'random_item' },
-                            { name: 'Role', value: 'role' },
-                            { name: 'Custom Role', value: 'custom_role' }
+                            { name: 'Premium Random Item', value: 'premium_random_item' }
                         ))
                 .addIntegerOption(option =>
                     option.setName('effect_value')
                         .setDescription('Effect value (e.g., 2 for 2x multiplier)')
-                        .setRequired(false))
-                .addStringOption(option =>
-                    option.setName('color')
-                        .setDescription('Color hex code (for roles)')
                         .setRequired(false)))
         .addSubcommand(subcommand =>
             subcommand
@@ -264,16 +258,23 @@ module.exports = {
                     const type = interaction.options.getString('type');
                     const rarity = interaction.options.getString('rarity');
                     const price = interaction.options.getInteger('price');
-                    const max_quantity = interaction.options.getInteger('max_quantity') || 1;
-                    const duration_hours = interaction.options.getInteger('duration_hours') || 0;
-                    const effect_type = interaction.options.getString('effect_type');
-                    const effect_value = interaction.options.getInteger('effect_value') || 0;
-                    const color = interaction.options.getString('color');
-                    
-                    if (!id || !name || !description || !type || !rarity || !price) {
-                        return interaction.reply({ 
-                            content: 'Missing required options!', 
-                            ephemeral: true 
+                    const maxQuantity = interaction.options.getInteger('max_quantity') || 1;
+                    const durationHours = interaction.options.getInteger('duration_hours') || 0;
+                    const effectType = interaction.options.getString('effect_type');
+                    const effectValue = interaction.options.getInteger('effect_value') || 1;
+
+                    // Validate required fields based on type
+                    if (type === 'consumable' && (!effectType || !durationHours)) {
+                        return interaction.reply({
+                            content: '❌ Consumable items require effect_type and duration_hours.',
+                            ephemeral: true
+                        });
+                    }
+
+                    if (type === 'mystery' && effectType !== 'random_item' && effectType !== 'premium_random_item') {
+                        return interaction.reply({
+                            content: '❌ Mystery items must have effect_type of "random_item" or "premium_random_item".',
+                            ephemeral: true
                         });
                     }
 
@@ -293,11 +294,10 @@ module.exports = {
                         type,
                         rarity,
                         price,
-                        max_quantity,
-                        duration_hours,
-                        effect_type,
-                        effect_value,
-                        color
+                        max_quantity: maxQuantity,
+                        duration_hours: durationHours,
+                        effect_type: effectType,
+                        effect_value: effectValue
                     };
 
                     const success = interaction.client.inventory.addShopItem(itemData);
@@ -318,8 +318,8 @@ module.exports = {
                             { name: '💰 Price', value: interaction.client.economy.formatCurrency(price), inline: true },
                             { name: '🏷️ Type', value: type.charAt(0).toUpperCase() + type.slice(1), inline: true },
                             { name: '⭐ Rarity', value: rarity.charAt(0).toUpperCase() + rarity.slice(1), inline: true },
-                            { name: '📦 Max Quantity', value: max_quantity.toString(), inline: true },
-                            { name: '⏰ Duration', value: duration_hours > 0 ? `${duration_hours}h` : 'Permanent', inline: true }
+                            { name: '📦 Max Quantity', value: maxQuantity.toString(), inline: true },
+                            { name: '⏰ Duration', value: durationHours > 0 ? `${durationHours}h` : 'Permanent', inline: true }
                         )
                         .setFooter({ text: `Added by ${interaction.user.tag}` })
                         .setTimestamp();
@@ -437,7 +437,7 @@ module.exports = {
                         .setDescription('Successfully populated the shop with default items!')
                         .addFields(
                             { name: '📦 Items Added', value: '9 default items', inline: true },
-                            { name: '🎯 Types', value: 'Roles, XP Boosts, Work Multipliers, Mystery Boxes', inline: true }
+                            { name: '🎯 Types', value: 'XP Boosts, Work Multipliers, Mystery Boxes, Coin Multipliers', inline: true }
                         )
                         .setFooter({ text: `Populated by ${interaction.user.tag}` })
                         .setTimestamp();

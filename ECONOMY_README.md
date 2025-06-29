@@ -52,22 +52,33 @@ The Blaze Isle Bot now includes a comprehensive economy system that allows users
 - **Integration**: Seamlessly connects loyalty and economy systems
 
 ### 🛒 Shop System
-- **Interactive Dropdown**: Select items from a dropdown menu for purchase
-- **Pagination**: Navigate through unlimited items with arrow buttons
-- **Item Rarity**: Visual rarity indicators with colors and emojis
-- **Quantity Limits**: Prevent hoarding with maximum quantities
-- **Real-time Validation**: Check affordability and limits before purchase
-- **Rich Item Descriptions**: Detailed information about each item
-- **Guild-Specific**: Each guild has its own shop items and configuration
-- **Scalable**: Handles unlimited items without Discord component limits
+
+The shop offers various items that users can purchase with their coins:
+
+### Item Types
+- **Consumable Items**: XP boosts, work multipliers, daily doublers, coin multipliers
+- **Mystery Boxes**: Contain random items when opened
+- **Premium Mystery Boxes**: Guaranteed rare or better items
+
+### Item Rarities
+- **Common** (White): Basic items, low cost
+- **Uncommon** (Green): Better items, moderate cost  
+- **Rare** (Blue): Powerful items, high cost
+- **Epic** (Purple): Very powerful items, very high cost
+- **Legendary** (Orange): Extremely powerful items, extremely high cost
 
 ### 🛠️ Shop Management
-- **Custom Items**: Admins can add custom items with full configuration
-- **Item Removal**: Remove unwanted items from the shop
-- **Default Population**: Easily populate shop with default items
-- **Item Listing**: View all items with detailed information
-- **Flexible Configuration**: Set prices, rarities, effects, and limits
-- **Guild Isolation**: Each guild's shop is completely independent
+- **Add Items**: `/economy-admin add-item` - Add new items to the shop
+- **Remove Items**: `/economy-admin remove-item` - Remove items from the shop
+- **List Items**: `/economy-admin list-items` - View all shop items
+- **Populate Defaults**: `/economy-admin populate-defaults` - Add default items to new guilds
+
+### 📦 Item Management
+- **Item Types**: Consumable items, mystery boxes
+- **Effect Types**: XP multipliers, work multipliers, daily multipliers, coin multipliers, random items
+- **Rarity System**: Common to Legendary with visual indicators
+- **Quantity Limits**: Prevent item hoarding
+- **Duration Effects**: Temporary boosts with expiration times
 
 ## Commands
 

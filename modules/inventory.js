@@ -124,57 +124,6 @@ class Inventory {
         // Define default items
         const defaultItems = [
             {
-                id: 'bronze_role',
-                name: 'Bronze Role',
-                description: 'A special bronze role that shows your dedication to the server',
-                type: 'role',
-                rarity: 'common',
-                price: 1000,
-                max_quantity: 1,
-                duration_hours: 0,
-                effect_type: 'role',
-                role_id: null, // Will be set by admin
-                color: '#CD7F32'
-            },
-            {
-                id: 'silver_role',
-                name: 'Silver Role',
-                description: 'A prestigious silver role for active community members',
-                type: 'role',
-                rarity: 'uncommon',
-                price: 2500,
-                max_quantity: 1,
-                duration_hours: 0,
-                effect_type: 'role',
-                role_id: null,
-                color: '#C0C0C0'
-            },
-            {
-                id: 'gold_role',
-                name: 'Gold Role',
-                description: 'An exclusive gold role for the most dedicated members',
-                type: 'role',
-                rarity: 'rare',
-                price: 5000,
-                max_quantity: 1,
-                duration_hours: 0,
-                effect_type: 'role',
-                role_id: null,
-                color: '#FFD700'
-            },
-            {
-                id: 'custom_color_role',
-                name: 'Custom Color Role',
-                description: 'Create your own personalized colored role',
-                type: 'custom_role',
-                rarity: 'epic',
-                price: 3000,
-                max_quantity: 1,
-                duration_hours: 0,
-                effect_type: 'custom_role',
-                color: null // User chooses
-            },
-            {
                 id: 'xp_boost_1h',
                 name: 'XP Boost (1 Hour)',
                 description: 'Get 2x XP for 1 hour',
@@ -232,6 +181,54 @@ class Inventory {
                 max_quantity: 10,
                 duration_hours: 0,
                 effect_type: 'random_item',
+                effect_value: 1
+            },
+            {
+                id: 'coin_multiplier_1h',
+                name: 'Coin Multiplier (1 Hour)',
+                description: 'Get 2x coins from all sources for 1 hour',
+                type: 'consumable',
+                rarity: 'rare',
+                price: 3000,
+                max_quantity: 3,
+                duration_hours: 1,
+                effect_type: 'coin_multiplier',
+                effect_value: 2
+            },
+            {
+                id: 'xp_boost_7d',
+                name: 'XP Boost (7 Days)',
+                description: 'Get 2x XP for 7 days - perfect for active users!',
+                type: 'consumable',
+                rarity: 'epic',
+                price: 25000,
+                max_quantity: 2,
+                duration_hours: 168, // 7 days
+                effect_type: 'xp_multiplier',
+                effect_value: 2
+            },
+            {
+                id: 'work_booster',
+                name: 'Work Booster',
+                description: 'Increases work rewards by 100% for 2 hours',
+                type: 'consumable',
+                rarity: 'epic',
+                price: 4000,
+                max_quantity: 3,
+                duration_hours: 2,
+                effect_type: 'work_multiplier',
+                effect_value: 200
+            },
+            {
+                id: 'premium_mystery_box',
+                name: 'Premium Mystery Box',
+                description: 'Contains a guaranteed rare or better item!',
+                type: 'mystery',
+                rarity: 'legendary',
+                price: 5000,
+                max_quantity: 5,
+                duration_hours: 0,
+                effect_type: 'premium_random_item',
                 effect_value: 1
             }
         ];
@@ -352,9 +349,18 @@ class Inventory {
                 result.effect = { type: 'daily_multiplier', value: item.effect_value };
                 result.message = `Daily doubler activated! Your next daily reward will be doubled.`;
                 break;
+
+            case 'coin_multiplier':
+                result.effect = { type: 'coin_multiplier', value: item.effect_value, duration: item.duration_hours };
+                result.message = `Coin multiplier activated! You'll get ${item.effect_value}x coins from all sources for ${item.duration_hours} hour(s).`;
+                break;
                 
             case 'random_item':
                 result = await this.openMysteryBox(userId, guildId);
+                break;
+
+            case 'premium_random_item':
+                result = await this.openPremiumMysteryBox(userId, guildId);
                 break;
                 
             default:
@@ -386,6 +392,43 @@ class Inventory {
         return {
             success: true,
             message: 'The mystery box was empty...',
+            effect: null
+        };
+    }
+
+    // Open premium mystery box
+    async openPremiumMysteryBox(userId, guildId) {
+        const allItems = this.getAllItems(guildId).filter(item => 
+            item.type !== 'mystery' && 
+            (item.rarity === 'rare' || item.rarity === 'epic' || item.rarity === 'legendary')
+        );
+        
+        if (allItems.length === 0) {
+            // Fallback to regular items if no rare+ items exist
+            const fallbackItems = this.getAllItems(guildId).filter(item => item.type !== 'mystery');
+            const randomItem = fallbackItems[Math.floor(Math.random() * fallbackItems.length)];
+            
+            if (randomItem) {
+                this.addItem(userId, guildId, randomItem.id, 1);
+                return {
+                    success: true,
+                    message: `🎉 You found **${randomItem.name}** in the premium mystery box!`,
+                    effect: { type: 'item_received', item: randomItem }
+                };
+            }
+        } else {
+            const randomItem = allItems[Math.floor(Math.random() * allItems.length)];
+            this.addItem(userId, guildId, randomItem.id, 1);
+            return {
+                success: true,
+                message: `🎉 You found **${randomItem.name}** in the premium mystery box!`,
+                effect: { type: 'item_received', item: randomItem }
+            };
+        }
+        
+        return {
+            success: true,
+            message: 'The premium mystery box was empty...',
             effect: null
         };
     }
