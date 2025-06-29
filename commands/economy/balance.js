@@ -32,13 +32,10 @@ module.exports = {
                 .setFooter({ text: 'Use /daily and /work to earn more coins!' })
                 .setTimestamp();
 
-            await interaction.reply({ embeds: [embed] });
+            await interaction.reply({ embeds: [embed], ephemeral: true });
         } catch (error) {
             console.error('Error in balance command:', error);
-            await interaction.reply({ 
-                content: 'There was an error checking the balance!', 
-                ephemeral: true 
-            });
+            await interaction.reply({ content: 'There was an error checking the balance!', ephemeral: true });
         }
     },
 }; 

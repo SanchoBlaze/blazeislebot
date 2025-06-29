@@ -45,7 +45,7 @@ module.exports = {
                 .setFooter({ text: 'Your money is safe in the bank!' })
                 .setTimestamp();
 
-            await interaction.reply({ embeds: [embed] });
+            await interaction.reply({ embeds: [embed], ephemeral: true });
         } catch (error) {
             if (error.message === 'Insufficient funds') {
                 const user = interaction.client.economy.getUser(userId, guildId);
@@ -64,7 +64,7 @@ module.exports = {
             } else {
                 console.error('Error in deposit command:', error);
                 await interaction.reply({ 
-                    content: 'There was an error processing the deposit!', 
+                    content: 'There was an error processing your deposit!', 
                     ephemeral: true 
                 });
             }

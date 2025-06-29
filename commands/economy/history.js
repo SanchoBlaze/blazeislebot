@@ -49,7 +49,7 @@ module.exports = {
                 .setFooter({ text: `Showing last ${transactions.length} transactions` })
                 .setTimestamp();
 
-            await interaction.reply({ embeds: [embed] });
+            await interaction.reply({ embeds: [embed], ephemeral: true });
         } catch (error) {
             console.error('Error in economy history command:', error);
             await interaction.reply({ 

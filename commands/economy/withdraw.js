@@ -30,7 +30,7 @@ module.exports = {
                 .setFooter({ text: 'Your coins are now in your wallet!' })
                 .setTimestamp();
 
-            await interaction.reply({ embeds: [embed] });
+            await interaction.reply({ embeds: [embed], ephemeral: true });
         } catch (error) {
             if (error.message === 'Insufficient funds in bank') {
                 const user = interaction.client.economy.getUser(userId, guildId);
@@ -48,10 +48,7 @@ module.exports = {
                 await interaction.reply({ embeds: [embed], ephemeral: true });
             } else {
                 console.error('Error in withdraw command:', error);
-                await interaction.reply({ 
-                    content: 'There was an error processing the withdrawal!', 
-                    ephemeral: true 
-                });
+                await interaction.reply({ content: 'There was an error processing your withdrawal!', ephemeral: true });
             }
         }
     },
