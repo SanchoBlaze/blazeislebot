@@ -1,6 +1,17 @@
 # Blaze Isle Bot
 
-A feature-rich Node.js Discord bot for the Blaze Isle community, built with discord.js v14.
+A feature-rich Discord bot with modular architecture, economy system, loyalty tracking, Twitch integration, and more.
+
+## Getting Started
+
+### Option 1: Add the Bot to Your Server
+Click the link below to add Blaze Isle Bot to your Discord server:
+**[Add Blaze Isle Bot to Discord](https://discord.com/oauth2/authorize?client_id=712264446827036672)**
+
+After adding the bot, run `/config set` to configure the basic settings for your server. The bot will then be ready to use with all features enabled.
+
+### Option 2: Run Your Own Instance
+If you prefer to host your own instance of the bot, follow the installation and setup instructions below.
 
 ## Features
 - **Modal-based configuration system** with intelligent validation
