@@ -133,6 +133,18 @@ class Inventory {
                 effect_value: 2
             },
             {
+                id: 'daily_booster',
+                name: 'Daily Booster',
+                description: '5x daily rewards for 1 hour - perfect for quick gains!',
+                type: 'consumable',
+                rarity: 'legendary',
+                price: 10000,
+                max_quantity: 2,
+                duration_hours: 1,
+                effect_type: 'daily_multiplier',
+                effect_value: 5
+            },
+            {
                 id: 'mystery_box',
                 name: 'Mystery Box',
                 description: 'Contains a random item! Could be anything...',
@@ -331,9 +343,9 @@ class Inventory {
                 break;
                 
             case 'daily_multiplier':
-                this.addActiveEffect(userId, guildId, 'daily_multiplier', item.effect_value, 24); // 24 hour duration
+                this.addActiveEffect(userId, guildId, 'daily_multiplier', item.effect_value, item.duration_hours);
                 result.effect = { type: 'daily_multiplier', value: item.effect_value };
-                result.message = `Daily doubler activated! Your daily rewards will be doubled for 24 hours.`;
+                result.message = `Daily boost activated!  ${item.effect_value}x coins from daily rewards for ${item.duration_hours} hour(s).`;
                 break;
 
             case 'coin_multiplier':

@@ -147,6 +147,7 @@ The shop offers various items that users can purchase with their coins:
 - **Lucky Charm** (Rare) - 1,500 coins - 2x work rewards for 1 hour
 - **Work Booster** (Epic) - 4,000 coins - 3x work rewards for 2 hours
 - **Daily Doubler** (Epic) - 2,000 coins - 2x daily rewards for 24 hours
+- **Daily Booster** (Legendary) - 10,000 coins - 5x daily rewards for 1 hour
 - **Coin Multiplier (1 Hour)** (Rare) - 3,000 coins - 2x coins from all sources for 1 hour
 
 #### 🎁 Mystery Items
@@ -166,8 +167,9 @@ The shop offers various items that users can purchase with their coins:
 - **Usage**: Use before working for maximum efficiency
 
 #### Daily Multipliers
-- **Effect**: 2x daily rewards
-- **Duration**: 24 hours
+- **Effect**: Multiply your daily rewards (2x, 5x, etc.)
+- **Duration**: Varies by item (1 hour to 24 hours)
+- **One Per Type**: You can only have one daily multiplier active at a time
 - **Usage**: Use before claiming daily reward for maximum efficiency
 
 #### Mystery Boxes
@@ -282,6 +284,7 @@ The system is designed to maintain a healthy economy:
 - **One Effect Per Type**: You can only have one active effect of each type at a time
   - **Example**: You cannot use a 1-hour XP boost while a 24-hour XP boost is active
   - **Example**: You cannot use a work booster while a lucky charm is active
+  - **Example**: You cannot use a daily doubler while a daily booster is active
 - **No Effect Replacement**: Using a new effect of the same type will be blocked
 - **Wait for Expiration**: You must wait for the current effect to expire before using another
 - **Check Active Effects**: Use `/effects` to see your active effects and remaining time
