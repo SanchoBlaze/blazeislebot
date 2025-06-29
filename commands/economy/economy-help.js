@@ -28,7 +28,7 @@ module.exports = {
                 },
                 {
                     name: '📦 Inventory Commands',
-                    value: '• `/inventory [user]` - View your or another user\'s inventory\n• `/use <item>` - Use an item from your inventory\n• `/shop` - View and purchase items from the shop',
+                    value: '• `/inventory [user]` - View your or another user\'s inventory\n• `/use <item>` - Use an item from your inventory\n• `/effects` - View your active item effects\n• `/shop` - View and purchase items from the shop',
                     inline: false
                 },
                 {
@@ -54,6 +54,7 @@ module.exports = {
                 { name: '/shop', value: 'Browse and buy items', inline: true },
                 { name: '/inventory', value: 'View your inventory', inline: true },
                 { name: '/use', value: 'Use items from your inventory', inline: true },
+                { name: '/effects', value: 'View your active effects', inline: true },
                 { name: '/sell', value: 'Sell items back to the shop', inline: true }
             )
             .addFields(

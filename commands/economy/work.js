@@ -27,8 +27,12 @@ module.exports = {
             
             const randomMessage = workMessages[Math.floor(Math.random() * workMessages.length)];
 
+            // Check if user has work multiplier
+            const workMultiplier = interaction.client.inventory.getWorkMultiplier(userId, guildId);
+            const hasMultiplier = workMultiplier > 1;
+
             const embed = new EmbedBuilder()
-                .setColor(0x00FF00)
+                .setColor(hasMultiplier ? 0xFFD700 : 0x00FF00) // Gold if has multiplier, green if not
                 .setTitle('💼 Work Complete!')
                 .setDescription(`${randomMessage}`)
                 .addFields(
@@ -38,6 +42,15 @@ module.exports = {
                 )
                 .setFooter({ text: 'You can work again in 1 hour!' })
                 .setTimestamp();
+
+            // Add multiplier info if user has active work boost
+            if (hasMultiplier) {
+                embed.addFields({
+                    name: '🚀 Work Boost Active!',
+                    value: `You're getting ${workMultiplier}x coins from work!`,
+                    inline: false
+                });
+            }
 
             await interaction.reply({ embeds: [embed] });
         } catch (error) {

@@ -100,7 +100,8 @@ module.exports = {
         if (pages.length === 1) {
             return interaction.reply({ 
                 embeds: [pages[0].embed], 
-                components: pages[0].components 
+                components: pages[0].components,
+                ephemeral: true
             });
         }
 
@@ -122,7 +123,8 @@ module.exports = {
         const allComponents = [...pages[page].components, getButtons()];
         await interaction.reply({ 
             embeds: [pages[page].embed], 
-            components: allComponents 
+            components: allComponents,
+            ephemeral: true
         });
         
         const message = await interaction.fetchReply();
@@ -148,7 +150,8 @@ module.exports = {
             const allComponents = [...pages[page].components, getButtons()];
             await i.editReply({ 
                 embeds: [pages[page].embed], 
-                components: allComponents 
+                components: allComponents,
+                ephemeral: true
             });
         });
 
@@ -169,7 +172,7 @@ module.exports = {
             
             // Keep the dropdown menu but disable pagination buttons
             const finalComponents = [...pages[page].components, disabledRow];
-            interaction.editReply({ components: finalComponents });
+            interaction.editReply({ components: finalComponents, ephemeral: true });
         });
     },
 
@@ -186,6 +189,7 @@ module.exports = {
             const userId = interaction.user.id;
 
             try {
+                console.log(`[shop purchase] User ${userId} attempting to buy item ${selectedItemId} (interaction id: ${interaction.id})`);
                 const item = interaction.client.inventory.getItem(selectedItemId, guildId);
                 
                 if (!item) {
@@ -220,6 +224,7 @@ module.exports = {
                 const success = interaction.client.inventory.addItem(userId, guildId, selectedItemId, 1);
                 
                 if (success) {
+                    console.log(`[shop purchase] User ${userId} successfully bought item ${selectedItemId}`);
                     // Deduct coins and log transaction
                     interaction.client.economy.updateBalance(userId, guildId, -item.price, 'balance');
                     interaction.client.economy.logTransaction(userId, guildId, 'shop_purchase', -item.price, `Purchased ${item.name}`);

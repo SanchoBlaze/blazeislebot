@@ -144,9 +144,9 @@ The shop offers various items that users can purchase with their coins:
 - **XP Boost (1 Hour)** (Common) - 500 coins - 2x XP for 1 hour
 - **XP Boost (24 Hours)** (Uncommon) - 5,000 coins - 2x XP for 24 hours
 - **XP Boost (7 Days)** (Epic) - 25,000 coins - 2x XP for 7 days
-- **Lucky Charm** (Rare) - 1,500 coins - 50% more work rewards for 1 hour
-- **Work Booster** (Epic) - 4,000 coins - 100% more work rewards for 2 hours
-- **Daily Doubler** (Epic) - 2,000 coins - Double your next daily reward
+- **Lucky Charm** (Rare) - 1,500 coins - 2x work rewards for 1 hour
+- **Work Booster** (Epic) - 4,000 coins - 3x work rewards for 2 hours
+- **Daily Doubler** (Epic) - 2,000 coins - 2x daily rewards for 24 hours
 - **Coin Multiplier (1 Hour)** (Rare) - 3,000 coins - 2x coins from all sources for 1 hour
 
 #### 🎁 Mystery Items
@@ -166,9 +166,9 @@ The shop offers various items that users can purchase with their coins:
 - **Usage**: Use before working for maximum efficiency
 
 #### Daily Multipliers
-- **Effect**: Double your next daily reward
-- **Duration**: Until next daily claim
-- **Usage**: Use before claiming daily reward
+- **Effect**: 2x daily rewards
+- **Duration**: 24 hours
+- **Usage**: Use before claiming daily reward for maximum efficiency
 
 #### Mystery Boxes
 - **Effect**: Receive a random item from the shop

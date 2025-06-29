@@ -92,7 +92,19 @@ class Economy {
     updateBalance(userId, guildId, amount, type = 'balance') {
         const user = this.getUser(userId, guildId);
         const oldBalance = user[type];
-        const newBalance = Math.max(0, oldBalance + amount); // Prevent negative balance
+        
+        // Apply coin multiplier to positive amounts (earnings) if user has active effect
+        let finalAmount = amount;
+        if (amount > 0 && this.client && this.client.inventory) {
+            const coinMultiplier = this.client.inventory.getCoinMultiplier(userId, guildId);
+            if (coinMultiplier > 1) {
+                const originalAmount = amount;
+                finalAmount = Math.floor(amount * coinMultiplier);
+                console.log(`[updateBalance] User ${userId} has coin multiplier ${coinMultiplier}x: ${originalAmount} -> ${finalAmount} coins`);
+            }
+        }
+        
+        const newBalance = Math.max(0, oldBalance + finalAmount); // Prevent negative balance
         
         sql.prepare(`
             UPDATE economy 
@@ -100,7 +112,7 @@ class Economy {
             WHERE user = ? AND guild = ?
         `).run(newBalance, userId, guildId);
 
-        // Update totals
+        // Update totals (use original amount for tracking, not multiplied amount)
         if (amount > 0) {
             sql.prepare(`
                 UPDATE economy 
@@ -184,6 +196,16 @@ class Economy {
             throw new Error(`Daily reward available in ${hours}h ${minutes}m`);
         }
 
+        // Apply daily multiplier if user has active effect
+        let finalAmount = amount;
+        if (this.client && this.client.inventory) {
+            if (this.client.inventory.hasDailyMultiplier(userId, guildId)) {
+                const dailyMultiplier = this.client.inventory.getDailyMultiplier(userId, guildId);
+                finalAmount = Math.floor(amount * dailyMultiplier);
+                console.log(`[daily] User ${userId} has daily multiplier ${dailyMultiplier}x: ${amount} -> ${finalAmount} coins`);
+            }
+        }
+
         // Update last daily time and add money
         sql.prepare(`
             UPDATE economy 
@@ -191,8 +213,8 @@ class Economy {
             WHERE user = ? AND guild = ?
         `).run(userId, guildId);
 
-        this.updateBalance(userId, guildId, amount, 'balance');
-        this.logTransaction(userId, guildId, 'daily', amount, 'Daily reward');
+        this.updateBalance(userId, guildId, finalAmount, 'balance');
+        this.logTransaction(userId, guildId, 'daily', finalAmount, 'Daily reward');
         
         return this.getUser(userId, guildId);
     }
@@ -212,7 +234,17 @@ class Economy {
         }
 
         // Random work reward between 10-50 coins
-        const amount = Math.floor(Math.random() * 41) + 10;
+        let amount = Math.floor(Math.random() * 41) + 10;
+
+        // Apply work multiplier if user has active effect
+        if (this.client && this.client.inventory) {
+            const workMultiplier = this.client.inventory.getWorkMultiplier(userId, guildId);
+            if (workMultiplier > 1) {
+                const originalAmount = amount;
+                amount = Math.floor(amount * workMultiplier);
+                console.log(`[work] User ${userId} has work multiplier ${workMultiplier}x: ${originalAmount} -> ${amount} coins`);
+            }
+        }
 
         // Update last work time and add money
         sql.prepare(`

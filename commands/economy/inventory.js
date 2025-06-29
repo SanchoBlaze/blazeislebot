@@ -25,12 +25,21 @@ module.exports = {
                     .setFooter({ text: 'Use /shop to buy items' })
                     .setTimestamp();
 
-                return interaction.reply({ embeds: [embed] });
+                return interaction.reply({ embeds: [embed], ephemeral: true });
             }
 
-            // Group items by rarity
-            const itemsByRarity = {};
+            // Deduplicate items by id and sum quantities
+            const uniqueItems = {};
             for (const item of inventory) {
+                if (!uniqueItems[item.id]) {
+                    uniqueItems[item.id] = { ...item };
+                } else {
+                    uniqueItems[item.id].quantity += item.quantity;
+                }
+            }
+            // Group deduplicated items by rarity
+            const itemsByRarity = {};
+            for (const item of Object.values(uniqueItems)) {
                 if (!itemsByRarity[item.rarity]) {
                     itemsByRarity[item.rarity] = [];
                 }
@@ -71,7 +80,7 @@ module.exports = {
                 .setFooter({ text: 'Use /use <item> to use items, /shop to buy more' })
                 .setTimestamp();
 
-            await interaction.reply({ embeds: [embed] });
+            await interaction.reply({ embeds: [embed], ephemeral: true });
         } catch (error) {
             console.error('Error in inventory command:', error);
             await interaction.reply({ 

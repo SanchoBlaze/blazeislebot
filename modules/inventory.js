@@ -49,8 +49,6 @@ class Inventory {
                     duration_hours INTEGER NOT NULL DEFAULT 0,
                     effect_type TEXT,
                     effect_value INTEGER,
-                    role_id TEXT,
-                    colour TEXT,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             `).run();
@@ -58,63 +56,27 @@ class Inventory {
             sql.prepare('CREATE INDEX idx_items_guild ON items (guild);').run();
             sql.prepare('CREATE INDEX idx_items_type ON items (type);').run();
             sql.prepare('CREATE INDEX idx_items_rarity ON items (rarity);').run();
-        } else {
-            // Check if we need to migrate existing items table
-            this.migrateItemsTable();
         }
-    }
 
-    // Migrate existing items table to include guild column
-    migrateItemsTable() {
-        try {
-            // Check if guild column exists
-            const columns = sql.prepare("PRAGMA table_info(items)").all();
-            const hasGuildColumn = columns.some(col => col.name === 'guild');
+        // Create active_effects table for tracking active item effects
+        const effectsTable = sql.prepare('SELECT count(*) FROM sqlite_master WHERE type=\'table\' AND name = \'active_effects\';').get();
+        if (!effectsTable['count(*)']) {
+            sql.prepare(`
+                CREATE TABLE IF NOT EXISTS active_effects (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user TEXT NOT NULL,
+                    guild TEXT NOT NULL,
+                    effect_type TEXT NOT NULL,
+                    effect_value INTEGER NOT NULL,
+                    expires_at TEXT NOT NULL,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(user, guild, effect_type)
+                )
+            `).run();
             
-            if (!hasGuildColumn) {
-                console.log('Migrating items table to include guild column...');
-                
-                // Create new table with guild column
-                sql.prepare(`
-                    CREATE TABLE items_new (
-                        id TEXT NOT NULL,
-                        guild TEXT NOT NULL,
-                        name TEXT NOT NULL,
-                        description TEXT NOT NULL,
-                        type TEXT NOT NULL,
-                        rarity TEXT DEFAULT 'common',
-                        price INTEGER DEFAULT 0,
-                        max_quantity INTEGER DEFAULT 1,
-                        duration_hours INTEGER DEFAULT 0,
-                        effect_type TEXT,
-                        effect_value INTEGER DEFAULT 0,
-                        role_id TEXT,
-                        color TEXT,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                        PRIMARY KEY (id, guild)
-                    );
-                `).run();
-                
-                // Copy existing data with a default guild ID (for backward compatibility)
-                sql.prepare(`
-                    INSERT INTO items_new (id, guild, name, description, type, rarity, price, max_quantity, duration_hours, effect_type, effect_value, role_id, color, created_at)
-                    SELECT id, 'global' as guild, name, description, type, rarity, price, max_quantity, duration_hours, effect_type, effect_value, role_id, color, created_at
-                    FROM items
-                `).run();
-                
-                // Drop old table and rename new one
-                sql.prepare('DROP TABLE items').run();
-                sql.prepare('ALTER TABLE items_new RENAME TO items').run();
-                
-                // Recreate indexes
-                sql.prepare('CREATE INDEX idx_items_guild ON items (guild);').run();
-                sql.prepare('CREATE INDEX idx_items_type ON items (type);').run();
-                sql.prepare('CREATE INDEX idx_items_rarity ON items (rarity);').run();
-                
-                console.log('Items table migration completed successfully.');
-            }
-        } catch (error) {
-            console.error('Error during items table migration:', error);
+            sql.prepare('CREATE INDEX idx_active_effects_user_guild ON active_effects (user, guild);').run();
+            sql.prepare('CREATE INDEX idx_active_effects_type ON active_effects (effect_type);').run();
+            sql.prepare('CREATE INDEX idx_active_effects_expires ON active_effects (expires_at);').run();
         }
     }
 
@@ -149,24 +111,24 @@ class Inventory {
             {
                 id: 'lucky_charm',
                 name: 'Lucky Charm',
-                description: 'Increases work rewards by 50% for 1 hour',
+                description: 'Increases work rewards by 1.5x for 1 hour',
                 type: 'consumable',
                 rarity: 'rare',
                 price: 1500,
                 max_quantity: 5,
                 duration_hours: 1,
                 effect_type: 'work_multiplier',
-                effect_value: 150
+                effect_value: 1.5
             },
             {
                 id: 'daily_doubler',
                 name: 'Daily Doubler',
-                description: 'Double your next daily reward',
+                description: 'Double your daily rewards for 24 hours',
                 type: 'consumable',
                 rarity: 'epic',
                 price: 2000,
                 max_quantity: 3,
-                duration_hours: 0,
+                duration_hours: 24,
                 effect_type: 'daily_multiplier',
                 effect_value: 2
             },
@@ -197,37 +159,37 @@ class Inventory {
             {
                 id: 'xp_boost_7d',
                 name: 'XP Boost (7 Days)',
-                description: 'Get 2x XP for 7 days - perfect for active users!',
+                description: 'Get 2.5x XP for 7 days - perfect for active users!',
                 type: 'consumable',
-                rarity: 'epic',
+                rarity: 'legendary',
                 price: 25000,
                 max_quantity: 2,
                 duration_hours: 168, // 7 days
                 effect_type: 'xp_multiplier',
-                effect_value: 2
+                effect_value: 2.5
             },
             {
                 id: 'work_booster',
                 name: 'Work Booster',
-                description: 'Increases work rewards by 100% for 2 hours',
+                description: 'Increases work rewards by 2x for 2 hours',
                 type: 'consumable',
                 rarity: 'epic',
                 price: 4000,
                 max_quantity: 3,
                 duration_hours: 2,
                 effect_type: 'work_multiplier',
-                effect_value: 200
+                effect_value: 2
             },
             {
-                id: 'premium_mystery_box',
-                name: 'Premium Mystery Box',
+                id: 'rare_mystery_box',
+                name: 'Rare Mystery Box',
                 description: 'Contains a guaranteed rare or better item!',
                 type: 'mystery',
-                rarity: 'legendary',
+                rarity: 'rare',
                 price: 5000,
                 max_quantity: 5,
                 duration_hours: 0,
-                effect_type: 'premium_random_item',
+                effect_type: 'rare_random_item',
                 effect_value: 1
             }
         ];
@@ -235,12 +197,12 @@ class Inventory {
         // Insert default items for the specific guild
         for (const item of defaultItems) {
             sql.prepare(`
-                INSERT OR IGNORE INTO items (id, guild, name, description, type, rarity, price, max_quantity, duration_hours, effect_type, effect_value, role_id, color)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT OR IGNORE INTO items (id, guild, name, description, type, rarity, price, max_quantity, duration_hours, effect_type, effect_value)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `).run(
                 item.id, guildId, item.name, item.description, item.type, item.rarity, 
                 item.price, item.max_quantity, item.duration_hours, item.effect_type, 
-                item.effect_value, item.role_id, item.color
+                item.effect_value
             );
         }
     }
@@ -273,6 +235,7 @@ class Inventory {
 
     // Add item to user's inventory
     addItem(userId, guildId, itemId, quantity = 1) {
+        console.log(`[addItem] Called for user ${userId} in guild ${guildId} for item ${itemId} (quantity: ${quantity})`);
         const item = this.getItem(itemId, guildId);
         if (!item) throw new Error('Item not found');
 
@@ -292,6 +255,12 @@ class Inventory {
                         ELSE expires_at 
                     END
             `).run(userId, guildId, itemId, quantity, expiresAt, quantity, expiresAt, expiresAt);
+            
+            // After updating or inserting, log the new quantity
+            const userItem = this.getUserItem(userId, guildId, itemId);
+            if (userItem) {
+                console.log(`[addItem] After operation: user ${userId} now has ${userItem.quantity} of item ${itemId}`);
+            }
             
             return true;
         } catch (error) {
@@ -335,21 +304,25 @@ class Inventory {
 
         switch (item.effect_type) {
             case 'xp_multiplier':
+                this.addActiveEffect(userId, guildId, 'xp_multiplier', item.effect_value, item.duration_hours);
                 result.effect = { type: 'xp_multiplier', value: item.effect_value, duration: item.duration_hours };
                 result.message = `XP boost activated! You'll get ${item.effect_value}x XP for ${item.duration_hours} hour(s).`;
                 break;
                 
             case 'work_multiplier':
+                this.addActiveEffect(userId, guildId, 'work_multiplier', item.effect_value, item.duration_hours);
                 result.effect = { type: 'work_multiplier', value: item.effect_value, duration: item.duration_hours };
-                result.message = `Work boost activated! You'll get ${item.effect_value}% more coins from work for ${item.duration_hours} hour(s).`;
+                result.message = `Work boost activated! You'll get ${item.effect_value}x coins from work for ${item.duration_hours} hour(s).`;
                 break;
                 
             case 'daily_multiplier':
+                this.addActiveEffect(userId, guildId, 'daily_multiplier', item.effect_value, 24); // 24 hour duration
                 result.effect = { type: 'daily_multiplier', value: item.effect_value };
-                result.message = `Daily doubler activated! Your next daily reward will be doubled.`;
+                result.message = `Daily doubler activated! Your daily rewards will be doubled for 24 hours.`;
                 break;
 
             case 'coin_multiplier':
+                this.addActiveEffect(userId, guildId, 'coin_multiplier', item.effect_value, item.duration_hours);
                 result.effect = { type: 'coin_multiplier', value: item.effect_value, duration: item.duration_hours };
                 result.message = `Coin multiplier activated! You'll get ${item.effect_value}x coins from all sources for ${item.duration_hours} hour(s).`;
                 break;
@@ -358,8 +331,8 @@ class Inventory {
                 result = await this.openMysteryBox(userId, guildId);
                 break;
 
-            case 'premium_random_item':
-                result = await this.openPremiumMysteryBox(userId, guildId);
+            case 'rare_random_item':
+                result = await this.openRareMysteryBox(userId, guildId);
                 break;
                 
             default:
@@ -395,8 +368,8 @@ class Inventory {
         };
     }
 
-    // Open premium mystery box
-    async openPremiumMysteryBox(userId, guildId) {
+    // Open rare mystery box
+    async openRareMysteryBox(userId, guildId) {
         const allItems = this.getAllItems(guildId).filter(item => 
             item.type !== 'mystery' && 
             (item.rarity === 'rare' || item.rarity === 'epic' || item.rarity === 'legendary')
@@ -427,7 +400,7 @@ class Inventory {
         
         return {
             success: true,
-            message: 'The premium mystery box was empty...',
+            message: 'The rare mystery box was empty...',
             effect: null
         };
     }
@@ -493,13 +466,13 @@ class Inventory {
             const {
                 id, guild, name, description, type, rarity, price,
                 max_quantity = 1, duration_hours = 0, effect_type = null,
-                effect_value = null, role_id = null, colour = null
+                effect_value = null
             } = itemData;
 
             sql.prepare(`
-                INSERT OR REPLACE INTO items (id, guild, name, description, type, rarity, price, max_quantity, duration_hours, effect_type, effect_value, role_id, colour)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `).run(id, guild, name, description, type, rarity, price, max_quantity, duration_hours, effect_type, effect_value, role_id, colour);
+                INSERT OR REPLACE INTO items (id, guild, name, description, type, rarity, price, max_quantity, duration_hours, effect_type, effect_value)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(id, guild, name, description, type, rarity, price, max_quantity, duration_hours, effect_type, effect_value);
 
             return true;
         } catch (error) {
@@ -578,6 +551,116 @@ class Inventory {
             quantity: quantity,
             sellPercentage: sellPercentage
         };
+    }
+
+    getUserItem(userId, guildId, itemId) {
+        const row = sql.prepare(
+            'SELECT * FROM inventory WHERE user = ? AND guild = ? AND item_id = ?'
+        ).get(userId, guildId, itemId);
+        return row || null;
+    }
+
+    // Add active effect
+    addActiveEffect(userId, guildId, effectType, effectValue, durationHours) {
+        const expiresAt = durationHours > 0 
+            ? new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString()
+            : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // Default 24 hours for effects without duration
+
+        try {
+            sql.prepare(`
+                INSERT OR REPLACE INTO active_effects (user, guild, effect_type, effect_value, expires_at)
+                VALUES (?, ?, ?, ?, ?)
+            `).run(userId, guildId, effectType, effectValue, expiresAt);
+            
+            return true;
+        } catch (error) {
+            console.error('Error adding active effect:', error);
+            return false;
+        }
+    }
+
+    // Get active effect for a user
+    getActiveEffect(userId, guildId, effectType) {
+        const effect = sql.prepare(`
+            SELECT * FROM active_effects 
+            WHERE user = ? AND guild = ? AND effect_type = ? AND expires_at > CURRENT_TIMESTAMP
+        `).get(userId, guildId, effectType);
+        
+        return effect || null;
+    }
+
+    // Get all active effects for a user
+    getActiveEffects(userId, guildId) {
+        return sql.prepare(`
+            SELECT * FROM active_effects 
+            WHERE user = ? AND guild = ? AND expires_at > CURRENT_TIMESTAMP
+            ORDER BY created_at ASC
+        `).all(userId, guildId);
+    }
+
+    // Remove active effect
+    removeActiveEffect(userId, guildId, effectType) {
+        try {
+            const result = sql.prepare(`
+                DELETE FROM active_effects 
+                WHERE user = ? AND guild = ? AND effect_type = ?
+            `).run(userId, guildId, effectType);
+            
+            return result.changes > 0;
+        } catch (error) {
+            console.error('Error removing active effect:', error);
+            return false;
+        }
+    }
+
+    // Clean up expired effects
+    cleanupExpiredEffects() {
+        try {
+            const result = sql.prepare(`
+                DELETE FROM active_effects 
+                WHERE expires_at <= CURRENT_TIMESTAMP
+            `).run();
+            
+            return result.changes;
+        } catch (error) {
+            console.error('Error cleaning up expired effects:', error);
+            return 0;
+        }
+    }
+
+    // Get work multiplier for a user
+    getWorkMultiplier(userId, guildId) {
+        const effect = this.getActiveEffect(userId, guildId, 'work_multiplier');
+        return effect ? effect.effect_value : 1; // Return multiplier directly (2 = 2x, 3 = 3x)
+    }
+
+    // Get XP multiplier for a user
+    getXPMultiplier(userId, guildId) {
+        const effect = this.getActiveEffect(userId, guildId, 'xp_multiplier');
+        return effect ? effect.effect_value : 1;
+    }
+
+    // Get coin multiplier for a user
+    getCoinMultiplier(userId, guildId) {
+        const effect = this.getActiveEffect(userId, guildId, 'coin_multiplier');
+        return effect ? effect.effect_value : 1;
+    }
+
+    // Check if user has daily multiplier
+    hasDailyMultiplier(userId, guildId) {
+        const effect = this.getActiveEffect(userId, guildId, 'daily_multiplier');
+        return !!effect;
+    }
+
+    // Get daily multiplier for a user
+    getDailyMultiplier(userId, guildId) {
+        const effect = this.getActiveEffect(userId, guildId, 'daily_multiplier');
+        return effect ? effect.effect_value : 1;
+    }
+
+    // Remove daily multiplier after use
+    removeDailyMultiplier(userId, guildId) {
+        return this.removeActiveEffect(userId, guildId, 'daily_multiplier');
     }
 }
 

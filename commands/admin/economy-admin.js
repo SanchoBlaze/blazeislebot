@@ -157,7 +157,7 @@ module.exports = {
                         .setFooter({ text: `Added by ${interaction.user.tag}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed] });
+                    await interaction.reply({ embeds: [embed], ephemeral: true });
                     break;
                 }
 
@@ -194,7 +194,7 @@ module.exports = {
                         .setFooter({ text: `Removed by ${interaction.user.tag}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed] });
+                    await interaction.reply({ embeds: [embed], ephemeral: true });
                     break;
                 }
 
@@ -226,7 +226,7 @@ module.exports = {
                         .setFooter({ text: `Set by ${interaction.user.tag}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed] });
+                    await interaction.reply({ embeds: [embed], ephemeral: true });
                     break;
                 }
 
@@ -247,7 +247,7 @@ module.exports = {
                         .setFooter({ text: `Server: ${interaction.guild.name}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed] });
+                    await interaction.reply({ embeds: [embed], ephemeral: true });
                     break;
                 }
 
@@ -324,7 +324,7 @@ module.exports = {
                         .setFooter({ text: `Added by ${interaction.user.tag}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed] });
+                    await interaction.reply({ embeds: [embed], ephemeral: true });
                     break;
                 }
 
@@ -362,7 +362,7 @@ module.exports = {
                         .setFooter({ text: `Removed by ${interaction.user.tag}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed] });
+                    await interaction.reply({ embeds: [embed], ephemeral: true });
                     break;
                 }
 
@@ -377,7 +377,7 @@ module.exports = {
                             .setFooter({ text: `Server: ${interaction.guild.name}` })
                             .setTimestamp();
 
-                        return interaction.reply({ embeds: [embed] });
+                        return interaction.reply({ embeds: [embed], ephemeral: true });
                     }
 
                     // Group items by rarity
@@ -415,7 +415,7 @@ module.exports = {
                         .setFooter({ text: `Server: ${interaction.guild.name}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed] });
+                    await interaction.reply({ embeds: [embed], ephemeral: true });
                     break;
                 }
 
@@ -442,7 +442,7 @@ module.exports = {
                         .setFooter({ text: `Populated by ${interaction.user.tag}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed] });
+                    await interaction.reply({ embeds: [embed], ephemeral: true });
                     break;
                 }
             }

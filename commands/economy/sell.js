@@ -78,12 +78,10 @@ module.exports = {
         try {
             // Get user's inventory items
             const inventory = interaction.client.inventory.getUserInventory(userId, guildId);
-            
-            // If inventory is empty, return empty array
-            if (!inventory || inventory.length === 0) {
-                return await interaction.respond([]);
+            if (!Array.isArray(inventory) || inventory.length === 0) {
+                await interaction.respond([]);
+                return;
             }
-            
             const choices = inventory.map(item => {
                 const sellPercentage = interaction.client.inventory.getSellPricePercentage(item.rarity);
                 const sellPrice = Math.floor(item.price * sellPercentage);
@@ -92,16 +90,18 @@ module.exports = {
                     value: item.id
                 };
             });
-
             const filtered = choices.filter(choice => 
                 choice.name.toLowerCase().includes(focusedValue.toLowerCase()) ||
                 choice.value.toLowerCase().includes(focusedValue.toLowerCase())
             ).slice(0, 25);
-
             await interaction.respond(filtered);
         } catch (error) {
-            console.error('Error in sell autocomplete:', error);
-            await interaction.respond([]);
+            console.error('Error in /sell autocomplete:', error);
+            try {
+                await interaction.respond([]);
+            } catch (e) {
+                console.error('Failed to respond to autocomplete interaction:', e);
+            }
         }
     }
 }; 

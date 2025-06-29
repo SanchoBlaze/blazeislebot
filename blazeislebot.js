@@ -58,6 +58,9 @@ client.once('ready', () => {
     
     // Start Twitch stream checking
     startTwitchChecker();
+    
+    // Start periodic cleanup of expired effects and items
+    startCleanupScheduler();
 });
 
 
@@ -375,6 +378,41 @@ async function sendStreamNotification(twitchUsername, streamData) {
     } catch (error) {
         console.error('Error sending stream notification:', error);
     }
+}
+
+// Periodic cleanup function
+function startCleanupScheduler() {
+    // Run cleanup every 30 minutes
+    setInterval(() => {
+        try {
+            // Clean up expired effects
+            const expiredEffects = client.inventory.cleanupExpiredEffects();
+            if (expiredEffects > 0) {
+                console.log(`[cleanup] Removed ${expiredEffects} expired effects`);
+            }
+            
+            // Clean up expired inventory items
+            const expiredItems = client.inventory.cleanupExpiredItems();
+            if (expiredItems > 0) {
+                console.log(`[cleanup] Removed ${expiredItems} expired inventory items`);
+            }
+        } catch (error) {
+            console.error('[cleanup] Error during cleanup:', error);
+        }
+    }, 30 * 60 * 1000); // 30 minutes
+    
+    // Also run cleanup immediately on startup
+    setTimeout(() => {
+        try {
+            const expiredEffects = client.inventory.cleanupExpiredEffects();
+            const expiredItems = client.inventory.cleanupExpiredItems();
+            if (expiredEffects > 0 || expiredItems > 0) {
+                console.log(`[startup cleanup] Removed ${expiredEffects} expired effects and ${expiredItems} expired items`);
+            }
+        } catch (error) {
+            console.error('[startup cleanup] Error during cleanup:', error);
+        }
+    }, 5000); // 5 seconds after startup
 }
 
 client.login(config.get('Discord.token'));

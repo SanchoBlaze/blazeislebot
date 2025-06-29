@@ -10,12 +10,21 @@ module.exports = {
         const guildId = interaction.guild.id;
 
         try {
+            // Get user's balance before daily reward
+            const userBefore = interaction.client.economy.getUser(userId, guildId);
+            const balanceBefore = userBefore.balance;
+            
             const result = await interaction.client.economy.daily(userId, guildId);
             
+            // Calculate the actual amount received
+            const actualAmount = result.balance - balanceBefore;
+            const baseAmount = 100;
+            const hadMultiplier = actualAmount > baseAmount;
+            
             const embed = new EmbedBuilder()
-                .setColor(0x00FF00)
+                .setColor(hadMultiplier ? 0xFFD700 : 0x00FF00) // Gold if had multiplier, green if not
                 .setTitle('🎉 Daily Reward Claimed!')
-                .setDescription(`You received **100 coins** as your daily reward!`)
+                .setDescription(`You received **${interaction.client.economy.formatCurrency(actualAmount)}** as your daily reward!`)
                 .addFields(
                     { name: '💵 New Balance', value: interaction.client.economy.formatCurrency(result.balance), inline: true },
                     { name: '🏦 Bank', value: interaction.client.economy.formatCurrency(result.bank), inline: true },
@@ -23,6 +32,16 @@ module.exports = {
                 )
                 .setFooter({ text: 'Come back tomorrow for another reward!' })
                 .setTimestamp();
+
+            // Add multiplier info if user had daily doubler
+            if (hadMultiplier) {
+                const dailyMultiplier = interaction.client.inventory.getDailyMultiplier(userId, guildId);
+                embed.addFields({
+                    name: '🚀 Daily Multiplier Active!',
+                    value: `Your daily reward was multiplied by ${dailyMultiplier}x from ${interaction.client.economy.formatCurrency(baseAmount)} to ${interaction.client.economy.formatCurrency(actualAmount)}!`,
+                    inline: false
+                });
+            }
 
             await interaction.reply({ embeds: [embed] });
         } catch (error) {
