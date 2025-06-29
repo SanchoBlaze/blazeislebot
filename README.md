@@ -224,8 +224,6 @@ The bot features a complete virtual economy system that encourages community eng
 - **Item rarity system**: Common, Uncommon, Rare, Epic, Legendary
 - **Consumable items**: XP boosts, work multipliers, daily doublers
 - **Mystery boxes**: Random item rewards
-- **Role purchases**: Buy special server roles
-- **Custom roles**: Create personalized colored roles
 - **Item effects**: Temporary boosts and permanent rewards
 - **Quantity limits**: Prevent hoarding with max quantities
 - **Expiration system**: Time-limited items with automatic cleanup
@@ -261,7 +259,7 @@ The bot uses SQLite with the following tables:
 
 ### Modular Architecture
 - Commands organized by category in `/commands/` subdirectories
-- Separate modules for loyalty, Twitch, colors, and database operations
+- Separate modules for loyalty, Twitch, colours, and database operations
 - **Configuration validation system** with feature-specific checks
 - **Owner notification system** with anti-spam protection
 - Easy to extend with new commands and features

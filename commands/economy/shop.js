@@ -226,7 +226,7 @@ module.exports = {
                     
                     const rarityEmoji = interaction.client.inventory.getRarityEmoji(item.rarity);
                     const embed = new EmbedBuilder()
-                        .setColor(interaction.client.inventory.getRarityColor(item.rarity))
+                        .setColor(interaction.client.inventory.getRarityColour(item.rarity))
                         .setTitle('🛒 Purchase Successful!')
                         .setDescription(`You purchased **${rarityEmoji} ${item.name}** for ${interaction.client.economy.formatCurrency(item.price)}`)
                         .addFields(

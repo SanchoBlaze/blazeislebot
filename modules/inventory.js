@@ -37,23 +37,22 @@ class Inventory {
         const itemsTable = sql.prepare('SELECT count(*) FROM sqlite_master WHERE type=\'table\' AND name = \'items\';').get();
         if (!itemsTable['count(*)']) {
             sql.prepare(`
-                CREATE TABLE items (
-                    id TEXT NOT NULL,
+                CREATE TABLE IF NOT EXISTS items (
+                    id TEXT PRIMARY KEY,
                     guild TEXT NOT NULL,
                     name TEXT NOT NULL,
                     description TEXT NOT NULL,
                     type TEXT NOT NULL,
-                    rarity TEXT DEFAULT 'common',
-                    price INTEGER DEFAULT 0,
-                    max_quantity INTEGER DEFAULT 1,
-                    duration_hours INTEGER DEFAULT 0,
+                    rarity TEXT NOT NULL,
+                    price INTEGER NOT NULL,
+                    max_quantity INTEGER NOT NULL DEFAULT 1,
+                    duration_hours INTEGER NOT NULL DEFAULT 0,
                     effect_type TEXT,
-                    effect_value INTEGER DEFAULT 0,
+                    effect_value INTEGER,
                     role_id TEXT,
-                    color TEXT,
-                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    PRIMARY KEY (id, guild)
-                );
+                    colour TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
             `).run();
             
             sql.prepare('CREATE INDEX idx_items_guild ON items (guild);').run();
@@ -464,16 +463,16 @@ class Inventory {
         return expired.length;
     }
 
-    // Get rarity color
-    getRarityColor(rarity) {
-        const colors = {
-            common: 0x808080,    // Gray
-            uncommon: 0x00FF00,  // Green
-            rare: 0x0080FF,      // Blue
-            epic: 0x8000FF,      // Purple
-            legendary: 0xD4AF37  // Gold
+    // Get rarity colour
+    getRarityColour(rarity) {
+        const colours = {
+            common: 0xFFFFFF,      // White
+            uncommon: 0x00FF00,    // Green
+            rare: 0x0099FF,        // Blue
+            epic: 0x9932CC,        // Purple
+            legendary: 0xFFD700    // Gold
         };
-        return colors[rarity] || colors.common;
+        return colours[rarity] || colours.common;
     }
 
     // Get rarity emoji
@@ -488,25 +487,20 @@ class Inventory {
         return emojis[rarity] || emojis.common;
     }
 
-    // Admin: Add item to shop
+    // Add item to shop
     addShopItem(itemData) {
-        const {
-            id, guild, name, description, type, rarity, price, 
-            max_quantity = 1, duration_hours = 0, 
-            effect_type = null, effect_value = 0, 
-            role_id = null, color = null
-        } = itemData;
-
         try {
+            const {
+                id, guild, name, description, type, rarity, price,
+                max_quantity = 1, duration_hours = 0, effect_type = null,
+                effect_value = null, role_id = null, colour = null
+            } = itemData;
+
             sql.prepare(`
-                INSERT OR REPLACE INTO items (id, guild, name, description, type, rarity, price, max_quantity, duration_hours, effect_type, effect_value, role_id, color)
+                INSERT OR REPLACE INTO items (id, guild, name, description, type, rarity, price, max_quantity, duration_hours, effect_type, effect_value, role_id, colour)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `).run(
-                id, guild, name, description, type, rarity, 
-                price, max_quantity, duration_hours, effect_type, 
-                effect_value, role_id, color
-            );
-            
+            `).run(id, guild, name, description, type, rarity, price, max_quantity, duration_hours, effect_type, effect_value, role_id, colour);
+
             return true;
         } catch (error) {
             console.error('Error adding shop item:', error);
@@ -534,6 +528,56 @@ class Inventory {
     itemExists(itemId, guildId) {
         const item = sql.prepare('SELECT id FROM items WHERE id = ? AND guild = ?').get(itemId, guildId);
         return !!item;
+    }
+
+    // Get sell price percentage based on rarity
+    getSellPricePercentage(rarity) {
+        switch (rarity) {
+            case 'common': return 0.4;    // 40% of original price
+            case 'uncommon': return 0.5;  // 50% of original price
+            case 'rare': return 0.6;      // 60% of original price
+            case 'epic': return 0.7;      // 70% of original price
+            case 'legendary': return 0.8; // 80% of original price
+            default: return 0.4;          // Default 40%
+        }
+    }
+
+    // Sell an item back to the shop
+    sellItem(userId, guildId, itemId, quantity = 1) {
+        // Get item details
+        const item = this.getItem(itemId, guildId);
+        if (!item) {
+            return { success: false, message: 'Item not found in shop.' };
+        }
+
+        // Check if user has the item
+        const userItem = this.getUserItem(userId, guildId, itemId);
+        if (!userItem || userItem.quantity < quantity) {
+            return { success: false, message: `You don't have enough ${item.name} to sell.` };
+        }
+
+        // Calculate sell price based on rarity
+        const sellPercentage = this.getSellPricePercentage(item.rarity);
+        const sellPrice = Math.floor(item.price * sellPercentage) * quantity;
+
+        // Remove item from inventory
+        const newQuantity = userItem.quantity - quantity;
+        if (newQuantity <= 0) {
+            // Delete the item if quantity becomes 0
+            sql.prepare('DELETE FROM inventory WHERE user_id = ? AND guild_id = ? AND item_id = ?').run(userId, guildId, itemId);
+        } else {
+            // Update quantity
+            sql.prepare('UPDATE inventory SET quantity = ? WHERE user_id = ? AND guild_id = ? AND item_id = ?').run(newQuantity, userId, guildId, itemId);
+        }
+
+        return {
+            success: true,
+            message: `Sold ${quantity}x ${item.name} for ${sellPrice} coins.`,
+            sellPrice: sellPrice,
+            item: item,
+            quantity: quantity,
+            sellPercentage: sellPercentage
+        };
     }
 }
 

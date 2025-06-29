@@ -43,6 +43,20 @@ module.exports = {
                 }
             )
             .addFields(
+                { name: '/balance', value: 'Check your wallet and bank balance', inline: true },
+                { name: '/daily', value: 'Collect your daily reward', inline: true },
+                { name: '/work', value: 'Work to earn coins', inline: true },
+                { name: '/deposit', value: 'Move coins from wallet to bank', inline: true },
+                { name: '/withdraw', value: 'Move coins from bank to wallet', inline: true },
+                { name: '/transfer', value: 'Send coins to another user', inline: true },
+                { name: '/leaderboard', value: 'View the richest users', inline: true },
+                { name: '/history', value: 'View your transaction history', inline: true },
+                { name: '/shop', value: 'Browse and buy items', inline: true },
+                { name: '/inventory', value: 'View your inventory', inline: true },
+                { name: '/use', value: 'Use items from your inventory', inline: true },
+                { name: '/sell', value: 'Sell items back to the shop', inline: true }
+            )
+            .addFields(
                 {
                     name: '🎯 How to Earn Coins',
                     value: '• **Daily Reward**: `/daily` - Get 100 coins every 24 hours\n• **Work**: `/work` - Earn 10-50 coins every hour\n• **Level Up**: Earn coins when you level up (50-750 coins based on level)\n• **Chat Activity**: Earn 1 coin per message (automatic)\n• **Admin Rewards**: Server admins can give you coins',
@@ -63,6 +77,7 @@ module.exports = {
                 { name: '💰 Economy Commands', value: 'Manage your coins and transactions', inline: false },
                 { name: '🛒 Shop System', value: 'Buy items with coins - XP boosts, work multipliers, mystery boxes, and more!', inline: false },
                 { name: '📦 Inventory System', value: 'Store and use items you purchase from the shop', inline: false },
+                { name: '💰 Sell System', value: 'Sell items back to the shop - rarer items get better sell prices!', inline: false },
                 { name: '🏆 Level Rewards', value: 'Earn coins when you level up in the loyalty system', inline: false }
             )
             .setFooter({ text: 'Economy system by Blaze Isle Bot' })

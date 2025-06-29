@@ -31,11 +31,24 @@ The Blaze Isle Bot now includes a comprehensive economy system that allows users
 - **Transfer**: Send coins to other users (`/transfer`)
 
 ### 📦 Inventory System
-- **Item Storage**: Store and manage purchased items
-- **Rarity System**: Common, Uncommon, Rare, Epic, Legendary items
-- **Item Effects**: Temporary boosts and permanent rewards
-- **Quantity Management**: Stack multiple items with limits
-- **Expiration System**: Time-limited items with automatic cleanup
+- **Item Storage**: Store items you purchase from the shop
+- **Item Usage**: Use consumable items for temporary effects
+- **Scaled Selling**: Sell items back to the shop with rarity-based pricing
+- **Quantity Management**: Track how many of each item you own
+- **Expiration Tracking**: See when temporary items expire
+- **Rarity Display**: Visual indicators for item rarity
+- **Price Information**: See both buy and sell prices for items
+
+### 💰 Sell System
+- **Rarity-Based Pricing**: Rarer items get higher sell percentages
+  - **Common**: 40% of original price
+  - **Uncommon**: 50% of original price
+  - **Rare**: 60% of original price
+  - **Epic**: 70% of original price
+  - **Legendary**: 80% of original price
+- **Flexible Quantities**: Sell any amount of items you own
+- **Transparent Pricing**: See sell percentages in inventory and autocomplete
+- **Fair Value**: Better returns for valuable items
 
 ### 📊 Information & Statistics
 - **Balance Check**: View your or others' balances (`/balance`)
@@ -82,22 +95,21 @@ The shop offers various items that users can purchase with their coins:
 
 ## Commands
 
-### User Commands
+### 💰 Economy Commands
+- `/balance` - Check your wallet and bank balance
+- `/daily` - Collect your daily reward (cooldown: 24 hours)
+- `/work` - Work to earn coins (cooldown: 1 hour)
+- `/deposit <amount>` - Move coins from wallet to bank
+- `/withdraw <amount>` - Move coins from bank to wallet
+- `/transfer <user> <amount>` - Send coins to another user
+- `/leaderboard` - View the richest users in the server
+- `/history` - View your transaction history
 
-| Command | Description | Usage |
-|---------|-------------|-------|
-| `/balance` | Check balance | `/balance [user]` |
-| `/daily` | Claim daily reward | `/daily` |
-| `/work` | Work for coins | `/work` |
-| `/deposit` | Deposit to bank | `/deposit <amount>` |
-| `/withdraw` | Withdraw from bank | `/withdraw <amount>` |
-| `/transfer` | Send coins to user | `/transfer <user> <amount>` |
-| `/economy-leaderboard` | Show richest users | `/economy-leaderboard [limit]` |
-| `/history` | Show transactions | `/history [user] [limit]` |
-| `/inventory` | View inventory | `/inventory [user]` |
-| `/use` | Use an item | `/use <item>` |
-| `/shop` | View shop | `/shop` |
-| `/economy-help` | Get help | `/economy-help` |
+### 🛒 Shop & Inventory Commands
+- `/shop` - Browse and buy items from the shop
+- `/inventory [user]` - View your or another user's inventory
+- `/use <item>` - Use an item from your inventory
+- `/sell <item> [quantity]` - Sell items back to the shop (rarity-based pricing)
 
 ### Admin Commands
 
@@ -116,30 +128,30 @@ The shop offers various items that users can purchase with their coins:
 
 ### 🏷️ Item Rarity System
 
-| Rarity | Emoji | Color | Description |
-|--------|-------|-------|-------------|
-| **Common** | ⚪ | Gray | Basic items, easily obtainable |
-| **Uncommon** | 🟢 | Green | Better items, moderate value |
-| **Rare** | 🔵 | Blue | Premium items, high value |
-| **Epic** | 🟣 | Purple | Special items, very valuable |
-| **Legendary** | 🟡 | Gold | Exclusive items, extremely rare |
+| Rarity | Emoji | Colour | Description |
+|--------|-------|--------|-------------|
+| **Common** | ⚪ | White | Basic items, low cost |
+| **Uncommon** | 🟢 | Green | Better items, moderate cost |
+| **Rare** | 🔵 | Blue | Powerful items, high cost |
+| **Epic** | 🟣 | Purple | Very powerful items, very high cost |
+| **Legendary** | 🟡 | Gold | Extremely powerful items, extremely high cost |
 
 ### 📦 Available Items
 
-#### 🎭 Role Items
-- **Bronze Role** (Common) - 1,000 coins - Special bronze role
-- **Silver Role** (Uncommon) - 2,500 coins - Prestigious silver role  
-- **Gold Role** (Rare) - 5,000 coins - Exclusive gold role
-- **Custom Color Role** (Epic) - 3,000 coins - Personalized colored role
+The shop offers various items that users can purchase with their coins:
 
 #### ⚡ Consumable Items
 - **XP Boost (1 Hour)** (Common) - 500 coins - 2x XP for 1 hour
 - **XP Boost (24 Hours)** (Uncommon) - 5,000 coins - 2x XP for 24 hours
+- **XP Boost (7 Days)** (Epic) - 25,000 coins - 2x XP for 7 days
 - **Lucky Charm** (Rare) - 1,500 coins - 50% more work rewards for 1 hour
+- **Work Booster** (Epic) - 4,000 coins - 100% more work rewards for 2 hours
 - **Daily Doubler** (Epic) - 2,000 coins - Double your next daily reward
+- **Coin Multiplier (1 Hour)** (Rare) - 3,000 coins - 2x coins from all sources for 1 hour
 
 #### 🎁 Mystery Items
 - **Mystery Box** (Legendary) - 1,000 coins - Contains a random item
+- **Premium Mystery Box** (Legendary) - 5,000 coins - Contains a guaranteed rare or better item
 
 ### 🎯 Item Effects
 
@@ -225,7 +237,7 @@ CREATE TABLE items (
     effect_type TEXT,
     effect_value INTEGER DEFAULT 0,
     role_id TEXT,
-    color TEXT,
+    colour TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id, guild)
 );
