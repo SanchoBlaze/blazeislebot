@@ -11,7 +11,7 @@ module.exports = {
 
         try {
             const user = interaction.client.economy.getUser(userId, guildId);
-            const items = interaction.client.inventory.getAllItems();
+            const items = interaction.client.inventory.getAllItems(guildId);
             
             if (items.length === 0) {
                 return interaction.reply({ 
@@ -83,7 +83,8 @@ module.exports = {
         if (!customId.startsWith('buy_')) return false;
 
         const itemId = customId.replace('buy_', '');
-        const item = interaction.client.inventory.getItem(itemId);
+        const guildId = interaction.guild.id;
+        const item = interaction.client.inventory.getItem(itemId, guildId);
         
         if (!item) {
             await interaction.reply({ 
@@ -94,7 +95,6 @@ module.exports = {
         }
 
         const userId = interaction.user.id;
-        const guildId = interaction.guild.id;
 
         try {
             const user = interaction.client.economy.getUser(userId, guildId);

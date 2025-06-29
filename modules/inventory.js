@@ -6,7 +6,6 @@ class Inventory {
     constructor(client) {
         this.client = client;
         this.setupDatabase();
-        this.initializeItems();
     }
 
     setupDatabase() {
@@ -39,7 +38,8 @@ class Inventory {
         if (!itemsTable['count(*)']) {
             sql.prepare(`
                 CREATE TABLE items (
-                    id TEXT PRIMARY KEY,
+                    id TEXT NOT NULL,
+                    guild TEXT NOT NULL,
                     name TEXT NOT NULL,
                     description TEXT NOT NULL,
                     type TEXT NOT NULL,
@@ -51,16 +51,76 @@ class Inventory {
                     effect_value INTEGER DEFAULT 0,
                     role_id TEXT,
                     color TEXT,
-                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id, guild)
                 );
             `).run();
             
+            sql.prepare('CREATE INDEX idx_items_guild ON items (guild);').run();
             sql.prepare('CREATE INDEX idx_items_type ON items (type);').run();
             sql.prepare('CREATE INDEX idx_items_rarity ON items (rarity);').run();
+        } else {
+            // Check if we need to migrate existing items table
+            this.migrateItemsTable();
         }
     }
 
-    initializeItems() {
+    // Migrate existing items table to include guild column
+    migrateItemsTable() {
+        try {
+            // Check if guild column exists
+            const columns = sql.prepare("PRAGMA table_info(items)").all();
+            const hasGuildColumn = columns.some(col => col.name === 'guild');
+            
+            if (!hasGuildColumn) {
+                console.log('Migrating items table to include guild column...');
+                
+                // Create new table with guild column
+                sql.prepare(`
+                    CREATE TABLE items_new (
+                        id TEXT NOT NULL,
+                        guild TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        description TEXT NOT NULL,
+                        type TEXT NOT NULL,
+                        rarity TEXT DEFAULT 'common',
+                        price INTEGER DEFAULT 0,
+                        max_quantity INTEGER DEFAULT 1,
+                        duration_hours INTEGER DEFAULT 0,
+                        effect_type TEXT,
+                        effect_value INTEGER DEFAULT 0,
+                        role_id TEXT,
+                        color TEXT,
+                        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                        PRIMARY KEY (id, guild)
+                    );
+                `).run();
+                
+                // Copy existing data with a default guild ID (for backward compatibility)
+                sql.prepare(`
+                    INSERT INTO items_new (id, guild, name, description, type, rarity, price, max_quantity, duration_hours, effect_type, effect_value, role_id, color, created_at)
+                    SELECT id, 'global' as guild, name, description, type, rarity, price, max_quantity, duration_hours, effect_type, effect_value, role_id, color, created_at
+                    FROM items
+                `).run();
+                
+                // Drop old table and rename new one
+                sql.prepare('DROP TABLE items').run();
+                sql.prepare('ALTER TABLE items_new RENAME TO items').run();
+                
+                // Recreate indexes
+                sql.prepare('CREATE INDEX idx_items_guild ON items (guild);').run();
+                sql.prepare('CREATE INDEX idx_items_type ON items (type);').run();
+                sql.prepare('CREATE INDEX idx_items_rarity ON items (rarity);').run();
+                
+                console.log('Items table migration completed successfully.');
+            }
+        } catch (error) {
+            console.error('Error during items table migration:', error);
+        }
+    }
+
+    // Populate default items for a specific guild
+    populateDefaultItems(guildId) {
         // Define default items
         const defaultItems = [
             {
@@ -176,13 +236,13 @@ class Inventory {
             }
         ];
 
-        // Insert default items if they don't exist
+        // Insert default items for the specific guild
         for (const item of defaultItems) {
             sql.prepare(`
-                INSERT OR IGNORE INTO items (id, name, description, type, rarity, price, max_quantity, duration_hours, effect_type, effect_value, role_id, color)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT OR IGNORE INTO items (id, guild, name, description, type, rarity, price, max_quantity, duration_hours, effect_type, effect_value, role_id, color)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `).run(
-                item.id, item.name, item.description, item.type, item.rarity, 
+                item.id, guildId, item.name, item.description, item.type, item.rarity, 
                 item.price, item.max_quantity, item.duration_hours, item.effect_type, 
                 item.effect_value, item.role_id, item.color
             );
@@ -190,18 +250,18 @@ class Inventory {
     }
 
     // Get item definition
-    getItem(itemId) {
-        return sql.prepare('SELECT * FROM items WHERE id = ?').get(itemId);
+    getItem(itemId, guildId) {
+        return sql.prepare('SELECT * FROM items WHERE id = ? AND guild = ?').get(itemId, guildId);
     }
 
-    // Get all items
-    getAllItems() {
-        return sql.prepare('SELECT * FROM items ORDER BY price ASC').all();
+    // Get all items for a guild
+    getAllItems(guildId) {
+        return sql.prepare('SELECT * FROM items WHERE guild = ? ORDER BY price ASC').all(guildId);
     }
 
-    // Get items by type
-    getItemsByType(type) {
-        return sql.prepare('SELECT * FROM items WHERE type = ? ORDER BY price ASC').all(type);
+    // Get items by type for a guild
+    getItemsByType(type, guildId) {
+        return sql.prepare('SELECT * FROM items WHERE type = ? AND guild = ? ORDER BY price ASC').all(type, guildId);
     }
 
     // Get user's inventory
@@ -217,7 +277,7 @@ class Inventory {
 
     // Add item to user's inventory
     addItem(userId, guildId, itemId, quantity = 1) {
-        const item = this.getItem(itemId);
+        const item = this.getItem(itemId, guildId);
         if (!item) throw new Error('Item not found');
 
         const expiresAt = item.duration_hours > 0 
@@ -262,7 +322,7 @@ class Inventory {
 
     // Use/consume an item
     async useItem(userId, guildId, itemId) {
-        const item = this.getItem(itemId);
+        const item = this.getItem(itemId, guildId);
         if (!item) throw new Error('Item not found');
 
         const inventoryItem = sql.prepare('SELECT * FROM inventory WHERE user = ? AND guild = ? AND item_id = ?').get(userId, guildId, itemId);
@@ -311,7 +371,7 @@ class Inventory {
 
     // Open mystery box
     async openMysteryBox(userId, guildId) {
-        const allItems = this.getAllItems().filter(item => item.type !== 'mystery');
+        const allItems = this.getAllItems(guildId).filter(item => item.type !== 'mystery');
         const randomItem = allItems[Math.floor(Math.random() * allItems.length)];
         
         if (randomItem) {
@@ -383,6 +443,54 @@ class Inventory {
             legendary: '🟡'
         };
         return emojis[rarity] || emojis.common;
+    }
+
+    // Admin: Add item to shop
+    addShopItem(itemData) {
+        const {
+            id, guild, name, description, type, rarity, price, 
+            max_quantity = 1, duration_hours = 0, 
+            effect_type = null, effect_value = 0, 
+            role_id = null, color = null
+        } = itemData;
+
+        try {
+            sql.prepare(`
+                INSERT OR REPLACE INTO items (id, guild, name, description, type, rarity, price, max_quantity, duration_hours, effect_type, effect_value, role_id, color)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(
+                id, guild, name, description, type, rarity, 
+                price, max_quantity, duration_hours, effect_type, 
+                effect_value, role_id, color
+            );
+            
+            return true;
+        } catch (error) {
+            console.error('Error adding shop item:', error);
+            return false;
+        }
+    }
+
+    // Admin: Remove item from shop
+    removeShopItem(itemId, guildId) {
+        try {
+            const result = sql.prepare('DELETE FROM items WHERE id = ? AND guild = ?').run(itemId, guildId);
+            return result.changes > 0;
+        } catch (error) {
+            console.error('Error removing shop item:', error);
+            return false;
+        }
+    }
+
+    // Admin: Get all shop items for a guild
+    getShopItems(guildId) {
+        return sql.prepare('SELECT * FROM items WHERE guild = ? ORDER BY price ASC').all(guildId);
+    }
+
+    // Admin: Check if item exists in a guild
+    itemExists(itemId, guildId) {
+        const item = sql.prepare('SELECT id FROM items WHERE id = ? AND guild = ?').get(itemId, guildId);
+        return !!item;
     }
 }
 

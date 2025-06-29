@@ -57,6 +57,15 @@ The Blaze Isle Bot now includes a comprehensive economy system that allows users
 - **Quantity Limits**: Prevent hoarding with maximum quantities
 - **Real-time Validation**: Check affordability and limits before purchase
 - **Rich Item Descriptions**: Detailed information about each item
+- **Guild-Specific**: Each guild has its own shop items and configuration
+
+### 🛠️ Shop Management
+- **Custom Items**: Admins can add custom items with full configuration
+- **Item Removal**: Remove unwanted items from the shop
+- **Default Population**: Easily populate shop with default items
+- **Item Listing**: View all items with detailed information
+- **Flexible Configuration**: Set prices, rarities, effects, and limits
+- **Guild Isolation**: Each guild's shop is completely independent
 
 ## Commands
 
@@ -85,6 +94,10 @@ The Blaze Isle Bot now includes a comprehensive economy system that allows users
 | `/economy-admin remove` | Remove coins from user | `/economy-admin remove <user> <amount>` |
 | `/economy-admin set` | Set user's balance | `/economy-admin set <user> <amount>` |
 | `/economy-admin stats` | Show server stats | `/economy-admin stats` |
+| `/economy-admin add-item` | Add new item to shop | `/economy-admin add-item` |
+| `/economy-admin remove-item` | Remove item from shop | `/economy-admin remove-item <id>` |
+| `/economy-admin list-items` | List all shop items | `/economy-admin list-items` |
+| `/economy-admin populate-defaults` | Add default items to shop | `/economy-admin populate-defaults` |
 
 ## Item System
 
@@ -187,7 +200,8 @@ CREATE TABLE inventory (
 ### Items Table
 ```sql
 CREATE TABLE items (
-    id TEXT PRIMARY KEY,
+    id TEXT NOT NULL,
+    guild TEXT NOT NULL,
     name TEXT NOT NULL,
     description TEXT NOT NULL,
     type TEXT NOT NULL,
@@ -199,7 +213,8 @@ CREATE TABLE items (
     effect_value INTEGER DEFAULT 0,
     role_id TEXT,
     color TEXT,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id, guild)
 );
 ```
 

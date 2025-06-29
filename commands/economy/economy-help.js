@@ -38,7 +38,7 @@ module.exports = {
                 },
                 {
                     name: '⚙️ Admin Commands',
-                    value: '• `/economy-admin add <user> <amount>` - Add coins to user\n• `/economy-admin remove <user> <amount>` - Remove coins from user\n• `/economy-admin set <user> <amount>` - Set user\'s balance\n• `/economy-admin stats` - Show economy statistics',
+                    value: '• `/economy-admin add <user> <amount>` - Add coins to user\n• `/economy-admin remove <user> <amount>` - Remove coins from user\n• `/economy-admin set <user> <amount>` - Set user\'s balance\n• `/economy-admin stats` - Show economy statistics\n• `/economy-admin add-item` - Add new item to shop\n• `/economy-admin remove-item <id>` - Remove item from shop\n• `/economy-admin list-items` - List all shop items\n• `/economy-admin populate-defaults` - Add default items to shop',
                     inline: false
                 }
             )
