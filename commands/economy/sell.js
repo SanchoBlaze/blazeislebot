@@ -22,6 +22,15 @@ module.exports = {
         const guildId = interaction.guild.id;
 
         try {
+            // Check if user has any items first
+            const inventory = interaction.client.inventory.getUserInventory(userId, guildId);
+            if (!inventory || inventory.length === 0) {
+                return interaction.reply({
+                    content: '❌ You don\'t have any items to sell! Visit the shop to buy some items first.',
+                    ephemeral: true
+                });
+            }
+
             // Sell the item
             const result = interaction.client.inventory.sellItem(userId, guildId, itemId, quantity);
             
@@ -69,6 +78,12 @@ module.exports = {
         try {
             // Get user's inventory items
             const inventory = interaction.client.inventory.getUserInventory(userId, guildId);
+            
+            // If inventory is empty, return empty array
+            if (!inventory || inventory.length === 0) {
+                return await interaction.respond([]);
+            }
+            
             const choices = inventory.map(item => {
                 const sellPercentage = interaction.client.inventory.getSellPricePercentage(item.rarity);
                 const sellPrice = Math.floor(item.price * sellPercentage);
