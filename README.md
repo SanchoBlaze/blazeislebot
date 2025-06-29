@@ -10,6 +10,7 @@ A feature-rich Node.js Discord bot for the Blaze Isle community, built with disc
 - **Configurable welcome messages** sent to designated channel
 - **Advanced Twitch stream notifications** with real-time monitoring
 - **Advanced loyalty/XP system** with scaled leveling and multi-level progression
+- **💰 Comprehensive economy system** with wallet/bank, daily rewards, work, transfers, and shop
 - **Engaging games**: Connect4, TicTacToe, RPS, RPSLS with XP rewards for winners
 - **Animal commands**: Cute pictures with small XP rewards (cat, dog, fox, bunny, duck)
 - **Social commands**: Hug and comfort other users for XP and community building
@@ -176,6 +177,61 @@ The bot features a sophisticated leveling system designed to reward active commu
 - **Rich embeds**: Beautiful displays with progress bars and statistics
 - **Persistent storage**: All data safely stored in SQLite database
 
+### 💰 Economy System
+The bot features a complete virtual economy system that encourages community engagement and provides users with meaningful progression:
+
+#### Currency & Banking
+- **Dual currency system**: Wallet for spending, bank for savings
+- **Net worth tracking**: Combined wallet and bank balance
+- **Transaction history**: Complete audit trail of all economic activities
+- **Secure transfers**: User-to-user coin transfers with validation
+
+#### Earning Methods
+- **Daily rewards**: 100 coins every 24 hours (`/daily`)
+- **Work system**: 10-50 coins every hour (`/work`)
+- **Chat activity**: 1 coin per message (automatic)
+- **Admin rewards**: Server administrators can give coins
+
+#### Banking Features
+- **Deposit/Withdraw**: Move coins between wallet and bank
+- **Transfer system**: Send coins to other users
+- **Balance protection**: Users cannot go below 0 coins
+- **Transaction logging**: All activities are recorded with timestamps
+
+#### Economy Commands
+- **`/balance [user]`**: Check wallet, bank, and net worth
+- **`/daily`**: Claim daily reward (100 coins)
+- **`/work`**: Work for coins (10-50 coins, 1 hour cooldown)
+- **`/deposit <amount>`**: Move coins to bank
+- **`/withdraw <amount>`**: Move coins from bank
+- **`/transfer <user> <amount>`**: Send coins to another user
+- **`/economy-leaderboard [limit]`**: Show richest users
+- **`/history [user] [limit]`**: View transaction history
+- **`/shop`**: Interactive shop with purchase buttons
+- **`/economy-help`**: Get help with economy commands
+
+#### Admin Controls
+- **`/economy-admin add <user> <amount>`**: Add coins to user
+- **`/economy-admin remove <user> <amount>`**: Remove coins from user
+- **`/economy-admin set <user> <amount>`**: Set user's balance
+- **`/economy-admin stats`**: View server economy statistics
+
+#### Shop System
+- **Interactive buttons**: Click to purchase items
+- **Role purchases**: Buy special server roles
+- **Custom roles**: Create personalized colored roles
+- **XP boosts**: Temporary experience multipliers
+- **Future features**: Gambling games, investment system, auction house
+
+#### Economy Balance
+The system is designed to maintain a healthy economy:
+- **Daily Reward**: 100 coins (4,200 coins per week)
+- **Work**: 10-50 coins per hour (70-350 coins per week)
+- **Chat Activity**: 1 coin per message
+- **Total Weekly Potential**: ~4,270-4,550 coins for active users
+
+📖 **[View detailed economy documentation →](ECONOMY_README.md)**
+
 ## Technical Details
 
 ### Built With
@@ -189,6 +245,8 @@ The bot features a sophisticated leveling system designed to reward active commu
 The bot uses SQLite with the following tables:
 - `guild_settings`: Server-specific configuration
 - `loyalty`: User XP and level data
+- `economy`: User wallet, bank, and economy data
+- `transactions`: Economy transaction history
 - `twitch_subscriptions`: Twitch channel subscriptions
 - `twitch_status`: Current stream status cache
 
