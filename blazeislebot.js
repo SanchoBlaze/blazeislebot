@@ -11,6 +11,7 @@ const { Colours } = require('./modules/colours');
 const Loyalty = require('./modules/loyalty');
 const TwitchManager = require('./modules/twitch');
 const GuildSettings = require('./modules/guildSettings');
+const Economy = require('./modules/economy');
 
 
 // Create an instance of a Discord client
@@ -34,6 +35,7 @@ const twitchManager = new TwitchManager();
 client.twitch = twitchManager;
 client.settings = new GuildSettings(client);
 client.loyalty = new Loyalty(client);
+client.economy = new Economy(client);
 
 
 const commandFolders = fs.readdirSync('./commands');
@@ -144,6 +146,13 @@ client.on('interactionCreate', async interaction => {
             const configCommand = client.commands.get('config');
             if (configCommand && configCommand.handleButtonInteraction) {
                 const handled = await configCommand.handleButtonInteraction(interaction);
+                if (handled) return;
+            }
+            
+            // Check for shop command button interactions
+            const shopCommand = client.commands.get('shop');
+            if (shopCommand && shopCommand.handleButtonInteraction) {
+                const handled = await shopCommand.handleButtonInteraction(interaction);
                 if (handled) return;
             }
         } catch (error) {
