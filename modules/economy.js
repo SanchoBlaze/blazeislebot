@@ -21,6 +21,7 @@ class Economy {
                     bank INTEGER DEFAULT 0,
                     last_daily TEXT,
                     last_work TEXT,
+                    last_fishing TEXT,
                     total_earned INTEGER DEFAULT 0,
                     total_spent INTEGER DEFAULT 0,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -33,6 +34,16 @@ class Economy {
             sql.prepare('CREATE INDEX idx_economy_balance ON economy (balance DESC);').run();
             sql.pragma('synchronous = 1');
             sql.pragma('journal_mode = wal');
+        } else {
+            // Check if last_fishing column exists, add it if it doesn't
+            try {
+                sql.prepare('SELECT last_fishing FROM economy LIMIT 1').get();
+            } catch (error) {
+                if (error.message.includes('no such column')) {
+                    console.log('Adding last_fishing column to existing economy table...');
+                    sql.prepare('ALTER TABLE economy ADD COLUMN last_fishing TEXT').run();
+                }
+            }
         }
 
         // Create transactions table for history
@@ -70,6 +81,7 @@ class Economy {
                 bank: 0,
                 last_daily: null,
                 last_work: null,
+                last_fishing: null,
                 total_earned: 0,
                 total_spent: 0,
                 created_at: new Date().toISOString(),
@@ -83,8 +95,8 @@ class Economy {
     // Create new user
     createUser(userData) {
         return sql.prepare(`
-            INSERT INTO economy (id, user, guild, balance, bank, last_daily, last_work, total_earned, total_spent, created_at, updated_at)
-            VALUES (@id, @user, @guild, @balance, @bank, @last_daily, @last_work, @total_earned, @total_spent, @created_at, @updated_at)
+            INSERT INTO economy (id, user, guild, balance, bank, last_daily, last_work, last_fishing, total_earned, total_spent, created_at, updated_at)
+            VALUES (@id, @user, @guild, @balance, @bank, @last_daily, @last_work, @last_fishing, @total_earned, @total_spent, @created_at, @updated_at)
         `).run(userData);
     }
 
@@ -257,6 +269,96 @@ class Economy {
         this.logTransaction(userId, guildId, 'work', amount, 'Work reward');
         
         return { user: this.getUser(userId, guildId), amount };
+    }
+
+    // Fishing reward
+    async fish(userId, guildId) {
+        const user = this.getUser(userId, guildId);
+        const now = new Date();
+        const lastFishing = user.last_fishing ? new Date(user.last_fishing) : null;
+        
+        // Check if user can fish (30 minutes cooldown)
+        if (lastFishing && (now - lastFishing) < 30 * 60 * 1000) {
+            const timeLeft = 30 * 60 * 1000 - (now - lastFishing);
+            const minutes = Math.floor(timeLeft / (60 * 1000));
+            const seconds = Math.floor((timeLeft % (60 * 1000)) / 1000);
+            throw new Error(`Fishing available in ${minutes}m ${seconds}s`);
+        }
+
+        // Get all fish items from the inventory system (optimized)
+        const fishItems = this.client.inventory.getAllFish(guildId);
+        
+        if (fishItems.length === 0) {
+            throw new Error('No fish available for fishing in this server. Contact an administrator to add fish items.');
+        }
+
+        // Get user's fishing rod boost
+        const fishingBoost = this.client.inventory.getFishingBoost(userId, guildId);
+        
+        // Create fish types array with chances based on rarity and fishing rod
+        const fishTypes = fishItems.map(item => {
+            let baseChance;
+            switch (item.rarity) {
+                case 'common': baseChance = 40; break;
+                case 'uncommon': baseChance = 25; break;
+                case 'rare': baseChance = 5; break;
+                case 'epic': baseChance = 0.5; break;
+                case 'legendary': baseChance = 0.1; break;
+                default: baseChance = 10; break;
+            }
+            
+            // Apply fishing rod boost to rare+ fish only
+            let finalChance = baseChance;
+            if (item.rarity === 'rare' || item.rarity === 'epic' || item.rarity === 'legendary') {
+                finalChance = baseChance * fishingBoost;
+            }
+            
+            return {
+                name: item.name,
+                rarity: item.rarity,
+                sellPrice: item.price,
+                chance: finalChance,
+                itemId: item.id,
+                baseChance: baseChance
+            };
+        });
+
+        // Calculate total chance and determine which fish was caught
+        const totalChance = fishTypes.reduce((sum, fish) => sum + fish.chance, 0);
+        const random = Math.random() * totalChance;
+        let cumulativeChance = 0;
+        let caughtFish = null;
+
+        for (const fish of fishTypes) {
+            cumulativeChance += fish.chance;
+            if (random <= cumulativeChance) {
+                caughtFish = fish;
+                break;
+            }
+        }
+
+        // If no fish was caught (shouldn't happen, but just in case)
+        if (!caughtFish) {
+            caughtFish = fishTypes[0]; // Default to first fish
+        }
+
+        // Add the fish to user's inventory
+        this.client.inventory.addItem(userId, guildId, caughtFish.itemId, 1);
+
+        // Update last fishing time
+        sql.prepare(`
+            UPDATE economy 
+            SET last_fishing = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+            WHERE user = ? AND guild = ?
+        `).run(userId, guildId);
+
+        this.logTransaction(userId, guildId, 'fishing', 0, `Caught ${caughtFish.name}`);
+        
+        return { 
+            user: this.getUser(userId, guildId), 
+            fish: caughtFish,
+            itemId: caughtFish.itemId
+        };
     }
 
     // Get leaderboard

@@ -15,14 +15,14 @@ The Blaze Isle Bot now includes a comprehensive economy system that allows users
 ### 🎯 Earning Methods
 1. **Daily Rewards**: 100 coins every 24 hours (`/daily`)
 2. **Work**: 10-50 coins every hour (`/work`)
-3. **Level Up Rewards**: Earn coins when leveling up (`/level` command or chat activity)
+3. **Fishing**: Catch fish to sell (prices vary by rarity, 30-minute cooldown)
+4. **Level Up Rewards**: Earn coins when leveling up (`/level` command or chat activity)
    - **Levels 1-5**: 50 coins per level
    - **Levels 6-10**: 100 coins per level
    - **Levels 11-20**: 200 coins per level
    - **Levels 21-30**: 350 coins per level
    - **Levels 31-50**: 500 coins per level
    - **Levels 51+**: 750 coins per level
-4. **Chat Activity**: 1 coin per message (automatic)
 5. **Admin Rewards**: Server administrators can give coins
 
 ### 🏦 Banking System
@@ -99,6 +99,7 @@ The shop offers various items that users can purchase with their coins:
 - `/balance` - Check your wallet and bank balance
 - `/daily` - Collect your daily reward (cooldown: 24 hours)
 - `/work` - Work to earn coins (cooldown: 1 hour)
+- `/fish` - Go fishing to catch fish (cooldown: 30 minutes)
 - `/deposit <amount>` - Move coins from wallet to bank
 - `/withdraw <amount>` - Move coins from bank to wallet
 - `/transfer <user> <amount>` - Send coins to another user
@@ -136,9 +137,44 @@ The shop offers various items that users can purchase with their coins:
 | **Epic** | 🟣 | Purple | Very powerful items, very high cost |
 | **Legendary** | 🟡 | Gold | Extremely powerful items, extremely high cost |
 
+### 🎣 Fishing System
+
+The fishing system allows players to catch fish and sell them for coins. Fish have different rarities and sell prices, and fishing rods can improve your chances of catching rare fish.
+
+#### Fishing Mechanics
+- **Cooldown**: 30 minutes between fishing sessions
+- **Fish Rarities**: Common, Uncommon, Rare, Epic, Legendary
+- **Sell Prices**: Fish can be sold back to the shop for coins
+- **Fishing Rods**: Permanent items that boost rare fish catch rates
+- **Admin Control**: Server admins can add custom fish using `/economy-admin add-item`
+
+#### Default Fish Types
+- **Common**: Tiny Minnow (5 coins), Small Bass (8 coins)
+- **Uncommon**: Medium Trout (15 coins), Large Salmon (25 coins)
+- **Rare**: Golden Carp (50 coins), Crystal Fish (75 coins)
+- **Epic**: Diamond Tuna (150 coins)
+- **Legendary**: Legendary Kraken (500 coins)
+
+#### Fishing Rods
+- **Basic Fishing Rod** (Common) - 1,000 coins - 1.2x rare fish boost
+- **Steel Fishing Rod** (Uncommon) - 5,000 coins - 1.5x rare fish boost
+- **Golden Fishing Rod** (Rare) - 15,000 coins - 2.0x rare fish boost
+- **Crystal Fishing Rod** (Epic) - 50,000 coins - 3.0x rare fish boost
+- **Legendary Fishing Rod** (Legendary) - 100,000 coins - 5.0x rare fish boost
+
+#### How Fishing Rods Work
+- **Permanent Items**: Fishing rods don't expire or need to be used
+- **Best Rod Active**: Only the best fishing rod in your inventory provides the boost
+- **Rare Fish Only**: Boost only applies to rare, epic, and legendary fish
+- **Progressive Investment**: Higher-tier rods cost more but provide better boosts
+
 ### 📦 Available Items
 
 The shop offers various items that users can purchase with their coins:
+
+#### 🎣 Fishing Items
+- **Fish**: Various fish types with different rarities and sell prices
+- **Fishing Rods**: Permanent items that boost rare fish catch rates
 
 #### ⚡ Consumable Items
 - **XP Boost (1 Hour)** (Common) - 500 coins - 2x XP for 1 hour
@@ -189,6 +225,7 @@ CREATE TABLE economy (
     bank INTEGER DEFAULT 0,
     last_daily TEXT,
     last_work TEXT,
+    last_fishing TEXT,
     total_earned INTEGER DEFAULT 0,
     total_spent INTEGER DEFAULT 0,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -260,20 +297,23 @@ The system is designed to maintain a healthy economy:
 
 - **Daily Reward**: 100 coins (4,200 coins per week)
 - **Work**: 10-50 coins per hour (70-350 coins per week)
-- **Chat Activity**: 1 coin per message
-- **Total Weekly Potential**: ~4,270-4,550 coins for active users
+- **Fishing**: Variable based on fish caught (5-500 coins per fish, 30-minute cooldown)
+- **Total Weekly Potential**: ~4,270-4,550+ coins for active users (fishing adds additional income)
 
 ## Item Strategy Guide
 
 ### 🎯 For New Users
 1. **Start with daily rewards** - Consistent income
-2. **Buy XP boosts** - Accelerate leveling
-3. **Save for roles** - Permanent status symbols
+2. **Fish regularly** - Additional income source
+3. **Buy XP boosts** - Accelerate leveling
+4. **Save for roles** - Permanent status symbols
 
 ### 💎 For Active Users
 1. **Use work multipliers** - Maximize work efficiency
-2. **Buy mystery boxes** - Gamble for rare items
-3. **Invest in daily doublers** - Double your income
+2. **Fish regularly** - Steady additional income
+3. **Buy fishing rods** - Improve rare fish chances
+4. **Buy mystery boxes** - Gamble for rare items
+5. **Invest in daily doublers** - Double your income
 
 ### 🏆 For Wealthy Users
 1. **Collect rare items** - Show off your status

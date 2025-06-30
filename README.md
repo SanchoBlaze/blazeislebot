@@ -198,6 +198,7 @@ The bot features a complete virtual economy system that encourages community eng
 #### Earning Methods
 - **Daily rewards**: 100 coins every 24 hours (`/daily`)
 - **Work system**: 10-50 coins every hour (`/work`)
+- **Fishing system**: Catch fish to sell (prices vary by rarity, 30-minute cooldown)
 - **Chat activity**: 1 coin per message (automatic)
 - **Admin rewards**: Server administrators can give coins
 
@@ -211,6 +212,7 @@ The bot features a complete virtual economy system that encourages community eng
 - **`/balance [user]`**: Check wallet, bank, and net worth
 - **`/daily`**: Claim daily reward (100 coins)
 - **`/work`**: Work for coins (10-50 coins, 1 hour cooldown)
+- **`/fish`**: Go fishing to catch fish (30-minute cooldown)
 - **`/deposit <amount>`**: Move coins to bank
 - **`/withdraw <amount>`**: Move coins from bank
 - **`/transfer <user> <amount>`**: Send coins to another user
@@ -219,6 +221,7 @@ The bot features a complete virtual economy system that encourages community eng
 - **`/inventory [user]`**: View your or another user's inventory
 - **`/use <item>`**: Use an item from your inventory
 - **`/shop`**: Interactive shop with purchase buttons
+- **`/sell <item> [quantity]`**: Sell items back to the shop
 - **`/economy-help`**: Get help with economy commands
 
 #### Admin Controls
@@ -232,6 +235,8 @@ The bot features a complete virtual economy system that encourages community eng
 - **Inventory management**: Store and manage your items
 - **Item rarity system**: Common, Uncommon, Rare, Epic, Legendary
 - **Consumable items**: XP boosts, work multipliers, daily doublers
+- **Fishing rods**: Permanent items that boost rare fish catch rates
+- **Fish items**: Catchable fish with different rarities and sell prices
 - **Mystery boxes**: Random item rewards
 - **Item effects**: Temporary boosts and permanent rewards
 - **Quantity limits**: Prevent hoarding with max quantities

@@ -13,7 +13,7 @@ module.exports = {
             .addFields(
                 {
                     name: '💵 Basic Commands',
-                    value: '• `/balance [user]` - Check your or another user\'s balance\n• `/daily` - Claim your daily reward (100 coins)\n• `/work` - Work to earn coins (10-50 coins, 1 hour cooldown)',
+                    value: '• `/balance [user]` - Check your or another user\'s balance\n• `/daily` - Claim your daily reward (100 coins)\n• `/work` - Work to earn coins (10-50 coins, 1 hour cooldown)\n• `/fish` - Go fishing to catch fish (30 minute cooldown)',
                     inline: false
                 },
                 {
@@ -46,6 +46,7 @@ module.exports = {
                 { name: '/balance', value: 'Check your wallet and bank balance', inline: true },
                 { name: '/daily', value: 'Collect your daily reward', inline: true },
                 { name: '/work', value: 'Work to earn coins', inline: true },
+                { name: '/fish', value: 'Go fishing to catch fish', inline: true },
                 { name: '/deposit', value: 'Move coins from wallet to bank', inline: true },
                 { name: '/withdraw', value: 'Move coins from bank to wallet', inline: true },
                 { name: '/transfer', value: 'Send coins to another user', inline: true },
@@ -60,17 +61,17 @@ module.exports = {
             .addFields(
                 {
                     name: '🎯 How to Earn Coins',
-                    value: '• **Daily Reward**: `/daily` - Get 100 coins every 24 hours\n• **Work**: `/work` - Earn 10-50 coins every hour\n• **Level Up**: Earn coins when you level up (50-750 coins based on level)\n• **Chat Activity**: Earn 1 coin per message (automatic)\n• **Admin Rewards**: Server admins can give you coins',
+                    value: '• **Daily Reward**: `/daily` - Get 100 coins every 24 hours\n• **Work**: `/work` - Earn 10-50 coins every hour\n• **Fishing**: `/fish` - Catch fish to sell (prices vary by rarity)\n• **Level Up**: Earn coins when you level up (50-750 coins based on level)\n• **Chat Activity**: Earn 1 coin per message (automatic)\n• **Admin Rewards**: Server admins can give you coins',
                     inline: false
                 },
                 {
                     name: '🛒 Shop & Items',
-                    value: '• **Shop**: `/shop` - View items with pagination and dropdown purchase\n• **Inventory**: `/inventory` - View your items\n• **Use Items**: `/use <item>` - Activate item effects\n• **Item Types**: Roles, XP boosts, work multipliers, mystery boxes',
+                    value: '• **Shop**: `/shop` - View items with pagination and dropdown purchase\n• **Inventory**: `/inventory` - View your items\n• **Use Items**: `/use <item>` - Activate item effects\n• **Item Types**: Roles, XP boosts, work multipliers, mystery boxes, fish, fishing rods\n• **Fish Items**: Server admins can add custom fish using `/economy-admin add-item`\n• **Fishing Rods**: Improve rare fish catch rates (permanent items)',
                     inline: false
                 },
                 {
                     name: '💡 Tips',
-                    value: '• Use `/daily` every day to maximize earnings\n• Work regularly with `/work` for steady income\n• Keep some coins in the bank for safety\n• Check `/economy-leaderboard` to see how you rank\n• Use items strategically to boost your earnings\n• **Note**: Only one effect of each type can be active at a time - wait for effects to expire before using new ones',
+                    value: '• Use `/daily` every day to maximize earnings\n• Work regularly with `/work` for steady income\n• Fish regularly with `/fish` for additional income\n• Keep some coins in the bank for safety\n• Check `/economy-leaderboard` to see how you rank\n• Use items strategically to boost your earnings\n• **Note**: Only one effect of each type can be active at a time - wait for effects to expire before using new ones',
                     inline: false
                 }
             )

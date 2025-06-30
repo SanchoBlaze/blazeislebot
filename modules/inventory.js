@@ -84,6 +84,165 @@ class Inventory {
     populateDefaultItems(guildId) {
         // Define default items
         const defaultItems = [
+            // Fish items
+            {
+                id: 'fish_tiny_minnow',
+                name: 'Tiny Minnow',
+                description: 'A small, common fish. Good for beginners!',
+                type: 'fish',
+                rarity: 'common',
+                price: 5,
+                max_quantity: 100,
+                duration_hours: 0,
+                effect_type: null,
+                effect_value: null
+            },
+            {
+                id: 'fish_small_bass',
+                name: 'Small Bass',
+                description: 'A decent-sized bass. Not bad for a day\'s catch!',
+                type: 'fish',
+                rarity: 'common',
+                price: 8,
+                max_quantity: 100,
+                duration_hours: 0,
+                effect_type: null,
+                effect_value: null
+            },
+            {
+                id: 'fish_medium_trout',
+                name: 'Medium Trout',
+                description: 'A nice trout. Getting better at fishing!',
+                type: 'fish',
+                rarity: 'uncommon',
+                price: 15,
+                max_quantity: 100,
+                duration_hours: 0,
+                effect_type: null,
+                effect_value: null
+            },
+            {
+                id: 'fish_large_salmon',
+                name: 'Large Salmon',
+                description: 'A big salmon! This is a good catch!',
+                type: 'fish',
+                rarity: 'uncommon',
+                price: 25,
+                max_quantity: 100,
+                duration_hours: 0,
+                effect_type: null,
+                effect_value: null
+            },
+            {
+                id: 'fish_golden_carp',
+                name: 'Golden Carp',
+                description: 'A rare golden carp! This is valuable!',
+                type: 'fish',
+                rarity: 'rare',
+                price: 50,
+                max_quantity: 100,
+                duration_hours: 0,
+                effect_type: null,
+                effect_value: null
+            },
+            {
+                id: 'fish_crystal_fish',
+                name: 'Crystal Fish',
+                description: 'A mysterious crystal fish. Very rare!',
+                type: 'fish',
+                rarity: 'rare',
+                price: 75,
+                max_quantity: 100,
+                duration_hours: 0,
+                effect_type: null,
+                effect_value: null
+            },
+            {
+                id: 'fish_diamond_tuna',
+                name: 'Diamond Tuna',
+                description: 'An epic diamond tuna! This is legendary!',
+                type: 'fish',
+                rarity: 'epic',
+                price: 150,
+                max_quantity: 100,
+                duration_hours: 0,
+                effect_type: null,
+                effect_value: null
+            },
+            {
+                id: 'fish_legendary_kraken',
+                name: 'Legendary Kraken',
+                description: 'THE LEGENDARY KRAKEN! The rarest catch of all!',
+                type: 'fish',
+                rarity: 'legendary',
+                price: 500,
+                max_quantity: 100,
+                duration_hours: 0,
+                effect_type: null,
+                effect_value: null
+            },
+            // Fishing Rods
+            {
+                id: 'fishing_rod_basic',
+                name: 'Basic Fishing Rod',
+                description: 'A simple wooden fishing rod. Slightly increases rare fish chances.',
+                type: 'fishing_rod',
+                rarity: 'common',
+                price: 1000,
+                max_quantity: 1,
+                duration_hours: 0,
+                effect_type: 'fishing_boost',
+                effect_value: 1.2
+            },
+            {
+                id: 'fishing_rod_steel',
+                name: 'Steel Fishing Rod',
+                description: 'A sturdy steel fishing rod. Moderately increases rare fish chances.',
+                type: 'fishing_rod',
+                rarity: 'uncommon',
+                price: 5000,
+                max_quantity: 1,
+                duration_hours: 0,
+                effect_type: 'fishing_boost',
+                effect_value: 1.5
+            },
+            {
+                id: 'fishing_rod_golden',
+                name: 'Golden Fishing Rod',
+                description: 'A luxurious golden fishing rod. Significantly increases rare fish chances.',
+                type: 'fishing_rod',
+                rarity: 'rare',
+                price: 15000,
+                max_quantity: 1,
+                duration_hours: 0,
+                effect_type: 'fishing_boost',
+                effect_value: 2.0
+            },
+            {
+                id: 'fishing_rod_crystal',
+                name: 'Crystal Fishing Rod',
+                description: 'A magical crystal fishing rod. Greatly increases rare fish chances.',
+                type: 'fishing_rod',
+                rarity: 'epic',
+                price: 50000,
+                max_quantity: 1,
+                duration_hours: 0,
+                effect_type: 'fishing_boost',
+                effect_value: 3.0
+            },
+            {
+                id: 'fishing_rod_legendary',
+                name: 'Legendary Fishing Rod',
+                description: 'The ultimate fishing rod! Dramatically increases rare fish chances.',
+                type: 'fishing_rod',
+                rarity: 'legendary',
+                price: 100000,
+                max_quantity: 1,
+                duration_hours: 0,
+                effect_type: 'fishing_boost',
+                effect_value: 5.0
+            },
+            // Original items
             {
                 id: 'xp_boost_1h',
                 name: 'XP Boost (1 Hour)',
@@ -232,6 +391,11 @@ class Inventory {
     // Get items by type for a guild
     getItemsByType(type, guildId) {
         return sql.prepare('SELECT * FROM items WHERE type = ? AND guild = ? ORDER BY price ASC').all(type, guildId);
+    }
+
+    // Get all fish items for a guild (optimized for fishing)
+    getAllFish(guildId) {
+        return sql.prepare('SELECT * FROM items WHERE type = ? AND guild = ? ORDER BY rarity ASC, price ASC').all('fish', guildId);
     }
 
     // Get user's inventory
@@ -688,6 +852,25 @@ class Inventory {
     // Remove daily multiplier after use
     removeDailyMultiplier(userId, guildId) {
         return this.removeActiveEffect(userId, guildId, 'daily_multiplier');
+    }
+
+    // Get user's best fishing rod
+    getBestFishingRod(userId, guildId) {
+        const userInventory = this.getUserInventory(userId, guildId);
+        const fishingRods = userInventory.filter(item => item.type === 'fishing_rod');
+        
+        if (fishingRods.length === 0) return null;
+        
+        // Return the rod with the highest effect value (best rod)
+        return fishingRods.reduce((best, current) => 
+            current.effect_value > best.effect_value ? current : best
+        );
+    }
+
+    // Get fishing boost multiplier for a user
+    getFishingBoost(userId, guildId) {
+        const bestRod = this.getBestFishingRod(userId, guildId);
+        return bestRod ? bestRod.effect_value : 1;
     }
 }
 
