@@ -60,7 +60,8 @@ module.exports = {
                         const expiryText = item.expires_at ? ` ⏰` : '';
                         const sellPercentage = interaction.client.inventory.getSellPricePercentage(item.rarity);
                         const sellPrice = Math.floor(item.price * sellPercentage);
-                        description += `• **${item.name}**${quantityText}${expiryText}\n`;
+                        const emoji = interaction.client.inventory.getItemEmoji(item);
+                        description += `• **${emoji} ${item.name}**${quantityText}${expiryText}\n`;
                         description += `  └ ${item.description}\n`;
                         description += `  └ 💰 Buy: ${interaction.client.economy.formatCurrency(item.price)} | 💵 Sell: ${interaction.client.economy.formatCurrency(sellPrice)} (${Math.round(sellPercentage * 100)}%)\n\n`;
                     }

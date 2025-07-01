@@ -29,7 +29,7 @@ module.exports = {
 
             // Get rarity color and emoji
             const rarityColor = interaction.client.inventory.getRarityColour(result.fish.rarity);
-            const rarityEmoji = interaction.client.inventory.getRarityEmoji(result.fish.rarity);
+            const emoji = interaction.client.inventory.getItemEmoji(result.fish);
 
             // Check if user has a fishing rod
             const bestRod = interaction.client.inventory.getBestFishingRod(userId, guildId);
@@ -42,7 +42,7 @@ module.exports = {
                 .addFields(
                     { 
                         name: '🐟 Caught', 
-                        value: `${rarityEmoji} **${result.fish.name}**`, 
+                        value: `${emoji} **${result.fish.name}**`, 
                         inline: true 
                     },
                     { 
@@ -66,10 +66,10 @@ module.exports = {
 
             // Add fishing rod info if user has one
             if (hasFishingRod) {
-                const rodRarityEmoji = interaction.client.inventory.getRarityEmoji(bestRod.rarity);
+                const rodEmoji = interaction.client.inventory.getItemEmoji(bestRod);
                 embed.addFields({
                     name: '🎣 Fishing Rod Active',
-                    value: `${rodRarityEmoji} **${bestRod.name}** (${bestRod.effect_value}x rare fish boost)`,
+                    value: `${rodEmoji} **${bestRod.name}** (${bestRod.effect_value}x rare fish boost)`,
                     inline: false
                 });
             }

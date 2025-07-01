@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -27,7 +27,7 @@ module.exports = {
             if (!inventory || inventory.length === 0) {
                 return interaction.reply({
                     content: '❌ You don\'t have any items to sell! Visit the shop to buy some items first.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -37,7 +37,7 @@ module.exports = {
             if (!result.success) {
                 return interaction.reply({
                     content: `❌ ${result.message}`,
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -65,7 +65,7 @@ module.exports = {
             console.error('Error in sell command:', error);
             await interaction.reply({
                 content: 'There was an error processing the sale!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     },

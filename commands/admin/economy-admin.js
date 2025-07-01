@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -130,6 +130,13 @@ module.exports = {
         const subcommand = interaction.options.getSubcommand();
         const guildId = interaction.guild.id;
 
+        if (!interaction.member.permissions.has('Administrator')) {
+            return interaction.reply({ 
+                content: '❌ You need Administrator permissions to use this command!', 
+                flags: MessageFlags.Ephemeral 
+            });
+        }
+
         try {
             switch (subcommand) {
                 case 'add': {
@@ -139,7 +146,7 @@ module.exports = {
                     if (amount <= 0) {
                         return interaction.reply({ 
                             content: 'Amount must be positive!', 
-                            ephemeral: true 
+                            flags: MessageFlags.Ephemeral 
                         });
                     }
 
@@ -157,7 +164,7 @@ module.exports = {
                         .setFooter({ text: `Added by ${interaction.user.tag}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed], ephemeral: true });
+                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
                     break;
                 }
 
@@ -168,7 +175,7 @@ module.exports = {
                     if (amount <= 0) {
                         return interaction.reply({ 
                             content: 'Amount must be positive!', 
-                            ephemeral: true 
+                            flags: MessageFlags.Ephemeral 
                         });
                     }
 
@@ -176,7 +183,7 @@ module.exports = {
                     if (currentUser.balance < amount) {
                         return interaction.reply({ 
                             content: `User only has ${interaction.client.economy.formatCurrency(currentUser.balance)}!`, 
-                            ephemeral: true 
+                            flags: MessageFlags.Ephemeral 
                         });
                     }
 
@@ -194,7 +201,7 @@ module.exports = {
                         .setFooter({ text: `Removed by ${interaction.user.tag}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed], ephemeral: true });
+                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
                     break;
                 }
 
@@ -205,7 +212,7 @@ module.exports = {
                     if (amount < 0) {
                         return interaction.reply({ 
                             content: 'Amount cannot be negative!', 
-                            ephemeral: true 
+                            flags: MessageFlags.Ephemeral 
                         });
                     }
 
@@ -226,7 +233,7 @@ module.exports = {
                         .setFooter({ text: `Set by ${interaction.user.tag}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed], ephemeral: true });
+                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
                     break;
                 }
 
@@ -247,7 +254,7 @@ module.exports = {
                         .setFooter({ text: `Server: ${interaction.guild.name}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed], ephemeral: true });
+                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
                     break;
                 }
 
@@ -267,14 +274,14 @@ module.exports = {
                     if (type === 'consumable' && (!effectType || !durationHours)) {
                         return interaction.reply({
                             content: '❌ Consumable items require effect_type and duration_hours.',
-                            ephemeral: true
+                            flags: MessageFlags.Ephemeral
                         });
                     }
 
                     if (type === 'mystery' && effectType !== 'random_item' && effectType !== 'premium_random_item') {
                         return interaction.reply({
                             content: '❌ Mystery items must have effect_type of "random_item" or "premium_random_item".',
-                            ephemeral: true
+                            flags: MessageFlags.Ephemeral
                         });
                     }
 
@@ -282,7 +289,7 @@ module.exports = {
                     if (interaction.client.inventory.itemExists(id, guildId)) {
                         return interaction.reply({ 
                             content: `Item with ID "${id}" already exists in this guild!`, 
-                            ephemeral: true 
+                            flags: MessageFlags.Ephemeral 
                         });
                     }
 
@@ -305,7 +312,7 @@ module.exports = {
                     if (!success) {
                         return interaction.reply({ 
                             content: 'Failed to add item to shop!', 
-                            ephemeral: true 
+                            flags: MessageFlags.Ephemeral 
                         });
                     }
 
@@ -324,7 +331,7 @@ module.exports = {
                         .setFooter({ text: `Added by ${interaction.user.tag}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed], ephemeral: true });
+                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
                     break;
                 }
 
@@ -334,7 +341,7 @@ module.exports = {
                     if (!id) {
                         return interaction.reply({ 
                             content: 'Missing item ID!', 
-                            ephemeral: true 
+                            flags: MessageFlags.Ephemeral 
                         });
                     }
 
@@ -342,7 +349,7 @@ module.exports = {
                     if (!interaction.client.inventory.itemExists(id, guildId)) {
                         return interaction.reply({ 
                             content: `Item with ID "${id}" not found in this guild!`, 
-                            ephemeral: true 
+                            flags: MessageFlags.Ephemeral 
                         });
                     }
 
@@ -351,7 +358,7 @@ module.exports = {
                     if (!success) {
                         return interaction.reply({ 
                             content: 'Failed to remove item from shop!', 
-                            ephemeral: true 
+                            flags: MessageFlags.Ephemeral 
                         });
                     }
 
@@ -362,7 +369,7 @@ module.exports = {
                         .setFooter({ text: `Removed by ${interaction.user.tag}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed], ephemeral: true });
+                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
                     break;
                 }
 
@@ -377,7 +384,7 @@ module.exports = {
                             .setFooter({ text: `Server: ${interaction.guild.name}` })
                             .setTimestamp();
 
-                        return interaction.reply({ embeds: [embed], ephemeral: true });
+                        return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
                     }
 
                     // Group items by rarity
@@ -415,7 +422,7 @@ module.exports = {
                         .setFooter({ text: `Server: ${interaction.guild.name}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed], ephemeral: true });
+                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
                     break;
                 }
 
@@ -425,7 +432,7 @@ module.exports = {
                     if (existingItems.length > 0) {
                         return interaction.reply({ 
                             content: `Shop already has ${existingItems.length} items! Use \`/economy-admin list-items\` to see them.`, 
-                            ephemeral: true 
+                            flags: MessageFlags.Ephemeral 
                         });
                     }
 
@@ -442,7 +449,7 @@ module.exports = {
                         .setFooter({ text: `Populated by ${interaction.user.tag}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed], ephemeral: true });
+                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
                     break;
                 }
             }
@@ -450,7 +457,7 @@ module.exports = {
             console.error('Error in economy-admin command:', error);
             await interaction.reply({ 
                 content: 'There was an error processing the admin command!', 
-                ephemeral: true 
+                flags: MessageFlags.Ephemeral 
             });
         }
     },

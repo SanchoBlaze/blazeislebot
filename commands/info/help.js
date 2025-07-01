@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ComponentType, MessageFlags } = require('discord.js');
 const { Colours } = require('../../modules/colours');
 
 // Emojis for categories
@@ -93,8 +93,8 @@ module.exports = {
         });
 
         collector.on('collect', async i => {
-            if (i.user.id !== user.id) {
-                return i.reply({ content: 'You cannot use this menu.', ephemeral: true });
+            if (i.user.id !== interaction.user.id) {
+                return i.reply({ content: 'You cannot use this menu.', flags: MessageFlags.Ephemeral });
             }
 
             await i.deferUpdate();

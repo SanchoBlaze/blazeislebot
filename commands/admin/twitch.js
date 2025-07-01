@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { Colours } = require('../../modules/colours');
 const config = require('config');
 
@@ -42,7 +42,7 @@ module.exports = {
         if (!settings) {
             return interaction.reply({
                 content: '⚙️ This server is not configured for Twitch notifications. The server owner has been notified to set up the bot configuration.',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
 
@@ -53,7 +53,7 @@ module.exports = {
         if (!isAdministrator && !hasModRole) {
             return interaction.reply({
                 content: 'You need to be a server Administrator or have the configured Mod role to use this command.',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
 
@@ -63,7 +63,7 @@ module.exports = {
         if (!twitchManager) {
             return interaction.reply({ 
                 content: 'Twitch integration is not available.', 
-                ephemeral: true 
+                flags: MessageFlags.Ephemeral 
             });
         }
 
@@ -89,7 +89,7 @@ module.exports = {
                     } else {
                         await interaction.reply({ 
                             content: 'Failed to add subscription. Please try again.', 
-                            ephemeral: true 
+                            flags: MessageFlags.Ephemeral 
                         });
                     }
                     break;
@@ -112,7 +112,7 @@ module.exports = {
                     } else {
                         await interaction.reply({ 
                             content: 'Subscription not found or failed to remove.', 
-                            ephemeral: true 
+                            flags: MessageFlags.Ephemeral 
                         });
                     }
                     break;
@@ -191,7 +191,7 @@ module.exports = {
             console.error('Error in twitch command:', error);
             await interaction.reply({ 
                 content: 'An error occurred while processing your request.', 
-                ephemeral: true 
+                flags: MessageFlags.Ephemeral 
             });
         }
     },

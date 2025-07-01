@@ -11,7 +11,8 @@ module.exports = {
 
         try {
             const user = interaction.client.economy.getUser(userId, guildId);
-            const allItems = interaction.client.inventory.getAllItems(guildId);
+            // Use SQL to exclude fish from shop for better performance
+            const allItems = interaction.client.inventory.getShopItemsExcludingTypes(guildId, ['fish']);
             
             if (allItems.length === 0) {
                 return interaction.reply({ 
@@ -34,10 +35,10 @@ module.exports = {
                 for (const item of pageItems) {
                     const canAfford = user.balance >= item.price;
                     const status = canAfford ? '✅' : '❌';
-                    const rarityEmoji = interaction.client.inventory.getRarityEmoji(item.rarity);
+                    const emoji = interaction.client.inventory.getItemEmoji(item);
                     const rarityName = item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1);
                     
-                    description += `${status} ${rarityEmoji} **${item.name}** - ${interaction.client.economy.formatCurrency(item.price)}\n`;
+                    description += `${status} ${emoji} **${item.name}** - ${interaction.client.economy.formatCurrency(item.price)}\n`;
                     description += `└ ${rarityName} • ${item.description}\n\n`;
                 }
 
@@ -65,13 +66,13 @@ module.exports = {
                         .addOptions(
                             pageItems.map(item => {
                                 const canAfford = user.balance >= item.price;
-                                const rarityEmoji = interaction.client.inventory.getRarityEmoji(item.rarity);
+                                const emoji = interaction.client.inventory.getItemEmoji(item);
                                 
                                 return {
                                     label: `${item.name} - ${interaction.client.economy.formatCurrency(item.price)}`,
-                                    description: canAfford ? `${rarityEmoji} ${item.description.substring(0, 50)}...` : `❌ Insufficient funds`,
+                                    description: canAfford ? `${emoji} ${item.description.substring(0, 50)}...` : `❌ Insufficient funds`,
                                     value: item.id,
-                                    emoji: canAfford ? '🛒' : '❌',
+                                    emoji: canAfford ? emoji : '❌',
                                     default: false
                                 };
                             })
@@ -200,6 +201,15 @@ module.exports = {
                     return true;
                 }
 
+                // Prevent buying fish items
+                if (item.type === 'fish') {
+                    await interaction.reply({
+                        content: 'Fish can only be obtained by fishing, not by purchasing from the shop!',
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return true;
+                }
+
                 const user = interaction.client.economy.getUser(userId, guildId);
                 
                 if (user.balance < item.price) {
@@ -229,11 +239,11 @@ module.exports = {
                     interaction.client.economy.updateBalance(userId, guildId, -item.price, 'balance');
                     interaction.client.economy.logTransaction(userId, guildId, 'shop_purchase', -item.price, `Purchased ${item.name}`);
                     
-                    const rarityEmoji = interaction.client.inventory.getRarityEmoji(item.rarity);
+                    const emoji = interaction.client.inventory.getItemEmoji(item);
                     const embed = new EmbedBuilder()
                         .setColor(interaction.client.inventory.getRarityColour(item.rarity))
                         .setTitle('🛒 Purchase Successful!')
-                        .setDescription(`You purchased **${rarityEmoji} ${item.name}** for ${interaction.client.economy.formatCurrency(item.price)}`)
+                        .setDescription(`You purchased **${emoji} ${item.name}** for ${interaction.client.economy.formatCurrency(item.price)}`)
                         .addFields(
                             { name: '📦 Item Type', value: item.type.charAt(0).toUpperCase() + item.type.slice(1), inline: true },
                             { name: '⭐ Rarity', value: item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1), inline: true },

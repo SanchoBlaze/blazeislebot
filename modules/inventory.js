@@ -49,7 +49,8 @@ class Inventory {
                     duration_hours INTEGER NOT NULL DEFAULT 0,
                     effect_type TEXT,
                     effect_value INTEGER,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    emoji TEXT
                 )
             `).run();
             
@@ -95,7 +96,8 @@ class Inventory {
                 max_quantity: 100,
                 duration_hours: 0,
                 effect_type: null,
-                effect_value: null
+                effect_value: null,
+                emoji: '🐟'
             },
             {
                 id: 'fish_small_bass',
@@ -107,7 +109,8 @@ class Inventory {
                 max_quantity: 100,
                 duration_hours: 0,
                 effect_type: null,
-                effect_value: null
+                effect_value: null,
+                emoji: '🐠'
             },
             {
                 id: 'fish_medium_trout',
@@ -119,7 +122,8 @@ class Inventory {
                 max_quantity: 100,
                 duration_hours: 0,
                 effect_type: null,
-                effect_value: null
+                effect_value: null,
+                emoji: '🐡'
             },
             {
                 id: 'fish_large_salmon',
@@ -131,7 +135,8 @@ class Inventory {
                 max_quantity: 100,
                 duration_hours: 0,
                 effect_type: null,
-                effect_value: null
+                effect_value: null,
+                emoji: '🦈'
             },
             {
                 id: 'fish_golden_carp',
@@ -143,7 +148,8 @@ class Inventory {
                 max_quantity: 100,
                 duration_hours: 0,
                 effect_type: null,
-                effect_value: null
+                effect_value: null,
+                emoji: '🐠'
             },
             {
                 id: 'fish_crystal_fish',
@@ -155,7 +161,8 @@ class Inventory {
                 max_quantity: 100,
                 duration_hours: 0,
                 effect_type: null,
-                effect_value: null
+                effect_value: null,
+                emoji: '💠'
             },
             {
                 id: 'fish_diamond_tuna',
@@ -167,7 +174,8 @@ class Inventory {
                 max_quantity: 100,
                 duration_hours: 0,
                 effect_type: null,
-                effect_value: null
+                effect_value: null,
+                emoji: '💎'
             },
             {
                 id: 'fish_legendary_kraken',
@@ -179,7 +187,8 @@ class Inventory {
                 max_quantity: 100,
                 duration_hours: 0,
                 effect_type: null,
-                effect_value: null
+                effect_value: null,
+                emoji: '🦑'
             },
             // Fishing Rods
             {
@@ -192,7 +201,8 @@ class Inventory {
                 max_quantity: 1,
                 duration_hours: 0,
                 effect_type: 'fishing_boost',
-                effect_value: 1.2
+                effect_value: 1.2,
+                emoji: '<:fishing_rod_basic:1389552382580363264>'
             },
             {
                 id: 'fishing_rod_steel',
@@ -204,7 +214,8 @@ class Inventory {
                 max_quantity: 1,
                 duration_hours: 0,
                 effect_type: 'fishing_boost',
-                effect_value: 1.5
+                effect_value: 1.5,
+                emoji: '🪝'
             },
             {
                 id: 'fishing_rod_golden',
@@ -216,7 +227,8 @@ class Inventory {
                 max_quantity: 1,
                 duration_hours: 0,
                 effect_type: 'fishing_boost',
-                effect_value: 2.0
+                effect_value: 2.0,
+                emoji: '🪙'
             },
             {
                 id: 'fishing_rod_crystal',
@@ -228,7 +240,8 @@ class Inventory {
                 max_quantity: 1,
                 duration_hours: 0,
                 effect_type: 'fishing_boost',
-                effect_value: 3.0
+                effect_value: 3.0,
+                emoji: '💠'
             },
             {
                 id: 'fishing_rod_legendary',
@@ -240,7 +253,8 @@ class Inventory {
                 max_quantity: 1,
                 duration_hours: 0,
                 effect_type: 'fishing_boost',
-                effect_value: 5.0
+                effect_value: 5.0,
+                emoji: '🏆'
             },
             // Original items
             {
@@ -249,11 +263,12 @@ class Inventory {
                 description: 'Get 2x XP for 1 hour',
                 type: 'consumable',
                 rarity: 'common',
-                price: 500,
+                price: 25,
                 max_quantity: 10,
                 duration_hours: 1,
                 effect_type: 'xp_multiplier',
-                effect_value: 2
+                effect_value: 2,
+                emoji: '⚡'
             },
             {
                 id: 'xp_boost_24h',
@@ -261,11 +276,12 @@ class Inventory {
                 description: 'Get 2x XP for 24 hours',
                 type: 'consumable',
                 rarity: 'uncommon',
-                price: 5000,
+                price: 575,
                 max_quantity: 5,
                 duration_hours: 24,
                 effect_type: 'xp_multiplier',
-                effect_value: 2
+                effect_value: 2,
+                emoji: '⚡'
             },
             {
                 id: 'lucky_charm',
@@ -273,11 +289,12 @@ class Inventory {
                 description: 'Increases work rewards by 1.5x for 1 hour',
                 type: 'consumable',
                 rarity: 'rare',
-                price: 1500,
+                price: 13,
                 max_quantity: 5,
                 duration_hours: 1,
                 effect_type: 'work_multiplier',
-                effect_value: 1.5
+                effect_value: 1.5,
+                emoji: '🍀'
             },
             {
                 id: 'daily_doubler',
@@ -285,11 +302,12 @@ class Inventory {
                 description: 'Double your daily rewards for 24 hours',
                 type: 'consumable',
                 rarity: 'epic',
-                price: 2000,
+                price: 80,
                 max_quantity: 3,
                 duration_hours: 24,
                 effect_type: 'daily_multiplier',
-                effect_value: 2
+                effect_value: 2,
+                emoji: '💸'
             },
             {
                 id: 'daily_booster',
@@ -297,11 +315,12 @@ class Inventory {
                 description: '5x daily rewards for 1 hour - perfect for quick gains!',
                 type: 'consumable',
                 rarity: 'legendary',
-                price: 10000,
+                price: 300,
                 max_quantity: 2,
                 duration_hours: 1,
                 effect_type: 'daily_multiplier',
-                effect_value: 5
+                effect_value: 5,
+                emoji: '🚀'
             },
             {
                 id: 'mystery_box',
@@ -313,7 +332,8 @@ class Inventory {
                 max_quantity: 10,
                 duration_hours: 0,
                 effect_type: 'random_item',
-                effect_value: 1
+                effect_value: 1,
+                emoji: '🎁'
             },
             {
                 id: 'coin_multiplier_1h',
@@ -321,11 +341,12 @@ class Inventory {
                 description: 'Get 2x coins from all sources for 1 hour',
                 type: 'consumable',
                 rarity: 'rare',
-                price: 3000,
+                price: 25,
                 max_quantity: 3,
                 duration_hours: 1,
                 effect_type: 'coin_multiplier',
-                effect_value: 2
+                effect_value: 2,
+                emoji: '💰'
             },
             {
                 id: 'xp_boost_7d',
@@ -333,11 +354,12 @@ class Inventory {
                 description: 'Get 2.5x XP for 7 days - perfect for active users!',
                 type: 'consumable',
                 rarity: 'legendary',
-                price: 25000,
+                price: 5700,
                 max_quantity: 2,
                 duration_hours: 168, // 7 days
                 effect_type: 'xp_multiplier',
-                effect_value: 2.5
+                effect_value: 2.5,
+                emoji: '⚡'
             },
             {
                 id: 'work_booster',
@@ -345,11 +367,12 @@ class Inventory {
                 description: 'Increases work rewards by 2x for 2 hours',
                 type: 'consumable',
                 rarity: 'epic',
-                price: 4000,
+                price: 50,
                 max_quantity: 3,
                 duration_hours: 2,
                 effect_type: 'work_multiplier',
-                effect_value: 2
+                effect_value: 2,
+                emoji: '💼'
             },
             {
                 id: 'rare_mystery_box',
@@ -361,19 +384,20 @@ class Inventory {
                 max_quantity: 5,
                 duration_hours: 0,
                 effect_type: 'rare_random_item',
-                effect_value: 1
+                effect_value: 1,
+                emoji: '🎁'
             }
         ];
 
         // Insert default items for the specific guild
         for (const item of defaultItems) {
             sql.prepare(`
-                INSERT OR IGNORE INTO items (id, guild, name, description, type, rarity, price, max_quantity, duration_hours, effect_type, effect_value)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT OR IGNORE INTO items (id, guild, name, description, type, rarity, price, max_quantity, duration_hours, effect_type, effect_value, emoji)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `).run(
                 item.id, guildId, item.name, item.description, item.type, item.rarity, 
                 item.price, item.max_quantity, item.duration_hours, item.effect_type, 
-                item.effect_value
+                item.effect_value, item.emoji
             );
         }
     }
@@ -651,6 +675,11 @@ class Inventory {
         return emojis[rarity] || emojis.common;
     }
 
+    // Get custom emoji for an item, fallback to rarity emoji
+    getItemEmoji(item) {
+        return item.emoji || this.getRarityEmoji(item.rarity);
+    }
+
     // Add item to shop
     addShopItem(itemData) {
         try {
@@ -871,6 +900,18 @@ class Inventory {
     getFishingBoost(userId, guildId) {
         const bestRod = this.getBestFishingRod(userId, guildId);
         return bestRod ? bestRod.effect_value : 1;
+    }
+
+    // Get all shop items for a guild, excluding certain types (SQL filtering)
+    getShopItemsExcludingTypes(guildId, excludedTypes = []) {
+        if (!excludedTypes.length) {
+            return this.getShopItems(guildId);
+        }
+        // Build SQL placeholders for excluded types
+        const placeholders = excludedTypes.map(() => '?').join(', ');
+        return sql.prepare(
+            `SELECT * FROM items WHERE guild = ? AND type NOT IN (${placeholders}) ORDER BY price ASC`
+        ).all(guildId, ...excludedTypes);
     }
 }
 
