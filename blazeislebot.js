@@ -160,6 +160,40 @@ client.on('interactionCreate', async interaction => {
                 const handled = await shopCommand.handleButtonInteraction(interaction);
                 if (handled) return;
             }
+            
+            // Check for use command button interactions
+            if (interaction.customId.startsWith('use_')) {
+                const useCommand = client.commands.get('use');
+                if (useCommand && useCommand.handleButtonInteraction) {
+                    const handled = await useCommand.handleButtonInteraction(interaction);
+                    if (handled) return;
+                } else if (useCommand && useCommand.usePaginator) {
+                    // fallback for legacy paginator
+                    const userId = interaction.user.id;
+                    const guildId = interaction.guild.id;
+                    const inventory = client.inventory.getUserInventory(userId, guildId)
+                        .filter(item => item.effect_type && item.quantity > 0 && (!item.expires_at || new Date(item.expires_at) > new Date()));
+                    const uniqueItems = {};
+                    for (const item of inventory) {
+                        if (!uniqueItems[item.id]) {
+                            uniqueItems[item.id] = { ...item };
+                        } else {
+                            uniqueItems[item.id].quantity += item.quantity;
+                        }
+                    }
+                    const allItems = Object.values(uniqueItems);
+                    allItems.sort((a, b) => {
+                        const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5 };
+                        const aRank = rarityOrder[a.rarity] || 99;
+                        const bRank = rarityOrder[b.rarity] || 99;
+                        if (aRank !== bRank) return aRank - bRank;
+                        return a.name.localeCompare(b.name);
+                    });
+                    const pages = useCommand.createPages(allItems, client);
+                    await useCommand.usePaginator(interaction, pages, allItems);
+                    return;
+                }
+            }
         } catch (error) {
             console.error('Error handling button interaction:', error);
             if (!interaction.replied) {
@@ -179,6 +213,38 @@ client.on('interactionCreate', async interaction => {
             if (shopCommand && shopCommand.handleButtonInteraction) {
                 const handled = await shopCommand.handleButtonInteraction(interaction);
                 if (handled) return;
+            }
+            // Check for use command select menu interactions
+            if (interaction.customId.startsWith('use_')) {
+                const useCommand = client.commands.get('use');
+                if (useCommand && useCommand.handleButtonInteraction) {
+                    const handled = await useCommand.handleButtonInteraction(interaction);
+                    if (handled) return;
+                } else if (useCommand && useCommand.usePaginator) {
+                    const userId = interaction.user.id;
+                    const guildId = interaction.guild.id;
+                    const inventory = client.inventory.getUserInventory(userId, guildId)
+                        .filter(item => item.effect_type && item.quantity > 0 && (!item.expires_at || new Date(item.expires_at) > new Date()));
+                    const uniqueItems = {};
+                    for (const item of inventory) {
+                        if (!uniqueItems[item.id]) {
+                            uniqueItems[item.id] = { ...item };
+                        } else {
+                            uniqueItems[item.id].quantity += item.quantity;
+                        }
+                    }
+                    const allItems = Object.values(uniqueItems);
+                    allItems.sort((a, b) => {
+                        const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5 };
+                        const aRank = rarityOrder[a.rarity] || 99;
+                        const bRank = rarityOrder[b.rarity] || 99;
+                        if (aRank !== bRank) return aRank - bRank;
+                        return a.name.localeCompare(b.name);
+                    });
+                    const pages = useCommand.createPages(allItems, client);
+                    await useCommand.usePaginator(interaction, pages, allItems);
+                    return;
+                }
             }
         } catch (error) {
             console.error('Error handling select menu interaction:', error);

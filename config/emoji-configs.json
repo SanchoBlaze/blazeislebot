@@ -22,7 +22,8 @@
         "daily_doubler": "<:daily_doubler:1390066267024654477>",
         "daily_booster": "<:daily_booster:1390066251526570116>",
         "mystery_box": "<:mystery_box:1390066457341198516>",
-        "rare_mystery_box": "<:rare_mystery_box:1390066470058201301>"
+        "rare_mystery_box": "<:rare_mystery_box:1390066470058201301>",
+        "scratch_card": "<:scratch_card:1390103811691118632>"
     },
     "test_bot": {
         "fishing_rod_basic": "<:fishing_rod_basic:1389632536342429738>",
@@ -47,7 +48,8 @@
         "daily_doubler": "<:daily_doubler:1390065935762849802>",
         "daily_booster": "<:daily_booster:1390065922248671353>",
         "mystery_box": "<:mystery_box:1390065961742110881>",
-        "rare_mystery_box": "<:rare_mystery_box:1390065975856201841>"
+        "rare_mystery_box": "<:rare_mystery_box:1390065975856201841>",
+        "scratch_card": "<:scratch_card:1390104024434610388>"
     },
     "production_bot": {
         "fishing_rod_basic": "<:fishing_rod_basic:1389552382580363264>",
@@ -72,6 +74,7 @@
         "daily_doubler": "<:daily_doubler:1390066267024654477>",
         "daily_booster": "<:daily_booster:1390066251526570116>",
         "mystery_box": "<:mystery_box:1390066457341198516>",
-        "rare_mystery_box": "<:rare_mystery_box:1390066470058201301>"
+        "rare_mystery_box": "<:rare_mystery_box:1390066470058201301>",
+        "scratch_card": "<:scratch_card:1390103811691118632>"
     }
 } 

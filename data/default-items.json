@@ -210,12 +210,12 @@
     {
         "id": "daily_doubler",
         "name": "Daymaker Token",
-        "description": "Double your daily rewards for 24 hours",
+        "description": "Double your daily rewards for 1 hour",
         "type": "consumable",
         "rarity": "epic",
-        "price": 2429,
+        "price": 184,
         "max_quantity": 3,
-        "duration_hours": 24,
+        "duration_hours": 1,
         "effect_type": "daily_multiplier",
         "effect_value": 2,
         "emoji": "💸"
@@ -226,7 +226,7 @@
         "description": "5x daily rewards for 1 hour - perfect for quick gains!",
         "type": "consumable",
         "rarity": "legendary",
-        "price": 293,
+        "price": 450,
         "max_quantity": 2,
         "duration_hours": 1,
         "effect_type": "daily_multiplier",
@@ -297,5 +297,18 @@
         "effect_type": "random_item",
         "effect_value": 1,
         "emoji": "🎁"
+    },
+    {
+        "id": "scratch_card",
+        "name": "Enchanted Gamble",
+        "description": "Use for a chance to win coins or a item of any rarity!",
+        "type": "consumable",
+        "rarity": "uncommon",
+        "price": 300,
+        "max_quantity": 5,
+        "duration_hours": 0,
+        "effect_type": "scratch_card",
+        "effect_value": null,
+        "emoji": "🎟️"
     }
 ] 

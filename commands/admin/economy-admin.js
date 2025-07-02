@@ -180,7 +180,11 @@ module.exports = {
                         .setFooter({ text: `Added by ${interaction.user.tag}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    if (interaction.replied || interaction.deferred) {
+                        await interaction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    } else {
+                        await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    }
                     break;
                 }
 
@@ -217,7 +221,11 @@ module.exports = {
                         .setFooter({ text: `Removed by ${interaction.user.tag}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    if (interaction.replied || interaction.deferred) {
+                        await interaction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    } else {
+                        await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    }
                     break;
                 }
 
@@ -249,7 +257,11 @@ module.exports = {
                         .setFooter({ text: `Set by ${interaction.user.tag}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    if (interaction.replied || interaction.deferred) {
+                        await interaction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    } else {
+                        await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    }
                     break;
                 }
 
@@ -270,7 +282,11 @@ module.exports = {
                         .setFooter({ text: `Server: ${interaction.guild.name}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    if (interaction.replied || interaction.deferred) {
+                        await interaction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    } else {
+                        await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    }
                     break;
                 }
 
@@ -347,7 +363,11 @@ module.exports = {
                         .setFooter({ text: `Added by ${interaction.user.tag}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    if (interaction.replied || interaction.deferred) {
+                        await interaction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    } else {
+                        await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    }
                     break;
                 }
 
@@ -385,7 +405,11 @@ module.exports = {
                         .setFooter({ text: `Removed by ${interaction.user.tag}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    if (interaction.replied || interaction.deferred) {
+                        await interaction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    } else {
+                        await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    }
                     break;
                 }
 
@@ -438,7 +462,11 @@ module.exports = {
                         .setFooter({ text: `Server: ${interaction.guild.name}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    if (interaction.replied || interaction.deferred) {
+                        await interaction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    } else {
+                        await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    }
                     break;
                 }
 
@@ -465,7 +493,11 @@ module.exports = {
                         .setFooter({ text: `Populated by ${interaction.user.tag}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    if (interaction.replied || interaction.deferred) {
+                        await interaction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    } else {
+                        await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    }
                     break;
                 }
 
@@ -509,16 +541,27 @@ module.exports = {
                         .setFooter({ text: `Added by ${interaction.user.tag}` })
                         .setTimestamp();
 
-                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    if (interaction.replied || interaction.deferred) {
+                        await interaction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    } else {
+                        await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    }
                     break;
                 }
             }
         } catch (error) {
             console.error('Error in economy-admin command:', error);
-            await interaction.reply({ 
-                content: 'There was an error processing the admin command!', 
-                flags: MessageFlags.Ephemeral 
-            });
+            if (interaction.replied || interaction.deferred) {
+                await interaction.followUp({ 
+                    content: 'There was an error processing the admin command!', 
+                    flags: MessageFlags.Ephemeral 
+                });
+            } else {
+                await interaction.reply({ 
+                    content: 'There was an error processing the admin command!', 
+                    flags: MessageFlags.Ephemeral 
+                });
+            }
         }
     },
 

@@ -297,6 +297,44 @@ class Inventory {
             case 'rare_random_item':
                 result = await this.openRareMysteryBox(userId, guildId);
                 break;
+
+            case 'scratch_card': {
+                // 50% nothing, 30% coins, 20% item (weighted by rarity)
+                const roll = Math.random();
+                if (roll < 0.5) {
+                    result.message = '😢 You scratched and found nothing. Better luck next time!';
+                } else if (roll < 0.8) {
+                    // 30% coins
+                    const coins = Math.floor(Math.random() * 901) + 100;
+                    if (this.client && this.client.economy) {
+                        this.client.economy.updateBalance(userId, guildId, coins, 'balance');
+                        this.client.economy.logTransaction(userId, guildId, 'scratch_card_win', coins, 'Scratch Card Win');
+                    }
+                    result.effect = { type: 'coins', amount: coins };
+                    result.message = `🎉 You scratched and won **${coins} coins**!`;
+                } else {
+                    // 20% item (weighted by rarity)
+                    const allItems = this.getAllItems(guildId).filter(i => i.type !== 'mystery' && i.id !== 'scratch_card');
+                    // Rarity weights: common 40, uncommon 30, rare 15, epic 10, legendary 5
+                    const rarityWeights = { common: 40, uncommon: 30, rare: 15, epic: 10, legendary: 5 };
+                    let weightedPool = [];
+                    for (const item of allItems) {
+                        const weight = rarityWeights[item.rarity] || 1;
+                        for (let i = 0; i < weight; i++) {
+                            weightedPool.push(item);
+                        }
+                    }
+                    if (weightedPool.length > 0) {
+                        const randomItem = weightedPool[Math.floor(Math.random() * weightedPool.length)];
+                        this.addItem(userId, guildId, randomItem.id, 1);
+                        result.effect = { type: 'item', item: randomItem };
+                        result.message = `🎁 You scratched and won a **${randomItem.name}**!`;
+                    } else {
+                        result.message = 'You scratched, but there was nothing to win this time.';
+                    }
+                }
+                break;
+            }
                 
             default:
                 result.message = `Used ${item.name}.`;
