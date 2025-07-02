@@ -110,7 +110,7 @@ The shop offers various items that users can purchase with their coins:
 - `/shop` - Browse and buy items from the shop
 - `/inventory [user]` - View your or another user's inventory
 - `/use <item>` - Use an item from your inventory
-- `/sell <item> [quantity]` - Sell items back to the shop (rarity-based pricing)
+- `/sell` - Sell items back to the shop (rarity-based pricing)
 
 ### Admin Commands
 

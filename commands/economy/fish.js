@@ -79,7 +79,7 @@ module.exports = {
             // Add tip at the bottom
             embed.addFields({
                 name: '💡 Tip',
-                value: 'Use `/sell fish_<fish_name>` to sell your catch!',
+                value: 'Use `/sell` to sell your catch!',
                 inline: false
             });
 

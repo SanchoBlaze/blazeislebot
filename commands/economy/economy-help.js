@@ -56,7 +56,7 @@ module.exports = {
                 { name: '/inventory', value: 'View your inventory', inline: true },
                 { name: '/use', value: 'Use items from your inventory', inline: true },
                 { name: '/effects', value: 'View your active effects', inline: true },
-                { name: '/sell', value: 'Sell items back to the shop', inline: true }
+                { name: '/sell', value: 'Sell items back to the shop (interactive menu)', inline: true }
             )
             .addFields(
                 {

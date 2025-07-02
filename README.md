@@ -221,7 +221,7 @@ The bot features a complete virtual economy system that encourages community eng
 - **`/inventory [user]`**: View your or another user's inventory
 - **`/use <item>`**: Use an item from your inventory
 - **`/shop`**: Interactive shop with purchase buttons
-- **`/sell <item> [quantity]`**: Sell items back to the shop
+- **`/sell`**: Sell items back to the shop
 - **`/economy-help`**: Get help with economy commands
 
 #### Admin Controls
