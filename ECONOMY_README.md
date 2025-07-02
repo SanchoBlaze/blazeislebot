@@ -93,6 +93,26 @@ The shop offers various items that users can purchase with their coins:
 - **Quantity Limits**: Prevent item hoarding
 - **Duration Effects**: Temporary boosts with expiration times
 
+### Interactive UI & Item Usage
+- All shop, sell, and use commands now feature a modern interactive paginator UI:
+  - One item per page, with navigation arrows
+  - Filter dropdown to sort by item type
+  - Action button (Buy, Sell, Use) for each item
+  - Emoji thumbnails for each item, including custom emojis
+  - When using an item that gives a reward (like a scratch card or mystery box), the reward's emoji is shown as the embed thumbnail
+- Improved error handling and global interaction logic: No more failed interactions or double reply errors
+- Admin commands are now robust and stable, preventing double reply errors
+
+### 🎟️ Scratch Card Item
+- **Type:** Consumable, Uncommon
+- **Price:** 300 coins
+- **Effect:** 50% chance to get nothing, 30% chance to win 100–1000 coins, 20% chance to win an item of any rarity (weighted by rarity)
+- **Reward:** If you win an item, its emoji is shown as the embed thumbnail
+
+### 💸 Profit Margin Logic
+- All item prices are set so users always make a profit when using or selling them
+- Profit margins are transparent and based on rarity
+
 ## Commands
 
 ### 💰 Economy Commands

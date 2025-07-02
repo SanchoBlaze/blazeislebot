@@ -93,4 +93,9 @@ If you have a new item with ID `"magic_sword"`:
 }
 ```
 
-The system will automatically use the custom emoji when available, falling back to the default emoji if not found in the config. 
+The system will automatically use the custom emoji when available, falling back to the default emoji if not found in the config.
+
+## Emoji Display in Interactive UIs
+
+- The interactive shop, sell, and use commands always show the correct emoji for each item, including custom emojis, thanks to the emoji config system.
+- When you use an item that gives a reward (like a scratch card or mystery box), the reward item's emoji is shown as the thumbnail in the result embed. 

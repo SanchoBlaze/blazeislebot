@@ -17,6 +17,11 @@ A feature-rich Discord bot with modular architecture, economy system, loyalty tr
 - **Utility commands**: 8ball, dadjoke, gif, server info, avatar, and help
 - **Role-based permissions** for moderation commands
 - Modular command structure for easy extension
+- **Interactive paginator UI** for `/shop`, `/sell`, and `/use` commands: One item per page, navigation arrows, filter dropdown, action button, and emoji thumbnails for a modern, user-friendly experience.
+- **Improved error handling and global interaction logic** for all interactive commands: No more failed interactions or double reply errors.
+- **Scratch Card item**: A consumable with gambling logic—win coins or a random item, with the reward's emoji shown as the embed thumbnail.
+- **Profit margin logic for item pricing**: All shop items are priced so users always make a profit when using or selling them.
+- **Admin command stability**: All admin commands now handle Discord interactions robustly, preventing double reply errors.
 
 ## Getting Started
 
@@ -250,6 +255,11 @@ The system is designed to maintain a healthy economy:
 - **Total Weekly Potential**: ~4,270-4,550 coins for active users
 
 📖 **[View detailed economy documentation →](ECONOMY_README.md)**
+
+#### Interactive shop, sell, and use commands: Browse, buy, sell, and use items with a modern paginator UI, filter dropdown, and emoji thumbnails.
+#### Scratch Card item: Try your luck for coins or rare items, with visual feedback for your reward.
+#### Transparent profit margins: All item prices are set so users always make a profit.
+#### Admin command stability: All admin commands now handle Discord interactions robustly, preventing double reply errors.
 
 ## Technical Details
 
