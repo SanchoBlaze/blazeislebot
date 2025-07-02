@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, MessageFlags, StringSelectMenuBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, MessageFlags, StringSelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -174,7 +174,27 @@ module.exports = {
             }
             // Handle button interactions
             if (i.isButton()) {
-                await i.deferUpdate();
+                if (i.customId === 'sell_quantityButton') {
+                    // Show modal for quantity input (do NOT defer or edit reply)
+                    const currentPage = currentPages[page];
+                    const modal = new ModalBuilder()
+                        .setCustomId('sell_quantityModal')
+                        .setTitle('Sell Quantity')
+                        .addComponents(
+                            new ActionRowBuilder().addComponents(
+                                new TextInputBuilder()
+                                    .setCustomId('sell_quantityInput')
+                                    .setLabel('Enter quantity to sell')
+                                    .setStyle(TextInputStyle.Short)
+                                    .setPlaceholder(`1 - ${currentPage.item.quantity}`)
+                                    .setRequired(true)
+                            )
+                        );
+                    await i.showModal(modal);
+                    return;
+                } else {
+                    await i.deferUpdate();
+                }
                 if (i.customId === 'sell_leftPaginationButton') {
                     page = page > 0 ? --page : currentPages.length - 1;
                 } else if (i.customId === 'sell_rightPaginationButton') {
@@ -206,6 +226,36 @@ module.exports = {
             }
         });
 
+        // Modal submit handler
+        interaction.client.on('interactionCreate', async modalInteraction => {
+            if (!modalInteraction.isModalSubmit() || modalInteraction.customId !== 'sell_quantityModal') return;
+            if (modalInteraction.user.id !== interaction.user.id) return;
+            const currentPage = currentPages[page];
+            const maxQty = currentPage.item.quantity;
+            const qtyStr = modalInteraction.fields.getTextInputValue('sell_quantityInput');
+            let qty = parseInt(qtyStr, 10);
+            if (isNaN(qty) || qty < 1 || qty > maxQty) {
+                await modalInteraction.reply({ content: `Please enter a valid quantity between 1 and ${maxQty}.`, ephemeral: true });
+                return;
+            }
+            // Process the sale
+            const success = await this.processSell(modalInteraction, currentPage.item, currentPage.sellPrice, qty);
+            if (success) {
+                // Update the embed and buttons
+                const newQuantity = currentPage.item.quantity - qty;
+                currentPage.item.quantity = newQuantity;
+                const newTotalPrice = currentPage.sellPrice * newQuantity;
+                const updatedEmbed = this.updateEmbedAfterSell(currentPage.embed, newQuantity, newTotalPrice, modalInteraction.client);
+                const updatedButtons = this.getButtons(currentPage.pageNumber, currentPage.totalPages, newQuantity > 0);
+                await modalInteraction.update({
+                    embeds: [updatedEmbed],
+                    components: [filterDropdown, updatedButtons]
+                });
+            } else {
+                await modalInteraction.reply({ content: 'There was an error processing your sale.', ephemeral: true });
+            }
+        });
+
         collector.on('end', () => {
             const currentPage = currentPages[page];
             const disabledButtons = this.getDisabledButtons(currentPage.pageNumber, currentPage.totalPages);
@@ -213,8 +263,8 @@ module.exports = {
         });
     },
 
-    getButtons(pageNumber, totalPages, canSell) {
-        return new ActionRowBuilder()
+    getButtons(pageNumber, totalPages, canSell, showSellQuantity = true) {
+        const row = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('sell_leftPaginationButton')
@@ -232,6 +282,16 @@ module.exports = {
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(pageNumber === totalPages)
             );
+        if (showSellQuantity) {
+            row.addComponents(
+                new ButtonBuilder()
+                    .setCustomId('sell_quantityButton')
+                    .setLabel('🔢 Sell Quantity')
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(!canSell)
+            );
+        }
+        return row;
     },
 
     getFilterDropdown() {
@@ -317,25 +377,50 @@ module.exports = {
     async processSell(interaction, item, sellPrice, quantity = 1) {
         const guildId = interaction.guild.id;
         const userId = interaction.user.id;
+        const isModal = interaction.isModalSubmit && interaction.isModalSubmit();
 
         try {
             console.log(`[sell] User ${userId} attempting to sell item ${item.id}`);
             // Check if user has the item
             const currentQuantity = interaction.client.inventory.getItemCount(userId, guildId, item.id);
             if (currentQuantity < quantity) {
-                await interaction.followUp({
-                    content: 'You don\'t have enough of this item to sell!',
-                    flags: MessageFlags.Ephemeral
-                });
+                if (isModal) {
+                    await interaction.reply({
+                        content: 'You don\'t have enough of this item to sell!',
+                        ephemeral: true
+                    });
+                } else if (interaction.replied || interaction.deferred) {
+                    await interaction.followUp({
+                        content: 'You don\'t have enough of this item to sell!',
+                        ephemeral: true
+                    });
+                } else {
+                    await interaction.reply({
+                        content: 'You don\'t have enough of this item to sell!',
+                        ephemeral: true
+                    });
+                }
                 return false;
             }
             // Sell the item
             const result = interaction.client.inventory.sellItem(userId, guildId, item.id, quantity);
             if (!result.success) {
-                await interaction.followUp({
-                    content: `❌ ${result.message}`,
-                    flags: MessageFlags.Ephemeral
-                });
+                if (isModal) {
+                    await interaction.reply({
+                        content: `❌ ${result.message}`,
+                        ephemeral: true
+                    });
+                } else if (interaction.replied || interaction.deferred) {
+                    await interaction.followUp({
+                        content: `❌ ${result.message}`,
+                        ephemeral: true
+                    });
+                } else {
+                    await interaction.reply({
+                        content: `❌ ${result.message}`,
+                        ephemeral: true
+                    });
+                }
                 return false;
             }
             // Add coins to user's balance
@@ -355,14 +440,33 @@ module.exports = {
                 )
                 .setFooter({ text: `Sold by ${interaction.user.tag}` })
                 .setTimestamp();
-            await interaction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
+            if (isModal) {
+                // Success handled by modalInteraction.update in the modal handler
+                return true;
+            } else if (interaction.replied || interaction.deferred) {
+                await interaction.followUp({ embeds: [embed], ephemeral: true });
+            } else {
+                await interaction.reply({ embeds: [embed], ephemeral: true });
+            }
             return true;
         } catch (error) {
             console.error('Error processing sell:', error);
-            await interaction.followUp({ 
-                content: 'There was an error processing the sale!', 
-                flags: MessageFlags.Ephemeral 
-            });
+            if (isModal) {
+                await interaction.reply({
+                    content: 'There was an error processing the sale!',
+                    ephemeral: true
+                });
+            } else if (interaction.replied || interaction.deferred) {
+                await interaction.followUp({
+                    content: 'There was an error processing the sale!',
+                    ephemeral: true
+                });
+            } else {
+                await interaction.reply({
+                    content: 'There was an error processing the sale!',
+                    ephemeral: true
+                });
+            }
             return false;
         }
     },
