@@ -278,7 +278,7 @@ class Economy {
         const lastFishing = user.last_fishing ? new Date(user.last_fishing) : null;
         
         // Check if user can fish (30 minutes cooldown)
-        if (lastFishing && (now - lastFishing) < 30 * 60 * 1000) {
+        if (lastFishing && (now - lastFishing) < 1 * 60 * 1000) {
             const timeLeft = 30 * 60 * 1000 - (now - lastFishing);
             const minutes = Math.floor(timeLeft / (60 * 1000));
             const seconds = Math.floor((timeLeft % (60 * 1000)) / 1000);
@@ -306,19 +306,15 @@ class Economy {
                 case 'legendary': baseChance = 0.1; break;
                 default: baseChance = 10; break;
             }
-            
             // Apply fishing rod boost to rare+ fish only
             let finalChance = baseChance;
             if (item.rarity === 'rare' || item.rarity === 'epic' || item.rarity === 'legendary') {
                 finalChance = baseChance * fishingBoost;
             }
-            
             return {
-                name: item.name,
-                rarity: item.rarity,
-                sellPrice: item.price,
+                ...item, // Spread all properties, including emoji
+                sellPrice: item.price, // Keep for compatibility
                 chance: finalChance,
-                itemId: item.id,
                 baseChance: baseChance
             };
         });
@@ -343,7 +339,7 @@ class Economy {
         }
 
         // Add the fish to user's inventory
-        this.client.inventory.addItem(userId, guildId, caughtFish.itemId, 1);
+        this.client.inventory.addItem(userId, guildId, caughtFish.id, 1);
 
         // Update last fishing time
         sql.prepare(`
@@ -357,7 +353,7 @@ class Economy {
         return { 
             user: this.getUser(userId, guildId), 
             fish: caughtFish,
-            itemId: caughtFish.itemId
+            id: caughtFish.id
         };
     }
 

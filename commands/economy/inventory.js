@@ -58,7 +58,7 @@ module.exports = {
                     for (const item of itemsByRarity[rarity]) {
                         const quantityText = item.quantity > 1 ? ` (x${item.quantity})` : '';
                         const expiryText = item.expires_at ? ` ⏰` : '';
-                        const sellPercentage = interaction.client.inventory.getSellPricePercentage(item.rarity);
+                        const sellPercentage = interaction.client.inventory.getSellPricePercentage(item.rarity, item.type);
                         const sellPrice = Math.floor(item.price * sellPercentage);
                         const emoji = interaction.client.inventory.getItemEmoji(item);
                         description += `• **${emoji} ${item.name}**${quantityText}${expiryText}\n`;

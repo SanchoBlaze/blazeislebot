@@ -35,40 +35,33 @@ module.exports = {
             const bestRod = interaction.client.inventory.getBestFishingRod(userId, guildId);
             const hasFishingRod = bestRod !== null;
 
+            // Get emoji URL for thumbnail
+            const emojiUrl = interaction.client.inventory.getEmojiUrl(emoji, interaction.client);
+
             const embed = new EmbedBuilder()
                 .setColor(rarityColor)
                 .setTitle('🎣 Fishing Complete!')
                 .setDescription(`${randomMessage}`)
                 .addFields(
                     { 
-                        name: '🐟 Caught', 
-                        value: `${emoji} **${result.fish.name}**`, 
-                        inline: true 
-                    },
-                    { 
-                        name: '💰 Sell Price', 
-                        value: interaction.client.economy.formatCurrency(result.fish.sellPrice), 
-                        inline: true 
-                    },
-                    { 
-                        name: '📦 Added to Inventory', 
-                        value: '✅ Fish added to your inventory', 
-                        inline: true 
+                        name: 'You Caught', 
+                        value: `${emoji} **${result.fish.name}**\n\n💰 **Sell Price:** ${interaction.client.economy.formatCurrency(result.fish.sellPrice)}`, 
+                        inline: false
                     }
                 )
-                .addFields({
-                    name: '💡 Tip',
-                    value: 'Use `/sell fish_<fish_name>` to sell your catch!',
-                    inline: false
-                })
                 .setFooter({ text: 'You can fish again in 30 minutes!' })
                 .setTimestamp();
+
+            // Always set thumbnail to the caught fish's emoji if available
+            if (emojiUrl) {
+                embed.setThumbnail(emojiUrl);
+            }
 
             // Add fishing rod info if user has one
             if (hasFishingRod) {
                 const rodEmoji = interaction.client.inventory.getItemEmoji(bestRod);
                 embed.addFields({
-                    name: '🎣 Fishing Rod Active',
+                    name: '🎣 Fishing Rod',
                     value: `${rodEmoji} **${bestRod.name}** (${bestRod.effect_value}x rare fish boost)`,
                     inline: false
                 });
@@ -82,6 +75,13 @@ module.exports = {
                     inline: false
                 });
             }
+
+            // Add tip at the bottom
+            embed.addFields({
+                name: '💡 Tip',
+                value: 'Use `/sell fish_<fish_name>` to sell your catch!',
+                inline: false
+            });
 
             await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         } catch (error) {

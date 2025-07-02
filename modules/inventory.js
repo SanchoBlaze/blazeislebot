@@ -83,321 +83,32 @@ class Inventory {
 
     // Populate default items for a specific guild
     populateDefaultItems(guildId) {
-        // Define default items
-        const defaultItems = [
-            // Fish items
-            {
-                id: 'fish_tiny_minnow',
-                name: 'Tiny Minnow',
-                description: 'A small, common fish. Good for beginners!',
-                type: 'fish',
-                rarity: 'common',
-                price: 5,
-                max_quantity: 100,
-                duration_hours: 0,
-                effect_type: null,
-                effect_value: null,
-                emoji: '🐟'
-            },
-            {
-                id: 'fish_small_bass',
-                name: 'Small Bass',
-                description: 'A decent-sized bass. Not bad for a day\'s catch!',
-                type: 'fish',
-                rarity: 'common',
-                price: 8,
-                max_quantity: 100,
-                duration_hours: 0,
-                effect_type: null,
-                effect_value: null,
-                emoji: '🐠'
-            },
-            {
-                id: 'fish_medium_trout',
-                name: 'Medium Trout',
-                description: 'A nice trout. Getting better at fishing!',
-                type: 'fish',
-                rarity: 'uncommon',
-                price: 15,
-                max_quantity: 100,
-                duration_hours: 0,
-                effect_type: null,
-                effect_value: null,
-                emoji: '🐡'
-            },
-            {
-                id: 'fish_large_salmon',
-                name: 'Large Salmon',
-                description: 'A big salmon! This is a good catch!',
-                type: 'fish',
-                rarity: 'uncommon',
-                price: 25,
-                max_quantity: 100,
-                duration_hours: 0,
-                effect_type: null,
-                effect_value: null,
-                emoji: '🦈'
-            },
-            {
-                id: 'fish_golden_carp',
-                name: 'Golden Carp',
-                description: 'A rare golden carp! This is valuable!',
-                type: 'fish',
-                rarity: 'rare',
-                price: 50,
-                max_quantity: 100,
-                duration_hours: 0,
-                effect_type: null,
-                effect_value: null,
-                emoji: '🐠'
-            },
-            {
-                id: 'fish_crystal_fish',
-                name: 'Crystal Fish',
-                description: 'A mysterious crystal fish. Very rare!',
-                type: 'fish',
-                rarity: 'rare',
-                price: 75,
-                max_quantity: 100,
-                duration_hours: 0,
-                effect_type: null,
-                effect_value: null,
-                emoji: '💠'
-            },
-            {
-                id: 'fish_diamond_tuna',
-                name: 'Diamond Tuna',
-                description: 'An epic diamond tuna! This is legendary!',
-                type: 'fish',
-                rarity: 'epic',
-                price: 150,
-                max_quantity: 100,
-                duration_hours: 0,
-                effect_type: null,
-                effect_value: null,
-                emoji: '💎'
-            },
-            {
-                id: 'fish_legendary_kraken',
-                name: 'Legendary Kraken',
-                description: 'THE LEGENDARY KRAKEN! The rarest catch of all!',
-                type: 'fish',
-                rarity: 'legendary',
-                price: 500,
-                max_quantity: 100,
-                duration_hours: 0,
-                effect_type: null,
-                effect_value: null,
-                emoji: '🦑'
-            },
-            // Fishing Rods
-            {
-                id: 'fishing_rod_basic',
-                name: 'Basic Fishing Rod',
-                description: 'A simple wooden fishing rod. Slightly increases rare fish chances.',
-                type: 'fishing_rod',
-                rarity: 'common',
-                price: 1000,
-                max_quantity: 1,
-                duration_hours: 0,
-                effect_type: 'fishing_boost',
-                effect_value: 1.2,
-                emoji: '<:fishing_rod_basic:1389552382580363264>'
-            },
-            {
-                id: 'fishing_rod_steel',
-                name: 'Steel Fishing Rod',
-                description: 'A sturdy steel fishing rod. Moderately increases rare fish chances.',
-                type: 'fishing_rod',
-                rarity: 'uncommon',
-                price: 5000,
-                max_quantity: 1,
-                duration_hours: 0,
-                effect_type: 'fishing_boost',
-                effect_value: 1.5,
-                emoji: '🪝'
-            },
-            {
-                id: 'fishing_rod_golden',
-                name: 'Golden Fishing Rod',
-                description: 'A luxurious golden fishing rod. Significantly increases rare fish chances.',
-                type: 'fishing_rod',
-                rarity: 'rare',
-                price: 15000,
-                max_quantity: 1,
-                duration_hours: 0,
-                effect_type: 'fishing_boost',
-                effect_value: 2.0,
-                emoji: '🪙'
-            },
-            {
-                id: 'fishing_rod_crystal',
-                name: 'Crystal Fishing Rod',
-                description: 'A magical crystal fishing rod. Greatly increases rare fish chances.',
-                type: 'fishing_rod',
-                rarity: 'epic',
-                price: 50000,
-                max_quantity: 1,
-                duration_hours: 0,
-                effect_type: 'fishing_boost',
-                effect_value: 3.0,
-                emoji: '💠'
-            },
-            {
-                id: 'fishing_rod_legendary',
-                name: 'Legendary Fishing Rod',
-                description: 'The ultimate fishing rod! Dramatically increases rare fish chances.',
-                type: 'fishing_rod',
-                rarity: 'legendary',
-                price: 100000,
-                max_quantity: 1,
-                duration_hours: 0,
-                effect_type: 'fishing_boost',
-                effect_value: 5.0,
-                emoji: '🏆'
-            },
-            // Original items
-            {
-                id: 'xp_boost_1h',
-                name: 'XP Boost (1 Hour)',
-                description: 'Get 2x XP for 1 hour',
-                type: 'consumable',
-                rarity: 'common',
-                price: 25,
-                max_quantity: 10,
-                duration_hours: 1,
-                effect_type: 'xp_multiplier',
-                effect_value: 2,
-                emoji: '⚡'
-            },
-            {
-                id: 'xp_boost_24h',
-                name: 'XP Boost (24 Hours)',
-                description: 'Get 2x XP for 24 hours',
-                type: 'consumable',
-                rarity: 'uncommon',
-                price: 575,
-                max_quantity: 5,
-                duration_hours: 24,
-                effect_type: 'xp_multiplier',
-                effect_value: 2,
-                emoji: '⚡'
-            },
-            {
-                id: 'lucky_charm',
-                name: 'Lucky Charm',
-                description: 'Increases work rewards by 1.5x for 1 hour',
-                type: 'consumable',
-                rarity: 'rare',
-                price: 13,
-                max_quantity: 5,
-                duration_hours: 1,
-                effect_type: 'work_multiplier',
-                effect_value: 1.5,
-                emoji: '🍀'
-            },
-            {
-                id: 'daily_doubler',
-                name: 'Daily Doubler',
-                description: 'Double your daily rewards for 24 hours',
-                type: 'consumable',
-                rarity: 'epic',
-                price: 80,
-                max_quantity: 3,
-                duration_hours: 24,
-                effect_type: 'daily_multiplier',
-                effect_value: 2,
-                emoji: '💸'
-            },
-            {
-                id: 'daily_booster',
-                name: 'Daily Booster',
-                description: '5x daily rewards for 1 hour - perfect for quick gains!',
-                type: 'consumable',
-                rarity: 'legendary',
-                price: 300,
-                max_quantity: 2,
-                duration_hours: 1,
-                effect_type: 'daily_multiplier',
-                effect_value: 5,
-                emoji: '🚀'
-            },
-            {
-                id: 'mystery_box',
-                name: 'Mystery Box',
-                description: 'Contains a random item! Could be anything...',
-                type: 'mystery',
-                rarity: 'legendary',
-                price: 1000,
-                max_quantity: 10,
-                duration_hours: 0,
-                effect_type: 'random_item',
-                effect_value: 1,
-                emoji: '🎁'
-            },
-            {
-                id: 'coin_multiplier_1h',
-                name: 'Coin Multiplier (1 Hour)',
-                description: 'Get 2x coins from all sources for 1 hour',
-                type: 'consumable',
-                rarity: 'rare',
-                price: 25,
-                max_quantity: 3,
-                duration_hours: 1,
-                effect_type: 'coin_multiplier',
-                effect_value: 2,
-                emoji: '💰'
-            },
-            {
-                id: 'xp_boost_7d',
-                name: 'XP Boost (7 Days)',
-                description: 'Get 2.5x XP for 7 days - perfect for active users!',
-                type: 'consumable',
-                rarity: 'legendary',
-                price: 5700,
-                max_quantity: 2,
-                duration_hours: 168, // 7 days
-                effect_type: 'xp_multiplier',
-                effect_value: 2.5,
-                emoji: '⚡'
-            },
-            {
-                id: 'work_booster',
-                name: 'Work Booster',
-                description: 'Increases work rewards by 2x for 2 hours',
-                type: 'consumable',
-                rarity: 'epic',
-                price: 50,
-                max_quantity: 3,
-                duration_hours: 2,
-                effect_type: 'work_multiplier',
-                effect_value: 2,
-                emoji: '💼'
-            },
-            {
-                id: 'rare_mystery_box',
-                name: 'Rare Mystery Box',
-                description: 'Contains a guaranteed rare or better item!',
-                type: 'mystery',
-                rarity: 'rare',
-                price: 5000,
-                max_quantity: 5,
-                duration_hours: 0,
-                effect_type: 'rare_random_item',
-                effect_value: 1,
-                emoji: '🎁'
-            }
-        ];
+        // Load default items from JSON file
+        const defaultItems = require('../data/default-items.json');
+        
+        // Load emoji configurations
+        const emojiConfigs = require('../config/emoji-configs.json');
+        
+        // Load bot configuration to determine which emoji set to use
+        const config = require('../config/default.json');
+        
+        // Determine which emoji set to use based on environment
+        const emojiSet = config.Enviroment.live 
+            ? emojiConfigs['production_bot'] 
+            : emojiConfigs['test_bot'] || emojiConfigs['default'];
 
-        // Insert default items for the specific guild
+        // Insert default items for the specific guild with emoji overrides
         for (const item of defaultItems) {
+            // Use emoji from config if available, otherwise use the default emoji
+            const emoji = emojiSet[item.id] || item.emoji;
+            
             sql.prepare(`
                 INSERT OR IGNORE INTO items (id, guild, name, description, type, rarity, price, max_quantity, duration_hours, effect_type, effect_value, emoji)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `).run(
                 item.id, guildId, item.name, item.description, item.type, item.rarity, 
                 item.price, item.max_quantity, item.duration_hours, item.effect_type, 
-                item.effect_value, item.emoji
+                item.effect_value, emoji
             );
         }
     }
@@ -677,7 +388,26 @@ class Inventory {
 
     // Get custom emoji for an item, fallback to rarity emoji
     getItemEmoji(item) {
-        return item.emoji || this.getRarityEmoji(item.rarity);
+        return (item.emoji != null && item.emoji !== "") ? item.emoji : this.getRarityEmoji(item.rarity);
+    }
+
+    // Get emoji URL for thumbnail (supports custom Discord emojis and Unicode emojis only)
+    getEmojiUrl(emoji, client) {
+        // If it's a custom Discord emoji (format: <:name:id>)
+        if (emoji && emoji.startsWith('<') && emoji.endsWith('>')) {
+            const emojiId = emoji.match(/:(\d+)>/)?.[1];
+            if (emojiId) {
+                return `https://cdn.discordapp.com/emojis/${emojiId}.png`;
+            }
+        }
+        // For Unicode emojis, use Twemoji CDN (handle all code points, use PNG for compatibility)
+        if (emoji && emoji.length > 0) {
+            const codePoints = Array.from(emoji)
+                .map(char => char.codePointAt(0).toString(16))
+                .join('-');
+            return `https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/72x72/${codePoints}.png`;
+        }
+        return null;
     }
 
     // Add item to shop
@@ -724,7 +454,12 @@ class Inventory {
     }
 
     // Get sell price percentage based on rarity
-    getSellPricePercentage(rarity) {
+    getSellPricePercentage(rarity, itemType = null) {
+        // Fish always sell for full price (100%)
+        if (itemType === 'fish') {
+            return 1.0;
+        }
+        
         switch (rarity) {
             case 'common': return 0.4;    // 40% of original price
             case 'uncommon': return 0.5;  // 50% of original price
@@ -749,18 +484,18 @@ class Inventory {
             return { success: false, message: `You don't have enough ${item.name} to sell.` };
         }
 
-        // Calculate sell price based on rarity
-        const sellPercentage = this.getSellPricePercentage(item.rarity);
+        // Calculate sell price based on rarity and item type
+        const sellPercentage = this.getSellPricePercentage(item.rarity, item.type);
         const sellPrice = Math.floor(item.price * sellPercentage) * quantity;
 
         // Remove item from inventory
         const newQuantity = userItem.quantity - quantity;
         if (newQuantity <= 0) {
             // Delete the item if quantity becomes 0
-            sql.prepare('DELETE FROM inventory WHERE user_id = ? AND guild_id = ? AND item_id = ?').run(userId, guildId, itemId);
+            sql.prepare('DELETE FROM inventory WHERE user = ? AND guild = ? AND item_id = ?').run(userId, guildId, itemId);
         } else {
             // Update quantity
-            sql.prepare('UPDATE inventory SET quantity = ? WHERE user_id = ? AND guild_id = ? AND item_id = ?').run(newQuantity, userId, guildId, itemId);
+            sql.prepare('UPDATE inventory SET quantity = ? WHERE user = ? AND guild = ? AND item_id = ?').run(newQuantity, userId, guildId, itemId);
         }
 
         return {
