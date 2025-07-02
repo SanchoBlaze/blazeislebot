@@ -30,6 +30,14 @@ module.exports = {
             }
 
             const allItems = Object.values(uniqueItems);
+            // Sort by rarity (common < uncommon < rare < epic < legendary)
+            const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5 };
+            allItems.sort((a, b) => {
+                const aRank = rarityOrder[a.rarity] || 99;
+                const bRank = rarityOrder[b.rarity] || 99;
+                if (aRank !== bRank) return aRank - bRank;
+                return a.name.localeCompare(b.name);
+            });
             
             // Create pages with one item per page
             const pages = this.createPages(allItems, interaction.client);
@@ -172,13 +180,16 @@ module.exports = {
                 } else if (i.customId === 'sell_rightPaginationButton') {
                     page = page + 1 < currentPages.length ? ++page : 0;
                 } else if (i.customId === 'sell_sellButton') {
-                    // Handle sell
+                    // Handle sell ONE item
                     const currentPage = currentPages[page];
-                    const success = await this.processSell(interaction, currentPage.item, currentPage.totalSellPrice);
+                    const success = await this.processSell(interaction, currentPage.item, currentPage.sellPrice, 1);
                     if (success) {
-                        // Update the embed to reflect the sale
-                        const updatedEmbed = this.updateEmbedAfterSell(currentPage.embed, 0, 0, i.client); // 0 quantity after sale
-                        const updatedButtons = this.getButtons(currentPage.pageNumber, currentPage.totalPages, false); // Disable sell button after sale
+                        // Update the embed to reflect the sale (decrement quantity by 1)
+                        const newQuantity = currentPage.item.quantity - 1;
+                        currentPage.item.quantity = newQuantity;
+                        const newTotalPrice = currentPage.sellPrice * newQuantity;
+                        const updatedEmbed = this.updateEmbedAfterSell(currentPage.embed, newQuantity, newTotalPrice, i.client);
+                        const updatedButtons = this.getButtons(currentPage.pageNumber, currentPage.totalPages, newQuantity > 0);
                         await i.editReply({ 
                             embeds: [updatedEmbed], 
                             components: [filterDropdown, updatedButtons]
@@ -303,26 +314,23 @@ module.exports = {
         return newEmbed;
     },
 
-    async processSell(interaction, item, totalSellPrice) {
+    async processSell(interaction, item, sellPrice, quantity = 1) {
         const guildId = interaction.guild.id;
         const userId = interaction.user.id;
 
         try {
             console.log(`[sell] User ${userId} attempting to sell item ${item.id}`);
-            
             // Check if user has the item
             const currentQuantity = interaction.client.inventory.getItemCount(userId, guildId, item.id);
-            if (currentQuantity <= 0) {
+            if (currentQuantity < quantity) {
                 await interaction.followUp({
-                    content: 'You don\'t have any of this item to sell!',
+                    content: 'You don\'t have enough of this item to sell!',
                     flags: MessageFlags.Ephemeral
                 });
                 return false;
             }
-
             // Sell the item
-            const result = interaction.client.inventory.sellItem(userId, guildId, item.id, currentQuantity);
-            
+            const result = interaction.client.inventory.sellItem(userId, guildId, item.id, quantity);
             if (!result.success) {
                 await interaction.followUp({
                     content: `❌ ${result.message}`,
@@ -330,17 +338,15 @@ module.exports = {
                 });
                 return false;
             }
-
             // Add coins to user's balance
             const newBalance = interaction.client.economy.updateBalance(userId, guildId, result.sellPrice, 'balance');
-            interaction.client.economy.logTransaction(userId, guildId, 'item_sale', result.sellPrice, `Sold ${currentQuantity}x ${result.item.name}`);
-
+            interaction.client.economy.logTransaction(userId, guildId, 'item_sale', result.sellPrice, `Sold ${quantity}x ${result.item.name}`);
             // Create success embed
             const emoji = interaction.client.inventory.getItemEmoji(item);
             const embed = new EmbedBuilder()
                 .setColor(0x00FF00)
                 .setTitle('💰 Item Sold')
-                .setDescription(`Successfully sold **${currentQuantity}x ${emoji} ${result.item.name}**`)
+                .setDescription(`Successfully sold **${quantity}x ${emoji} ${result.item.name}**`)
                 .addFields(
                     { name: '💵 Sale Price', value: interaction.client.economy.formatCurrency(result.sellPrice), inline: true },
                     { name: '💰 New Balance', value: interaction.client.economy.formatCurrency(newBalance), inline: true },
@@ -349,10 +355,8 @@ module.exports = {
                 )
                 .setFooter({ text: `Sold by ${interaction.user.tag}` })
                 .setTimestamp();
-
             await interaction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
             return true;
-
         } catch (error) {
             console.error('Error processing sell:', error);
             await interaction.followUp({ 

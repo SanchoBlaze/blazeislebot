@@ -332,7 +332,7 @@ module.exports = {
             }
 
             // Process the purchase
-            const success = interaction.client.inventory.addItem(userId, guildId, item.id, 1);
+            const success = interaction.client.inventory.addItem(userId, guildId, item.id, 1, interaction, interaction.client);
             
             if (success) {
                 console.log(`[shop purchase] User ${userId} successfully bought item ${item.id}`);
@@ -426,7 +426,7 @@ module.exports = {
                 }
 
                 // Process the purchase
-                const success = interaction.client.inventory.addItem(userId, guildId, selectedItemId, 1);
+                const success = interaction.client.inventory.addItem(userId, guildId, selectedItemId, 1, interaction, interaction.client);
                 
                 if (success) {
                     console.log(`[shop purchase] User ${userId} successfully bought item ${selectedItemId}`);

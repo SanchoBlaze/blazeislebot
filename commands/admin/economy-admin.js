@@ -124,7 +124,23 @@ module.exports = {
         .addSubcommand(subcommand =>
             subcommand
                 .setName('populate-defaults')
-                .setDescription('Populate the shop with default items')),
+                .setDescription('Populate the shop with default items'))
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('add-user-item')
+                .setDescription('Add an item to a user\'s inventory')
+                .addUserOption(option =>
+                    option.setName('user')
+                        .setDescription('User to give the item to')
+                        .setRequired(true))
+                .addStringOption(option =>
+                    option.setName('item_id')
+                        .setDescription('Item ID to give')
+                        .setRequired(true))
+                .addIntegerOption(option =>
+                    option.setName('quantity')
+                        .setDescription('Quantity to add')
+                        .setRequired(true))),
 
     async execute(interaction) {
         const subcommand = interaction.options.getSubcommand();
@@ -447,6 +463,50 @@ module.exports = {
                             { name: '🎯 Types', value: 'XP Boosts, Work Multipliers, Mystery Boxes, Coin Multipliers', inline: true }
                         )
                         .setFooter({ text: `Populated by ${interaction.user.tag}` })
+                        .setTimestamp();
+
+                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    break;
+                }
+
+                case 'add-user-item': {
+                    const user = interaction.options.getUser('user');
+                    const itemId = interaction.options.getString('item_id');
+                    const quantity = interaction.options.getInteger('quantity');
+
+                    if (quantity <= 0) {
+                        return interaction.reply({
+                            content: 'Quantity must be positive!',
+                            flags: MessageFlags.Ephemeral
+                        });
+                    }
+
+                    const item = interaction.client.inventory.getItem(itemId, guildId);
+                    if (!item) {
+                        return interaction.reply({
+                            content: `Item with ID "${itemId}" not found in the shop!`,
+                            flags: MessageFlags.Ephemeral
+                        });
+                    }
+
+                    const success = interaction.client.inventory.addItem(user.id, guildId, itemId, quantity, interaction, interaction.client);
+                    if (!success) {
+                        return interaction.reply({
+                            content: 'Failed to add item to user inventory!',
+                            flags: MessageFlags.Ephemeral
+                        });
+                    }
+
+                    const embed = new EmbedBuilder()
+                        .setColor(0x00FF00)
+                        .setTitle('✅ Item Added to User')
+                        .setDescription(`Added **${quantity}x ${item.name}** to ${user}`)
+                        .addFields(
+                            { name: '🆔 Item ID', value: itemId, inline: true },
+                            { name: '👤 User', value: user.toString(), inline: true },
+                            { name: '📦 Quantity', value: quantity.toString(), inline: true }
+                        )
+                        .setFooter({ text: `Added by ${interaction.user.tag}` })
                         .setTimestamp();
 
                     await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });

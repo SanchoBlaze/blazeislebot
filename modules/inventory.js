@@ -145,7 +145,7 @@ class Inventory {
     }
 
     // Add item to user's inventory
-    addItem(userId, guildId, itemId, quantity = 1) {
+    addItem(userId, guildId, itemId, quantity = 1, interaction = null, client = null) {
         console.log(`[addItem] Called for user ${userId} in guild ${guildId} for item ${itemId} (quantity: ${quantity})`);
         const item = this.getItem(itemId, guildId);
         if (!item) throw new Error('Item not found');
@@ -153,6 +153,45 @@ class Inventory {
         const expiresAt = item.duration_hours > 0 
             ? new Date(Date.now() + item.duration_hours * 60 * 60 * 1000).toISOString()
             : null;
+
+        // Enforce max_quantity
+        const userItem = this.getUserItem(userId, guildId, itemId);
+        const currentQty = userItem ? userItem.quantity : 0;
+        const maxQty = item.max_quantity || 1;
+        let toAdd = quantity;
+        let capped = false;
+        const notify = async (msg) => {
+            if (interaction) {
+                try {
+                    if (interaction.replied || interaction.deferred) {
+                        await interaction.followUp({ content: msg, flags: 64 });
+                    } else {
+                        await interaction.reply({ content: msg, flags: 64 });
+                    }
+                } catch {}
+            } else if (client) {
+                try {
+                    const user = await client.users.fetch(userId);
+                    if (user) await user.send(msg);
+                } catch {}
+            } else {
+                console.log('[addItem notify]', msg);
+            }
+        };
+        if (currentQty >= maxQty) {
+            console.log(`[addItem] User ${userId} already at or above max_quantity (${maxQty}) for item ${itemId}`);
+            notify(`You are already at the maximum quantity (${maxQty}) for **${item.name}**!`);
+            return { success: false, added: 0, capped: true, newQuantity: currentQty };
+        }
+        if (currentQty + quantity > maxQty) {
+            toAdd = maxQty - currentQty;
+            capped = true;
+            console.log(`[addItem] User ${userId} hit max_quantity cap for item ${itemId}: only adding ${toAdd}`);
+            notify(`You can only add ${toAdd} more of **${item.name}** (max ${maxQty}).`);
+        }
+        if (toAdd <= 0) {
+            return { success: false, added: 0, capped: true, newQuantity: currentQty };
+        }
 
         try {
             sql.prepare(`
@@ -165,18 +204,16 @@ class Inventory {
                         WHEN ? IS NOT NULL THEN ?
                         ELSE expires_at 
                     END
-            `).run(userId, guildId, itemId, quantity, expiresAt, quantity, expiresAt, expiresAt);
-            
+            `).run(userId, guildId, itemId, toAdd, expiresAt, toAdd, expiresAt, expiresAt);
             // After updating or inserting, log the new quantity
-            const userItem = this.getUserItem(userId, guildId, itemId);
-            if (userItem) {
-                console.log(`[addItem] After operation: user ${userId} now has ${userItem.quantity} of item ${itemId}`);
+            const updatedItem = this.getUserItem(userId, guildId, itemId);
+            if (updatedItem) {
+                console.log(`[addItem] After operation: user ${userId} now has ${updatedItem.quantity} of item ${itemId}`);
             }
-            
-            return true;
+            return { success: true, added: toAdd, capped, newQuantity: updatedItem ? updatedItem.quantity : 0 };
         } catch (error) {
             console.error('Error adding item to inventory:', error);
-            return false;
+            return { success: false, added: 0, capped, newQuantity: currentQty };
         }
     }
 
@@ -274,12 +311,12 @@ class Inventory {
     }
 
     // Open mystery box
-    async openMysteryBox(userId, guildId) {
+    async openMysteryBox(userId, guildId, interaction = null, client = null) {
         const allItems = this.getAllItems(guildId).filter(item => item.type !== 'mystery');
         const randomItem = allItems[Math.floor(Math.random() * allItems.length)];
         
         if (randomItem) {
-            this.addItem(userId, guildId, randomItem.id, 1);
+            this.addItem(userId, guildId, randomItem.id, 1, interaction, client);
             return {
                 success: true,
                 message: `🎉 You found **${randomItem.name}** in the mystery box!`,
@@ -295,7 +332,7 @@ class Inventory {
     }
 
     // Open rare mystery box
-    async openRareMysteryBox(userId, guildId) {
+    async openRareMysteryBox(userId, guildId, interaction = null, client = null) {
         const allItems = this.getAllItems(guildId).filter(item => 
             item.type !== 'mystery' && 
             (item.rarity === 'rare' || item.rarity === 'epic' || item.rarity === 'legendary')
@@ -307,7 +344,7 @@ class Inventory {
             const randomItem = fallbackItems[Math.floor(Math.random() * fallbackItems.length)];
             
             if (randomItem) {
-                this.addItem(userId, guildId, randomItem.id, 1);
+                this.addItem(userId, guildId, randomItem.id, 1, interaction, client);
                 return {
                     success: true,
                     message: `🎉 You found **${randomItem.name}** in the premium mystery box!`,
@@ -316,7 +353,7 @@ class Inventory {
             }
         } else {
             const randomItem = allItems[Math.floor(Math.random() * allItems.length)];
-            this.addItem(userId, guildId, randomItem.id, 1);
+            this.addItem(userId, guildId, randomItem.id, 1, interaction, client);
             return {
                 success: true,
                 message: `🎉 You found **${randomItem.name}** in the premium mystery box!`,
