@@ -204,7 +204,6 @@ The bot features a complete virtual economy system that encourages community eng
 - **Daily rewards**: 100 coins every 24 hours (`/daily`)
 - **Work system**: 10-50 coins every hour (`/work`)
 - **Fishing system**: Catch fish to sell (prices vary by rarity, 30-minute cooldown)
-- **Chat activity**: 1 coin per message (automatic)
 - **Admin rewards**: Server administrators can give coins
 
 #### Banking Features
@@ -251,8 +250,7 @@ The bot features a complete virtual economy system that encourages community eng
 The system is designed to maintain a healthy economy:
 - **Daily Reward**: 100 coins (4,200 coins per week)
 - **Work**: 10-50 coins per hour (70-350 coins per week)
-- **Chat Activity**: 1 coin per message
-- **Total Weekly Potential**: ~4,270-4,550 coins for active users
+- **Total Weekly Potential**: ~4,200-4,550 coins for active users
 
 📖 **[View detailed economy documentation →](ECONOMY_README.md)**
 

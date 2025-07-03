@@ -145,7 +145,7 @@ class Inventory {
     }
 
     // Add item to user's inventory
-    addItem(userId, guildId, itemId, quantity = 1, interaction = null, client = null) {
+    async addItem(userId, guildId, itemId, quantity = 1, interaction = null, client = null) {
         console.log(`[addItem] Called for user ${userId} in guild ${guildId} for item ${itemId} (quantity: ${quantity})`);
         const item = this.getItem(itemId, guildId);
         if (!item) throw new Error('Item not found');
@@ -209,6 +209,33 @@ class Inventory {
             const updatedItem = this.getUserItem(userId, guildId, itemId);
             if (updatedItem) {
                 console.log(`[addItem] After operation: user ${userId} now has ${updatedItem.quantity} of item ${itemId}`);
+            }
+            // Legendary notification logic
+            if (item.rarity === 'legendary' && toAdd > 0 && this.client && this.client.settings) {
+                try {
+                    const settings = this.client.settings.get(guildId);
+                    const channelId = settings && settings.economy_channel_id;
+                    if (channelId) {
+                        const guild = this.client.guilds.cache.get(guildId);
+                        if (guild) {
+                            const channel = guild.channels.cache.get(channelId);
+                            if (channel) {
+                                const user = await this.client.users.fetch(userId);
+                                const { EmbedBuilder } = require('discord.js');
+                                const emoji = this.getItemEmoji(item);
+                                const embed = new EmbedBuilder()
+                                    .setColor(this.getRarityColour('legendary'))
+                                    .setTitle('🏆 Legendary Item Acquired!')
+                                    .setDescription(`${user} just received a legendary item: **${emoji} ${item.name}**!`)
+                                    .setThumbnail(this.getEmojiUrl(emoji, this.client))
+                                    .setTimestamp();
+                                channel.send({ embeds: [embed] });
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.error('Error sending legendary item notification:', err);
+                }
             }
             return { success: true, added: toAdd, capped, newQuantity: updatedItem ? updatedItem.quantity : 0 };
         } catch (error) {
