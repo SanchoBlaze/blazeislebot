@@ -226,8 +226,8 @@ module.exports = {
             }
         });
 
-        // Modal submit handler
-        interaction.client.on('interactionCreate', async modalInteraction => {
+        // Modal submit handler - create a named function so we can remove it later
+        const modalHandler = async (modalInteraction) => {
             if (!modalInteraction.isModalSubmit() || modalInteraction.customId !== 'sell_quantityModal') return;
             if (modalInteraction.user.id !== interaction.user.id) return;
             const currentPage = currentPages[page];
@@ -254,12 +254,18 @@ module.exports = {
             } else {
                 await modalInteraction.reply({ content: 'There was an error processing your sale.', ephemeral: true });
             }
-        });
+        };
+
+        // Add the modal handler
+        interaction.client.on('interactionCreate', modalHandler);
 
         collector.on('end', () => {
             const currentPage = currentPages[page];
             const disabledButtons = this.getDisabledButtons(currentPage.pageNumber, currentPage.totalPages);
             interaction.editReply({ components: [filterDropdown, disabledButtons] });
+            
+            // Remove the modal handler to prevent memory leaks
+            interaction.client.removeListener('interactionCreate', modalHandler);
         });
     },
 
