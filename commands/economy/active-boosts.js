@@ -39,13 +39,9 @@ module.exports = {
                     const expires = new Date(effect.expires_at);
                     const now = new Date();
                     const ms = expires - now;
-                    if (ms > 0) {
-                        const hours = Math.floor(ms / (1000 * 60 * 60));
-                        const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-                        timeLeft = `⏳ ${hours}h ${minutes}m left`;
-                    } else {
-                        timeLeft = 'Expired';
-                    }
+                    const hours = Math.floor(ms / (1000 * 60 * 60));
+                    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+                    timeLeft = `⏳ ${hours}h ${minutes}m left`;
                 }
                 embed.addFields({
                     name: `${emoji} ${effectName}`,

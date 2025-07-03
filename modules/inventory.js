@@ -646,8 +646,26 @@ class Inventory {
         return effect || null;
     }
 
+    // Clean up expired effects
+    cleanupExpiredEffects(userId = null, guildId = null) {
+        try {
+            let deleteQuery = "DELETE FROM active_effects WHERE strftime('%s', expires_at) <= strftime('%s', 'now')";
+            let params = [];
+            if (userId && guildId) {
+                deleteQuery += ' AND user = ? AND guild = ?';
+                params = [userId, guildId];
+            }
+            const result = sql.prepare(deleteQuery).run(...params);
+            return result.changes;
+        } catch (error) {
+            console.error('Error cleaning up expired effects:', error);
+            return 0;
+        }
+    }
+
     // Get all active effects for a user
     getActiveEffects(userId, guildId) {
+        this.cleanupExpiredEffects(userId, guildId);
         return sql.prepare(`
             SELECT * FROM active_effects 
             WHERE user = ? AND guild = ? AND expires_at > CURRENT_TIMESTAMP
@@ -670,49 +688,44 @@ class Inventory {
         }
     }
 
-    // Clean up expired effects
-    cleanupExpiredEffects() {
-        try {
-            const result = sql.prepare(`
-                DELETE FROM active_effects 
-                WHERE expires_at <= CURRENT_TIMESTAMP
-            `).run();
-            
-            return result.changes;
-        } catch (error) {
-            console.error('Error cleaning up expired effects:', error);
-            return 0;
-        }
-    }
-
     // Get work multiplier for a user
     getWorkMultiplier(userId, guildId) {
         const effect = this.getActiveEffect(userId, guildId, 'work_multiplier');
-        return effect ? effect.effect_value : 1; // Return multiplier directly (2 = 2x, 3 = 3x)
+        if (!effect) return 1;
+        if (effect.expires_at && new Date(effect.expires_at) < new Date()) return 1;
+        return effect.effect_value;
     }
 
     // Get XP multiplier for a user
     getXPMultiplier(userId, guildId) {
         const effect = this.getActiveEffect(userId, guildId, 'xp_multiplier');
-        return effect ? effect.effect_value : 1;
+        if (!effect) return 1;
+        if (effect.expires_at && new Date(effect.expires_at) < new Date()) return 1;
+        return effect.effect_value;
     }
 
     // Get coin multiplier for a user
     getCoinMultiplier(userId, guildId) {
         const effect = this.getActiveEffect(userId, guildId, 'coin_multiplier');
-        return effect ? effect.effect_value : 1;
+        if (!effect) return 1;
+        if (effect.expires_at && new Date(effect.expires_at) < new Date()) return 1;
+        return effect.effect_value;
     }
 
     // Check if user has daily multiplier
     hasDailyMultiplier(userId, guildId) {
         const effect = this.getActiveEffect(userId, guildId, 'daily_multiplier');
-        return !!effect;
+        if (!effect) return false;
+        if (effect.expires_at && new Date(effect.expires_at) < new Date()) return false;
+        return true;
     }
 
     // Get daily multiplier for a user
     getDailyMultiplier(userId, guildId) {
         const effect = this.getActiveEffect(userId, guildId, 'daily_multiplier');
-        return effect ? effect.effect_value : 1;
+        if (!effect) return 1;
+        if (effect.expires_at && new Date(effect.expires_at) < new Date()) return 1;
+        return effect.effect_value;
     }
 
     // Remove daily multiplier after use
@@ -752,4 +765,4 @@ class Inventory {
     }
 }
 
-module.exports = Inventory; 
+module.exports = Inventory;
