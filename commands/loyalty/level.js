@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, MessageFlags } = require('discord.js');
 const { Colours } = require('../../modules/colours');
 
 module.exports = {
@@ -64,7 +64,7 @@ module.exports = {
             .setFooter({ text: `${(nextLevelXp - userXp).toLocaleString()} XP needed for level ${userLevel + 1}` })
             .setTimestamp();
 
-        return interaction.reply({ embeds: [embed] });
+        return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     },
 };
 

@@ -113,6 +113,17 @@ The shop offers various items that users can purchase with their coins:
 - All item prices are set so users always make a profit when using or selling them
 - Profit margins are transparent and based on rarity
 
+### 🏆 Net Worth XP Bonuses
+- Earn one-time XP bonuses for reaching net worth milestones (wallet + bank):
+  - 10,000 coins: 250 XP
+  - 50,000 coins: 750 XP
+  - 100,000 coins: 1,500 XP
+  - 250,000 coins: 3,000 XP
+  - 500,000 coins: 6,000 XP
+  - 1,000,000 coins: 12,000 XP
+- Each bonus is awarded only once per user per threshold.
+- When a milestone is reached, a non-ephemeral notification is sent in the economy channel, featuring the user's avatar and milestone details.
+
 ## Commands
 
 ### 💰 Economy Commands
@@ -394,25 +405,3 @@ The economy system requires no additional configuration beyond the standard bot 
 
 1. **"User not found"**: User will be automatically created on first command
 2. **"Insufficient funds"**: Check balance with `/balance`
-3. **"Cooldown active"**: Wait for the specified time before trying again
-4. **"Item not in inventory"**: Check inventory with `/inventory`
-5. **"Item has expired"**: Expired items are automatically removed
-6. **"Maximum quantity reached"**: You can't buy more of that item
-7. **Database errors**: Check file permissions in the `db/` directory
-
-### Admin Tools
-
-Use `/economy-admin stats` to monitor the economy health and `/economy-admin add` to help users who encounter issues.
-
-## Support
-
-For issues or questions about the economy system:
-
-1. Check this documentation
-2. Use `/economy-help` in Discord
-3. Contact server administrators
-4. Review transaction history for discrepancies
-
----
-
-*Economy System v2.0 - Blaze Isle Bot* 

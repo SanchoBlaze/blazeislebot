@@ -259,6 +259,18 @@ The system is designed to maintain a healthy economy:
 #### Transparent profit margins: All item prices are set so users always make a profit.
 #### Admin command stability: All admin commands now handle Discord interactions robustly, preventing double reply errors.
 
+## 🏆 Net Worth XP Bonuses
+
+- Users receive a one-time XP bonus for reaching certain net worth milestones (wallet + bank):
+  - 10,000 coins: 250 XP
+  - 50,000 coins: 750 XP
+  - 100,000 coins: 1,500 XP
+  - 250,000 coins: 3,000 XP
+  - 500,000 coins: 6,000 XP
+  - 1,000,000 coins: 12,000 XP
+- Each bonus is awarded only once per user per threshold.
+- When a user hits a milestone, a non-ephemeral notification is sent in the economy channel, showing the user's avatar and milestone details.
+
 ## Technical Details
 
 ### Built With

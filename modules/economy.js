@@ -1,5 +1,6 @@
 const SQLite = require('better-sqlite3');
 const sql = new SQLite('./db/economy.sqlite');
+const { EmbedBuilder } = require('discord.js');
 
 class Economy {
 
@@ -101,7 +102,7 @@ class Economy {
     }
 
     // Update user's balance
-    updateBalance(userId, guildId, amount, type = 'balance') {
+    async updateBalance(userId, guildId, amount, type = 'balance') {
         const user = this.getUser(userId, guildId);
         const oldBalance = user[type];
         
@@ -139,6 +140,61 @@ class Economy {
             `).run(Math.abs(amount), userId, guildId);
         }
 
+        // --- Net Worth XP Bonus Logic ---
+        // Create table if not exists
+        sql.prepare(`CREATE TABLE IF NOT EXISTS net_worth_xp_bonuses (
+            user TEXT NOT NULL,
+            guild TEXT NOT NULL,
+            threshold INTEGER NOT NULL,
+            PRIMARY KEY (user, guild, threshold)
+        )`).run();
+
+        // Thresholds and XP bonuses
+        const thresholds = [10000, 50000, 100000, 250000, 500000, 1000000];
+        const xpBonuses = [250, 750, 1500, 3000, 6000, 12000];
+        // Get current net worth
+        const netWorth = this.getNetWorth(userId, guildId);
+        // Get claimed bonuses
+        const claimedRows = sql.prepare('SELECT threshold FROM net_worth_xp_bonuses WHERE user = ? AND guild = ?').all(userId, guildId);
+        const claimed = new Set(claimedRows.map(r => r.threshold));
+        for (let i = 0; i < thresholds.length; i++) {
+            const threshold = thresholds[i];
+            if (netWorth >= threshold && !claimed.has(threshold)) {
+                // Mark as claimed
+                sql.prepare('INSERT OR IGNORE INTO net_worth_xp_bonuses (user, guild, threshold) VALUES (?, ?, ?)')
+                    .run(userId, guildId, threshold);
+                // Grant XP
+                if (this.client && this.client.loyalty) {
+                    const member = this.client.guilds.cache.get(guildId)?.members.cache.get(userId);
+                    const userObj = member ? member.user : await this.client.users.fetch(userId);
+                    await this.client.loyalty.addXp(xpBonuses[i], userObj, this.client.guilds.cache.get(guildId));
+                }
+                // Notify in economy channel
+                try {
+                    const settings = this.client.settings.get(guildId);
+                    const channelId = settings && settings.economy_channel_id;
+                    if (channelId) {
+                        const guild = this.client.guilds.cache.get(guildId);
+                        if (guild) {
+                            const channel = guild.channels.cache.get(channelId);
+                            if (channel) {
+                                const embed = new EmbedBuilder()
+                                    .setColor(0xFFD700)
+                                    .setTitle('🏆 Wealth Milestone!')
+                                    .setDescription(`<@${userId}> reached a net worth of **${threshold.toLocaleString()} coins** and earned a bonus of **${xpBonuses[i].toLocaleString()} XP**!`)
+                                    .setThumbnail(userObj?.displayAvatarURL ? userObj.displayAvatarURL() : null)
+                                    .setTimestamp();
+                                channel.send({ embeds: [embed] });
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.error('Error sending net worth XP bonus notification:', err);
+                }
+            }
+        }
+        // --- End Net Worth XP Bonus Logic ---
+
         return newBalance;
     }
 
@@ -167,28 +223,28 @@ class Economy {
     }
 
     // Deposit money to bank
-    deposit(userId, guildId, amount) {
+    async deposit(userId, guildId, amount) {
         if (amount <= 0) throw new Error('Deposit amount must be positive');
         
         const user = this.getUser(userId, guildId);
         if (user.balance < amount) throw new Error('Insufficient funds');
 
-        this.updateBalance(userId, guildId, -amount, 'balance');
-        this.updateBalance(userId, guildId, amount, 'bank');
+        await this.updateBalance(userId, guildId, -amount, 'balance');
+        await this.updateBalance(userId, guildId, amount, 'bank');
         this.logTransaction(userId, guildId, 'deposit', -amount, 'Bank deposit');
         
         return this.getUser(userId, guildId);
     }
 
     // Withdraw money from bank
-    withdraw(userId, guildId, amount) {
+    async withdraw(userId, guildId, amount) {
         if (amount <= 0) throw new Error('Withdrawal amount must be positive');
         
         const user = this.getUser(userId, guildId);
         if (user.bank < amount) throw new Error('Insufficient funds in bank');
 
-        this.updateBalance(userId, guildId, amount, 'balance');
-        this.updateBalance(userId, guildId, -amount, 'bank');
+        await this.updateBalance(userId, guildId, amount, 'balance');
+        await this.updateBalance(userId, guildId, -amount, 'bank');
         this.logTransaction(userId, guildId, 'withdraw', amount, 'Bank withdrawal');
         
         return this.getUser(userId, guildId);
@@ -225,7 +281,7 @@ class Economy {
             WHERE user = ? AND guild = ?
         `).run(userId, guildId);
 
-        this.updateBalance(userId, guildId, finalAmount, 'balance');
+        await this.updateBalance(userId, guildId, finalAmount, 'balance');
         this.logTransaction(userId, guildId, 'daily', finalAmount, 'Daily reward');
         
         return this.getUser(userId, guildId);
@@ -265,7 +321,7 @@ class Economy {
             WHERE user = ? AND guild = ?
         `).run(userId, guildId);
 
-        this.updateBalance(userId, guildId, amount, 'balance');
+        await this.updateBalance(userId, guildId, amount, 'balance');
         this.logTransaction(userId, guildId, 'work', amount, 'Work reward');
         
         return { user: this.getUser(userId, guildId), amount };

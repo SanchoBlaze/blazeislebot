@@ -1,5 +1,6 @@
 const SQLite = require('better-sqlite3');
 const sql = new SQLite('./db/loyalty.sqlite');
+const { EmbedBuilder } = require('discord.js');
 
 class Loyalty {
 
@@ -169,14 +170,35 @@ class Loyalty {
                 }
             }
             
+            const avatarUrl = user.displayAvatarURL ? user.displayAvatarURL() : null;
+            let embed;
             if (levelsGained === 1) {
                 // Single level up
                 const coinsAwarded = this.calculateLevelUpReward(newLevel);
-                channel.send(`🎉 ${user} leveled up to level **${newLevel}**! Congratulations! You earned **${this.client.economy ? this.client.economy.formatCurrency(coinsAwarded) : coinsAwarded + ' coins'}**! 💰`);
+                embed = new EmbedBuilder()
+                    .setColor(0xFFD700)
+                    .setTitle('🎉 Level Up!')
+                    .setDescription(`${user} leveled up to level **${newLevel}**! Congratulations!`)
+                    .addFields(
+                        { name: '💰 Coins Awarded', value: `${this.client.economy ? this.client.economy.formatCurrency(coinsAwarded) : coinsAwarded + ' coins'}`, inline: true },
+                        { name: '🏅 New Level', value: `${newLevel}`, inline: true }
+                    )
+                    .setThumbnail(avatarUrl)
+                    .setTimestamp();
             } else {
                 // Multiple levels gained
-                channel.send(`🚀 ${user} gained **${levelsGained} levels** and is now level **${newLevel}**! Amazing! 🎉\n💰 You earned **${this.client.economy ? this.client.economy.formatCurrency(totalCoinsAwarded) : totalCoinsAwarded + ' coins'}** in total!`);
+                embed = new EmbedBuilder()
+                    .setColor(0xFFD700)
+                    .setTitle('🚀 Multiple Levels Gained!')
+                    .setDescription(`${user} gained **${levelsGained} levels** and is now level **${newLevel}**! Amazing! 🎉`)
+                    .addFields(
+                        { name: '💰 Total Coins Awarded', value: `${this.client.economy ? this.client.economy.formatCurrency(totalCoinsAwarded) : totalCoinsAwarded + ' coins'}`, inline: true },
+                        { name: '🏅 New Level', value: `${newLevel}`, inline: true }
+                    )
+                    .setThumbnail(avatarUrl)
+                    .setTimestamp();
             }
+            channel.send({ embeds: [embed] });
         }
     }
 

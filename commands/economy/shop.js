@@ -332,12 +332,12 @@ module.exports = {
             }
 
             // Process the purchase
-            const success = interaction.client.inventory.addItem(userId, guildId, item.id, 1, interaction, interaction.client);
+            const success = await interaction.client.inventory.addItem(userId, guildId, item.id, 1, interaction, interaction.client);
             
             if (success) {
                 console.log(`[shop purchase] User ${userId} successfully bought item ${item.id}`);
                 // Deduct coins and log transaction
-                interaction.client.economy.updateBalance(userId, guildId, -item.price, 'balance');
+                await interaction.client.economy.updateBalance(userId, guildId, -item.price, 'balance');
                 interaction.client.economy.logTransaction(userId, guildId, 'shop_purchase', -item.price, `Purchased ${item.name}`);
                 
                 const emoji = interaction.client.inventory.getItemEmoji(item);
@@ -426,12 +426,12 @@ module.exports = {
                 }
 
                 // Process the purchase
-                const success = interaction.client.inventory.addItem(userId, guildId, selectedItemId, 1, interaction, interaction.client);
+                const success = await interaction.client.inventory.addItem(userId, guildId, selectedItemId, 1, interaction, interaction.client);
                 
                 if (success) {
                     console.log(`[shop purchase] User ${userId} successfully bought item ${selectedItemId}`);
                     // Deduct coins and log transaction
-                    interaction.client.economy.updateBalance(userId, guildId, -item.price, 'balance');
+                    await interaction.client.economy.updateBalance(userId, guildId, -item.price, 'balance');
                     interaction.client.economy.logTransaction(userId, guildId, 'shop_purchase', -item.price, `Purchased ${item.name}`);
                     
                     const emoji = interaction.client.inventory.getItemEmoji(item);

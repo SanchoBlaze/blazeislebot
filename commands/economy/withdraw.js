@@ -16,7 +16,7 @@ module.exports = {
         const amount = interaction.options.getInteger('amount');
 
         try {
-            const result = interaction.client.economy.withdraw(userId, guildId, amount);
+            const result = await interaction.client.economy.withdraw(userId, guildId, amount);
 
             const embed = new EmbedBuilder()
                 .setColor(0x00FF00)

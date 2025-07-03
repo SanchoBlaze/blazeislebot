@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, MessageFlags } = require('discord.js');
 const { Colours } = require('../../modules/colours');
 
 module.exports = {
@@ -41,6 +41,6 @@ module.exports = {
             .setFooter({ text: `Level ${userLevel + 1} requires ${interaction.client.loyalty.getXpForLevel(userLevel + 1).toLocaleString()} total XP` })
             .setTimestamp();
 
-        return interaction.reply({ embeds: [embed] });
+        return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     },
 };
