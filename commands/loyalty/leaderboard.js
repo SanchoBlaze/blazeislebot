@@ -2,6 +2,7 @@ const Discord = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Colours } = require('../../modules/colours');
 const { EmbedBuilder } = require('discord.js');
+const { MessageFlags } = require('discord.js');
 
 function getLevelBadge(level) {
     if (level >= 50) return '💎';
@@ -34,7 +35,7 @@ module.exports = {
                     .setDescription('No XP data found yet. Start chatting to earn XP!')
                     .setColor(Colours.BLUE)
                 ],
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
 
@@ -80,6 +81,6 @@ module.exports = {
             }
         }
 
-        return interaction.reply({ embeds: [embed] });
+        await interaction.reply({ embeds: [embed] });
     },
 };

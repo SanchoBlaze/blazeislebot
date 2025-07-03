@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, ChannelType } = require('discord.js');
+const { EmbedBuilder, ChannelType, MessageFlags } = require('discord.js');
 const { Colours } = require('../../modules/colours');
 
 module.exports = {
@@ -57,6 +57,6 @@ module.exports = {
             .setTimestamp()
             .setFooter({ text: `Requested by ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL({ dynamic: true }) });
 
-        await interaction.reply({ embeds: [embed] });
+        await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     },
 };

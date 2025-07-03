@@ -6,11 +6,13 @@
 
 const fs = require('fs');
 const config = require('config');
-const { Client, GatewayIntentBits, Partials, Collection, EmbedBuilder, ModalBuilder, ActionRowBuilder, TextInputBuilder, TextInputStyle, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, Collection, EmbedBuilder, ModalBuilder, ActionRowBuilder, TextInputBuilder, TextInputStyle, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const { Colours } = require('./modules/colours');
 const Loyalty = require('./modules/loyalty');
 const TwitchManager = require('./modules/twitch');
 const GuildSettings = require('./modules/guildSettings');
+const Economy = require('./modules/economy');
+const Inventory = require('./modules/inventory');
 
 
 // Create an instance of a Discord client
@@ -34,6 +36,8 @@ const twitchManager = new TwitchManager();
 client.twitch = twitchManager;
 client.settings = new GuildSettings(client);
 client.loyalty = new Loyalty(client);
+client.economy = new Economy(client);
+client.inventory = new Inventory(client);
 
 
 const commandFolders = fs.readdirSync('./commands');
@@ -54,6 +58,9 @@ client.once('ready', () => {
     
     // Start Twitch stream checking
     startTwitchChecker();
+    
+    // Start periodic cleanup of expired effects and items
+    startCleanupScheduler();
 });
 
 
@@ -133,7 +140,7 @@ client.on('interactionCreate', async interaction => {
     }
     catch (error) {
         console.error(error);
-        return interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        return interaction.reply({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
     }
     }
 
@@ -146,12 +153,105 @@ client.on('interactionCreate', async interaction => {
                 const handled = await configCommand.handleButtonInteraction(interaction);
                 if (handled) return;
             }
+            
+            // Check for shop command button interactions
+            const shopCommand = client.commands.get('shop');
+            if (shopCommand && shopCommand.handleButtonInteraction) {
+                const handled = await shopCommand.handleButtonInteraction(interaction);
+                if (handled) return;
+            }
+            
+            // Check for use command button interactions
+            if (interaction.customId.startsWith('use_')) {
+                const useCommand = client.commands.get('use');
+                if (useCommand && useCommand.handleButtonInteraction) {
+                    const handled = await useCommand.handleButtonInteraction(interaction);
+                    if (handled) return;
+                } else if (useCommand && useCommand.usePaginator) {
+                    // fallback for legacy paginator
+                    const userId = interaction.user.id;
+                    const guildId = interaction.guild.id;
+                    const inventory = client.inventory.getUserInventory(userId, guildId)
+                        .filter(item => item.effect_type && item.quantity > 0 && (!item.expires_at || new Date(item.expires_at) > new Date()));
+                    const uniqueItems = {};
+                    for (const item of inventory) {
+                        if (!uniqueItems[item.id]) {
+                            uniqueItems[item.id] = { ...item };
+                        } else {
+                            uniqueItems[item.id].quantity += item.quantity;
+                        }
+                    }
+                    const allItems = Object.values(uniqueItems);
+                    allItems.sort((a, b) => {
+                        const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5 };
+                        const aRank = rarityOrder[a.rarity] || 99;
+                        const bRank = rarityOrder[b.rarity] || 99;
+                        if (aRank !== bRank) return aRank - bRank;
+                        return a.name.localeCompare(b.name);
+                    });
+                    const pages = useCommand.createPages(allItems, client);
+                    await useCommand.usePaginator(interaction, pages, allItems);
+                    return;
+                }
+            }
         } catch (error) {
             console.error('Error handling button interaction:', error);
             if (!interaction.replied) {
                 await interaction.reply({ 
                     content: 'There was an error processing your request!', 
-                    ephemeral: true 
+                    flags: MessageFlags.Ephemeral 
+                });
+            }
+        }
+    }
+
+    // Handle select menu interactions
+    if (interaction.isStringSelectMenu()) {
+        try {
+            // Check for shop command select menu interactions
+            const shopCommand = client.commands.get('shop');
+            if (shopCommand && shopCommand.handleButtonInteraction) {
+                const handled = await shopCommand.handleButtonInteraction(interaction);
+                if (handled) return;
+            }
+            // Check for use command select menu interactions
+            if (interaction.customId.startsWith('use_')) {
+                const useCommand = client.commands.get('use');
+                if (useCommand && useCommand.handleButtonInteraction) {
+                    const handled = await useCommand.handleButtonInteraction(interaction);
+                    if (handled) return;
+                } else if (useCommand && useCommand.usePaginator) {
+                    const userId = interaction.user.id;
+                    const guildId = interaction.guild.id;
+                    const inventory = client.inventory.getUserInventory(userId, guildId)
+                        .filter(item => item.effect_type && item.quantity > 0 && (!item.expires_at || new Date(item.expires_at) > new Date()));
+                    const uniqueItems = {};
+                    for (const item of inventory) {
+                        if (!uniqueItems[item.id]) {
+                            uniqueItems[item.id] = { ...item };
+                        } else {
+                            uniqueItems[item.id].quantity += item.quantity;
+                        }
+                    }
+                    const allItems = Object.values(uniqueItems);
+                    allItems.sort((a, b) => {
+                        const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5 };
+                        const aRank = rarityOrder[a.rarity] || 99;
+                        const bRank = rarityOrder[b.rarity] || 99;
+                        if (aRank !== bRank) return aRank - bRank;
+                        return a.name.localeCompare(b.name);
+                    });
+                    const pages = useCommand.createPages(allItems, client);
+                    await useCommand.usePaginator(interaction, pages, allItems);
+                    return;
+                }
+            }
+        } catch (error) {
+            console.error('Error handling select menu interaction:', error);
+            if (!interaction.replied) {
+                await interaction.reply({ 
+                    content: 'There was an error processing your request!', 
+                    flags: MessageFlags.Ephemeral 
                 });
             }
         }
@@ -171,7 +271,7 @@ client.on('interactionCreate', async interaction => {
             if (!interaction.replied) {
                 await interaction.reply({ 
                     content: 'There was an error processing your submission!', 
-                    ephemeral: true 
+                    flags: MessageFlags.Ephemeral 
                 });
             }
         }
@@ -344,6 +444,41 @@ async function sendStreamNotification(twitchUsername, streamData) {
     } catch (error) {
         console.error('Error sending stream notification:', error);
     }
+}
+
+// Periodic cleanup function
+function startCleanupScheduler() {
+    // Run cleanup every 30 minutes
+    setInterval(() => {
+        try {
+            // Clean up expired effects
+            const expiredEffects = client.inventory.cleanupExpiredEffects();
+            if (expiredEffects > 0) {
+                console.log(`[cleanup] Removed ${expiredEffects} expired effects`);
+            }
+            
+            // Clean up expired inventory items
+            const expiredItems = client.inventory.cleanupExpiredItems();
+            if (expiredItems > 0) {
+                console.log(`[cleanup] Removed ${expiredItems} expired inventory items`);
+            }
+        } catch (error) {
+            console.error('[cleanup] Error during cleanup:', error);
+        }
+    }, 30 * 60 * 1000); // 30 minutes
+    
+    // Also run cleanup immediately on startup
+    setTimeout(() => {
+        try {
+            const expiredEffects = client.inventory.cleanupExpiredEffects();
+            const expiredItems = client.inventory.cleanupExpiredItems();
+            if (expiredEffects > 0 || expiredItems > 0) {
+                console.log(`[startup cleanup] Removed ${expiredEffects} expired effects and ${expiredItems} expired items`);
+            }
+        } catch (error) {
+            console.error('[startup cleanup] Error during cleanup:', error);
+        }
+    }, 5000); // 5 seconds after startup
 }
 
 client.login(config.get('Discord.token'));

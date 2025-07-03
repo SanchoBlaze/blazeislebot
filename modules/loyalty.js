@@ -1,5 +1,6 @@
 const SQLite = require('better-sqlite3');
 const sql = new SQLite('./db/loyalty.sqlite');
+const { EmbedBuilder } = require('discord.js');
 
 class Loyalty {
 
@@ -155,14 +156,74 @@ class Loyalty {
         
         if (channel) {
             const levelsGained = newLevel - oldLevel;
+            let totalCoinsAwarded = 0;
             
+            // Calculate tiered coin rewards for each level gained
+            for (let level = oldLevel + 1; level <= newLevel; level++) {
+                const coinsForLevel = this.calculateLevelUpReward(level);
+                totalCoinsAwarded += coinsForLevel;
+                
+                // Add coins to user's economy
+                if (this.client.economy) {
+                    this.client.economy.updateBalance(user.id, guild.id, coinsForLevel, 'balance');
+                    this.client.economy.logTransaction(user.id, guild.id, 'level_up', coinsForLevel, `Level ${level} reward`);
+                }
+            }
+            
+            const avatarUrl = user.displayAvatarURL ? user.displayAvatarURL() : null;
+            let embed;
             if (levelsGained === 1) {
                 // Single level up
-                channel.send(`🎉 ${user} leveled up to level **${newLevel}**! Congratulations!`);
+                const coinsAwarded = this.calculateLevelUpReward(newLevel);
+                embed = new EmbedBuilder()
+                    .setColor(0xFFD700)
+                    .setTitle('🎉 Level Up!')
+                    .setDescription(`${user} leveled up to level **${newLevel}**! Congratulations!`)
+                    .addFields(
+                        { name: '💰 Coins Awarded', value: `${this.client.economy ? this.client.economy.formatCurrency(coinsAwarded) : coinsAwarded + ' coins'}`, inline: true },
+                        { name: '🏅 New Level', value: `${newLevel}`, inline: true }
+                    )
+                    .setThumbnail(avatarUrl)
+                    .setTimestamp();
             } else {
                 // Multiple levels gained
-                channel.send(`🚀 ${user} gained **${levelsGained} levels** and is now level **${newLevel}**! Amazing! 🎉`);
+                embed = new EmbedBuilder()
+                    .setColor(0xFFD700)
+                    .setTitle('🚀 Multiple Levels Gained!')
+                    .setDescription(`${user} gained **${levelsGained} levels** and is now level **${newLevel}**! Amazing! 🎉`)
+                    .addFields(
+                        { name: '💰 Total Coins Awarded', value: `${this.client.economy ? this.client.economy.formatCurrency(totalCoinsAwarded) : totalCoinsAwarded + ' coins'}`, inline: true },
+                        { name: '🏅 New Level', value: `${newLevel}`, inline: true }
+                    )
+                    .setThumbnail(avatarUrl)
+                    .setTimestamp();
             }
+            channel.send({ embeds: [embed] });
+        }
+    }
+
+    // Calculate tiered coin rewards for leveling up
+    calculateLevelUpReward(level) {
+        // Tiered reward system:
+        // Levels 1-5: 50 coins per level
+        // Levels 6-10: 100 coins per level  
+        // Levels 11-20: 200 coins per level
+        // Levels 21-30: 350 coins per level
+        // Levels 31-50: 500 coins per level
+        // Levels 51+: 750 coins per level
+        
+        if (level <= 5) {
+            return 50;
+        } else if (level <= 10) {
+            return 100;
+        } else if (level <= 20) {
+            return 200;
+        } else if (level <= 30) {
+            return 350;
+        } else if (level <= 50) {
+            return 500;
+        } else {
+            return 750;
         }
     }
 

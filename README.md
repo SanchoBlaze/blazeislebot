@@ -1,6 +1,6 @@
 # Blaze Isle Bot
 
-A feature-rich Node.js Discord bot for the Blaze Isle community, built with discord.js v14.
+A feature-rich Discord bot with modular architecture, economy system, loyalty tracking, Twitch integration, and more.
 
 ## Features
 - **Modal-based configuration system** with intelligent validation
@@ -10,14 +10,29 @@ A feature-rich Node.js Discord bot for the Blaze Isle community, built with disc
 - **Configurable welcome messages** sent to designated channel
 - **Advanced Twitch stream notifications** with real-time monitoring
 - **Advanced loyalty/XP system** with scaled leveling and multi-level progression
+- **💰 Comprehensive economy system** with wallet/bank, daily rewards, work, transfers, and shop
 - **Engaging games**: Connect4, TicTacToe, RPS, RPSLS with XP rewards for winners
 - **Animal commands**: Cute pictures with small XP rewards (cat, dog, fox, bunny, duck)
 - **Social commands**: Hug and comfort other users for XP and community building
 - **Utility commands**: 8ball, dadjoke, gif, server info, avatar, and help
 - **Role-based permissions** for moderation commands
 - Modular command structure for easy extension
+- **Interactive paginator UI** for `/shop`, `/sell`, and `/use` commands: One item per page, navigation arrows, filter dropdown, action button, and emoji thumbnails for a modern, user-friendly experience.
+- **Improved error handling and global interaction logic** for all interactive commands: No more failed interactions or double reply errors.
+- **Scratch Card item**: A consumable with gambling logic—win coins or a random item, with the reward's emoji shown as the embed thumbnail.
+- **Profit margin logic for item pricing**: All shop items are priced so users always make a profit when using or selling them.
+- **Admin command stability**: All admin commands now handle Discord interactions robustly, preventing double reply errors.
 
 ## Getting Started
+
+### Option 1: Add the Bot to Your Server
+Click the link below to add Blaze Isle Bot to your Discord server:
+**[Add Blaze Isle Bot to Discord](https://discord.com/oauth2/authorize?client_id=712264446827036672)**
+
+After adding the bot, run `/config set` to configure the basic settings for your server. The bot will then be ready to use with all features enabled.
+
+### Option 2: Run Your Own Instance
+If you prefer to host your own instance of the bot, follow the installation and setup instructions below.
 
 ### Prerequisites
 - Node.js (v22.16.0 or higher)
@@ -176,6 +191,86 @@ The bot features a sophisticated leveling system designed to reward active commu
 - **Rich embeds**: Beautiful displays with progress bars and statistics
 - **Persistent storage**: All data safely stored in SQLite database
 
+### 💰 Economy System
+The bot features a complete virtual economy system that encourages community engagement and provides users with meaningful progression:
+
+#### Currency & Banking
+- **Dual currency system**: Wallet for spending, bank for savings
+- **Net worth tracking**: Combined wallet and bank balance
+- **Transaction history**: Complete audit trail of all economic activities
+- **Secure transfers**: User-to-user coin transfers with validation
+
+#### Earning Methods
+- **Daily rewards**: 100 coins every 24 hours (`/daily`)
+- **Work system**: 10-50 coins every hour (`/work`)
+- **Fishing system**: Catch fish to sell (prices vary by rarity, 30-minute cooldown)
+- **Admin rewards**: Server administrators can give coins
+
+#### Banking Features
+- **Deposit/Withdraw**: Move coins between wallet and bank
+- **Transfer system**: Send coins to other users
+- **Balance protection**: Users cannot go below 0 coins
+- **Transaction logging**: All activities are recorded with timestamps
+
+#### Economy Commands
+- **`/balance [user]`**: Check wallet, bank, and net worth
+- **`/daily`**: Claim daily reward (100 coins)
+- **`/work`**: Work for coins (10-50 coins, 1 hour cooldown)
+- **`/fish`**: Go fishing to catch fish (30-minute cooldown)
+- **`/deposit <amount>`**: Move coins to bank
+- **`/withdraw <amount>`**: Move coins from bank
+- **`/transfer <user> <amount>`**: Send coins to another user
+- **`/economy-leaderboard [limit]`**: Show richest users
+- **`/history [user] [limit]`**: View transaction history
+- **`/inventory [user]`**: View your or another user's inventory
+- **`/use <item>`**: Use an item from your inventory
+- **`/shop`**: Interactive shop with purchase buttons
+- **`/sell`**: Sell items back to the shop
+- **`/help-economy`**: Get help with economy commands
+
+#### Admin Controls
+- **`/economy-admin add <user> <amount>`**: Add coins to user
+- **`/economy-admin remove <user> <amount>`**: Remove coins from user
+- **`/economy-admin set <user> <amount>`**: Set user's balance
+- **`/economy-admin stats`**: View server economy statistics
+
+#### Shop System
+- **Interactive buttons**: Click to purchase items
+- **Inventory management**: Store and manage your items
+- **Item rarity system**: Common, Uncommon, Rare, Epic, Legendary
+- **Consumable items**: XP boosts, work multipliers, daily doublers
+- **Fishing rods**: Permanent items that boost rare fish catch rates
+- **Fish items**: Catchable fish with different rarities and sell prices
+- **Mystery boxes**: Random item rewards
+- **Item effects**: Temporary boosts and permanent rewards
+- **Quantity limits**: Prevent hoarding with max quantities
+- **Expiration system**: Time-limited items with automatic cleanup
+
+#### Economy Balance
+The system is designed to maintain a healthy economy:
+- **Daily Reward**: 100 coins (4,200 coins per week)
+- **Work**: 10-50 coins per hour (70-350 coins per week)
+- **Total Weekly Potential**: ~4,200-4,550 coins for active users
+
+📖 **[View detailed economy documentation →](ECONOMY_README.md)**
+
+#### Interactive shop, sell, and use commands: Browse, buy, sell, and use items with a modern paginator UI, filter dropdown, and emoji thumbnails.
+#### Scratch Card item: Try your luck for coins or rare items, with visual feedback for your reward.
+#### Transparent profit margins: All item prices are set so users always make a profit.
+#### Admin command stability: All admin commands now handle Discord interactions robustly, preventing double reply errors.
+
+## 🏆 Net Worth XP Bonuses
+
+- Users receive a one-time XP bonus for reaching certain net worth milestones (wallet + bank):
+  - 10,000 coins: 250 XP
+  - 50,000 coins: 750 XP
+  - 100,000 coins: 1,500 XP
+  - 250,000 coins: 3,000 XP
+  - 500,000 coins: 6,000 XP
+  - 1,000,000 coins: 12,000 XP
+- Each bonus is awarded only once per user per threshold.
+- When a user hits a milestone, a non-ephemeral notification is sent in the economy channel, showing the user's avatar and milestone details.
+
 ## Technical Details
 
 ### Built With
@@ -189,12 +284,16 @@ The bot features a sophisticated leveling system designed to reward active commu
 The bot uses SQLite with the following tables:
 - `guild_settings`: Server-specific configuration
 - `loyalty`: User XP and level data
+- `economy`: User wallet, bank, and economy data
+- `transactions`: Economy transaction history
+- `inventory`: User item storage and quantities
+- `items`: Item definitions, prices, and effects
 - `twitch_subscriptions`: Twitch channel subscriptions
 - `twitch_status`: Current stream status cache
 
 ### Modular Architecture
 - Commands organized by category in `/commands/` subdirectories
-- Separate modules for loyalty, Twitch, colors, and database operations
+- Separate modules for loyalty, Twitch, colours, and database operations
 - **Configuration validation system** with feature-specific checks
 - **Owner notification system** with anti-spam protection
 - Easy to extend with new commands and features

@@ -1,4 +1,4 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, MessageFlags } = require('discord.js');
 
 const paginator = async (interaction, pages) => {
 
@@ -31,7 +31,7 @@ const paginator = async (interaction, pages) => {
 
     collector.on('collect', async i => {
         if (i.user.id !== interaction.user.id) {
-            return i.reply({ content: 'You cannot use this button.', ephemeral: true });
+            return i.reply({ content: 'You cannot use this button.', flags: MessageFlags.Ephemeral });
         }
         
         await i.deferUpdate();

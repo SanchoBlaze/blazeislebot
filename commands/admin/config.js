@@ -64,7 +64,8 @@ module.exports = {
                     { name: '📺 Streams Channel', value: 'Channel for Twitch stream notifications', inline: true },
                     { name: '🛡️ Mod Role', value: 'Role for moderators', inline: true },
                     { name: '👋 Welcome Channel', value: 'Channel for welcome messages', inline: true },
-                    { name: '🎉 Loyalty Channel', value: 'Channel for level-up notifications', inline: true }
+                    { name: '🎉 Loyalty Channel', value: 'Channel for level-up notifications', inline: true },
+                    { name: '💸 Economy Channel', value: 'Channel for economy notifications', inline: true }
                 )
                 .setFooter({ text: 'Click a button below to set the corresponding value' });
 
@@ -113,7 +114,12 @@ module.exports = {
                         .setCustomId('config_set_loyalty_channel_id')
                         .setLabel('Loyalty Channel')
                         .setStyle(ButtonStyle.Secondary)
-                        .setEmoji('🎉')
+                        .setEmoji('🎉'),
+                    new ButtonBuilder()
+                        .setCustomId('config_set_economy_channel_id')
+                        .setLabel('Economy Channel')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setEmoji('💸')
                 );
 
             await interaction.reply({ 

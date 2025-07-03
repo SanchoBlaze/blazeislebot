@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ComponentType, MessageFlags } = require('discord.js');
 const { Colours } = require('../../modules/colours');
 
 // Emojis for categories
@@ -85,6 +85,7 @@ module.exports = {
         await interaction.reply({
             embeds: [getHomeEmbed()],
             components: [getCategorySelectMenu()],
+            flags: MessageFlags.Ephemeral
         });
         const message = await interaction.fetchReply();
 
@@ -93,8 +94,8 @@ module.exports = {
         });
 
         collector.on('collect', async i => {
-            if (i.user.id !== user.id) {
-                return i.reply({ content: 'You cannot use this menu.', ephemeral: true });
+            if (i.user.id !== interaction.user.id) {
+                return i.reply({ content: 'You cannot use this menu.', flags: MessageFlags.Ephemeral });
             }
 
             await i.deferUpdate();
@@ -114,12 +115,12 @@ module.exports = {
                     .setTimestamp()
                     .setFooter({ text: `Requested by ${user.username}`, iconURL: user.displayAvatarURL({ dynamic: true }) });
                 
-                await i.editReply({ embeds: [categoryEmbed], components: [getHomeButton()] });
+                await i.editReply({ embeds: [categoryEmbed], components: [getHomeButton()], flags: MessageFlags.Ephemeral });
             }
 
             if (i.isButton()) {
                 if (i.customId === 'help-home-button') {
-                    await i.editReply({ embeds: [getHomeEmbed()], components: [getCategorySelectMenu()] });
+                    await i.editReply({ embeds: [getHomeEmbed()], components: [getCategorySelectMenu()], flags: MessageFlags.Ephemeral });
                 }
             }
         });
@@ -127,7 +128,7 @@ module.exports = {
         collector.on('end', () => {
             const disabledSelect = getCategorySelectMenu();
             disabledSelect.components[0].setDisabled(true);
-            interaction.editReply({ components: [disabledSelect] }).catch(() => {});
+            interaction.editReply({ components: [disabledSelect], flags: MessageFlags.Ephemeral }).catch(() => {});
         });
     },
 };
