@@ -123,14 +123,31 @@ class Inventory {
         return sql.prepare('SELECT * FROM items WHERE guild = ? ORDER BY price ASC').all(guildId);
     }
 
-    // Get items by type for a guild
+    // Get items by type for a guild (supports items with a 'types' array)
     getItemsByType(type, guildId) {
-        return sql.prepare('SELECT * FROM items WHERE type = ? AND guild = ? ORDER BY price ASC').all(type, guildId);
+        return this.getAllItems(guildId).filter(item => {
+            if (item.types && Array.isArray(item.types)) {
+                return item.types.includes(type);
+            }
+            return item.type === type;
+        });
     }
 
-    // Get all fish items for a guild (optimized for fishing)
+    // Get all fish items for a guild (supports 'types' array)
     getAllFish(guildId) {
-        return sql.prepare('SELECT * FROM items WHERE type = ? AND guild = ? ORDER BY rarity ASC, price ASC').all('fish', guildId);
+        return this.getAllItems(guildId).filter(item => {
+            if (item.types && Array.isArray(item.types)) {
+                return item.types.includes('fish');
+            }
+            return item.type === 'fish';
+        }).sort((a, b) => {
+            // Sort by rarity ASC, price ASC
+            const rarityOrder = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+            const aRarity = rarityOrder.indexOf(a.rarity);
+            const bRarity = rarityOrder.indexOf(b.rarity);
+            if (aRarity !== bRarity) return aRarity - bRarity;
+            return a.price - b.price;
+        });
     }
 
     // Get user's inventory
@@ -364,12 +381,33 @@ class Inventory {
                 break;
             }
                 
+            case 'random_message': {
+                // Pool of possible messages
+                const messages = [
+                    "You unroll the note: 'The sea whispers secrets to those who listen.'",
+                    "The message reads: 'Luck comes to the patient angler.'",
+                    "You find a riddle: 'What has a head and a tail but no body? (A coin!)'",
+                    "The bottle contains a map... or is it just a doodle?",
+                    "You read: 'A friend is thinking of you right now.'",
+                    "The note says: 'You will catch something rare soon.'",
+                    "A cryptic message: 'Beware the old boot.'",
+                    "You find a coupon for one free smile. Redeem anytime!",
+                    "The message is waterlogged and unreadable, but you feel lucky!",
+                    "You find a poem: 'Rivers run deep, secrets they keep.'"
+                ];
+                const random = Math.floor(Math.random() * messages.length);
+                result.message = messages[random];
+                result.effect = { type: 'random_message' };
+                break;
+            }
+                
             default:
                 result.message = `Used ${item.name}.`;
         }
 
         // Remove item if it's consumable
-        if (item.type === 'consumable' || item.type === 'mystery') {
+        const isConsumable = (item.type === 'consumable') || (item.types && Array.isArray(item.types) && item.types.includes('consumable'));
+        if (isConsumable || item.type === 'mystery') {
             this.removeItem(userId, guildId, itemId, 1);
         }
 
@@ -764,6 +802,29 @@ class Inventory {
         return sql.prepare(
             `SELECT * FROM items WHERE guild = ? AND type NOT IN (${placeholders}) ORDER BY price ASC`
         ).all(guildId, ...excludedTypes);
+    }
+
+    // Delete all items for a guild
+    deleteAllItemsForGuild(guildId) {
+        try {
+            const result = sql.prepare('DELETE FROM items WHERE guild = ?').run(guildId);
+            return result.changes;
+        } catch (error) {
+            console.error('Error deleting all items for guild:', error);
+            return 0;
+        }
+    }
+
+    // Delete only default items for a guild (by id)
+    deleteDefaultItemsForGuild(guildId, defaultItemIds) {
+        try {
+            const placeholders = defaultItemIds.map(() => '?').join(', ');
+            const result = sql.prepare(`DELETE FROM items WHERE guild = ? AND id IN (${placeholders})`).run(guildId, ...defaultItemIds);
+            return result.changes;
+        } catch (error) {
+            console.error('Error deleting default items for guild:', error);
+            return 0;
+        }
     }
 }
 

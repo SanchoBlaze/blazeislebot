@@ -140,7 +140,11 @@ module.exports = {
                 .addIntegerOption(option =>
                     option.setName('quantity')
                         .setDescription('Quantity to add')
-                        .setRequired(true))),
+                        .setRequired(true)))
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('update-defaults')
+                .setDescription('Overwrite the shop with the current default items')),
 
     async execute(interaction) {
         const subcommand = interaction.options.getSubcommand();
@@ -511,6 +515,34 @@ module.exports = {
                             { name: '🎯 Types', value: 'XP Boosts, Work Multipliers, Mystery Boxes, Coin Multipliers', inline: true }
                         )
                         .setFooter({ text: `Populated by ${interaction.user.tag}` })
+                        .setTimestamp();
+
+                    if (interaction.replied || interaction.deferred) {
+                        await interaction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    } else {
+                        await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    }
+                    break;
+                }
+
+                case 'update-defaults': {
+                    // Load default item IDs
+                    const defaultItems = require('../../data/default-items.json');
+                    const defaultItemIds = defaultItems.map(item => item.id);
+                    // Delete only default items for this guild
+                    const deleted = interaction.client.inventory.deleteDefaultItemsForGuild(guildId, defaultItemIds);
+                    // Repopulate defaults
+                    interaction.client.inventory.populateDefaultItems(guildId);
+
+                    const embed = new EmbedBuilder()
+                        .setColor(0x00FF00)
+                        .setTitle('✅ Defaults Updated')
+                        .setDescription('The default items in the shop have been updated! Custom items were preserved.')
+                        .addFields(
+                            { name: '🗑️ Defaults Deleted', value: deleted.toString(), inline: true },
+                            { name: '📦 Defaults Added', value: defaultItemIds.length.toString(), inline: true }
+                        )
+                        .setFooter({ text: `Updated by ${interaction.user.tag}` })
                         .setTimestamp();
 
                     if (interaction.replied || interaction.deferred) {

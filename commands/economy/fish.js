@@ -45,7 +45,7 @@ module.exports = {
                 .addFields(
                     { 
                         name: 'You Caught', 
-                        value: `${emoji} **${result.fish.name}**\n\n💰 **Sell Price:** ${interaction.client.economy.formatCurrency(result.fish.sellPrice)}`, 
+                        value: `${emoji} **${result.fish.name}**\n\n${result.fish.description}\n\n💰 **Sell Price:** ${interaction.client.economy.formatCurrency(result.fish.sellPrice)}`, 
                         inline: false
                     }
                 )

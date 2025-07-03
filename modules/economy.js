@@ -364,7 +364,12 @@ class Economy {
         const fishingBoost = this.client.inventory.getFishingBoost(userId, guildId);
         
         // Create fish types array with chances based on rarity and fishing rod
-        const fishTypes = fishItems.map(item => {
+        const fishTypes = fishItems.filter(item => {
+            if (item.types && Array.isArray(item.types)) {
+                return item.types.includes('fish');
+            }
+            return item.type === 'fish';
+        }).map(item => {
             let baseChance;
             switch (item.rarity) {
                 case 'common': baseChance = 40; break;
