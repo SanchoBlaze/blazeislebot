@@ -166,7 +166,7 @@ module.exports = {
                         });
                     }
 
-                    const newBalance = interaction.client.economy.updateBalance(user.id, guildId, amount, 'balance');
+                    const newBalance = await interaction.client.economy.updateBalance(user.id, guildId, amount, 'balance');
                     interaction.client.economy.logTransaction(user.id, guildId, 'admin_add', amount, `Admin addition by ${interaction.user.tag}`);
 
                     const embed = new EmbedBuilder()
@@ -179,6 +179,26 @@ module.exports = {
                         )
                         .setFooter({ text: `Added by ${interaction.user.tag}` })
                         .setTimestamp();
+
+                    // DM the user to notify them of the addition
+                    try {
+                        await user.send({
+                            embeds: [
+                                new EmbedBuilder()
+                                    .setColor(0x00FF00)
+                                    .setTitle('💸 You received coins!')
+                                    .setDescription(`An admin has added **${interaction.client.economy.formatCurrency(amount)}** to your account in **${interaction.guild.name}**.`)
+                                    .addFields(
+                                        { name: '💰 Amount Added', value: interaction.client.economy.formatCurrency(amount), inline: true },
+                                        { name: '💵 New Balance', value: interaction.client.economy.formatCurrency(newBalance), inline: true }
+                                    )
+                                    .setFooter({ text: `Added by ${interaction.user.tag}` })
+                                    .setTimestamp()
+                            ]
+                        });
+                    } catch (err) {
+                        // Ignore DM errors (user may have DMs closed)
+                    }
 
                     if (interaction.replied || interaction.deferred) {
                         await interaction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
@@ -207,7 +227,7 @@ module.exports = {
                         });
                     }
 
-                    const newBalance = interaction.client.economy.updateBalance(user.id, guildId, -amount, 'balance');
+                    const newBalance = await interaction.client.economy.updateBalance(user.id, guildId, -amount, 'balance');
                     interaction.client.economy.logTransaction(user.id, guildId, 'admin_remove', -amount, `Admin removal by ${interaction.user.tag}`);
 
                     const embed = new EmbedBuilder()

@@ -36,8 +36,9 @@ module.exports = {
         }
 
         try {
-            const result = await interaction.client.economy.transfer(fromUserId, targetUser.id, guildId, amount);
-            
+            await interaction.client.economy.transfer(fromUserId, targetUser.id, guildId, amount);
+
+            // Fetch updated balances
             const fromUser = interaction.client.economy.getUser(fromUserId, guildId);
             const toUser = interaction.client.economy.getUser(targetUser.id, guildId);
 
@@ -46,13 +47,33 @@ module.exports = {
                 .setTitle('💸 Transfer Successful')
                 .setDescription(`Successfully transferred ${interaction.client.economy.formatCurrency(amount)} to ${targetUser.username}!`)
                 .addFields(
-                    { name: '💰 Your New Balance', value: interaction.client.economy.formatCurrency(result.newBalance), inline: true },
+                    { name: '💰 Your New Balance', value: interaction.client.economy.formatCurrency(fromUser.balance), inline: true },
                     { name: '💸 Transfer Amount', value: interaction.client.economy.formatCurrency(amount), inline: true }
                 )
                 .setFooter({ text: 'Transfer completed successfully!' })
                 .setTimestamp();
 
             await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+
+            // DM the receiver
+            try {
+                await targetUser.send({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setColor(0x00FF00)
+                            .setTitle('💸 You received coins!')
+                            .setDescription(`You received **${interaction.client.economy.formatCurrency(amount)}** from **${interaction.user.tag}** in **${interaction.guild.name}**.`)
+                            .addFields(
+                                { name: '💰 Your New Balance', value: interaction.client.economy.formatCurrency(toUser.balance), inline: true },
+                                { name: '💸 Transfer Amount', value: interaction.client.economy.formatCurrency(amount), inline: true }
+                            )
+                            .setFooter({ text: 'Transfer received!' })
+                            .setTimestamp()
+                    ]
+                });
+            } catch (err) {
+                // Ignore DM errors (user may have DMs closed)
+            }
         } catch (error) {
             if (error.message === 'Insufficient funds') {
                 const user = interaction.client.economy.getUser(fromUserId, guildId);

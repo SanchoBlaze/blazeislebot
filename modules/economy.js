@@ -163,10 +163,16 @@ class Economy {
                 // Mark as claimed
                 sql.prepare('INSERT OR IGNORE INTO net_worth_xp_bonuses (user, guild, threshold) VALUES (?, ?, ?)')
                     .run(userId, guildId, threshold);
-                // Grant XP
-                if (this.client && this.client.loyalty) {
+                // Always fetch userObj for notification and XP
+                let userObj;
+                try {
                     const member = this.client.guilds.cache.get(guildId)?.members.cache.get(userId);
-                    const userObj = member ? member.user : await this.client.users.fetch(userId);
+                    userObj = member ? member.user : await this.client.users.fetch(userId);
+                } catch (e) {
+                    userObj = null;
+                }
+                // Grant XP
+                if (this.client && this.client.loyalty && userObj) {
                     await this.client.loyalty.addXp(xpBonuses[i], userObj, this.client.guilds.cache.get(guildId));
                 }
                 // Notify in economy channel
@@ -470,6 +476,7 @@ class Economy {
 
     // Format currency
     formatCurrency(amount) {
+        if (typeof amount !== 'number' || !isFinite(amount)) amount = 0;
         return `${amount.toLocaleString()} coins`;
     }
 
