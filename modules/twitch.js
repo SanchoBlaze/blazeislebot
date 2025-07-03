@@ -20,7 +20,7 @@ class TwitchManager {
                     channel_id TEXT NOT NULL,
                     twitch_username TEXT NOT NULL,
                     added_by TEXT NOT NULL,
-                    added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    added_at TEXT,
                     UNIQUE(guild_id, twitch_username)
                 );
             `).run();
@@ -38,8 +38,8 @@ class TwitchManager {
                     stream_title TEXT,
                     game_name TEXT,
                     viewer_count INTEGER,
-                    started_at DATETIME,
-                    last_checked DATETIME DEFAULT CURRENT_TIMESTAMP
+                    started_at TEXT,
+                    last_checked TEXT
                 );
             `).run();
             sql.prepare('CREATE INDEX idx_stream_status_username ON stream_status (twitch_username);').run();
@@ -151,20 +151,52 @@ class TwitchManager {
 
     async updateStreamStatus(twitchUsername, streamData) {
         try {
-            const stmt = sql.prepare(`
-                INSERT OR REPLACE INTO stream_status 
-                (twitch_username, is_live, stream_title, game_name, viewer_count, started_at, last_checked)
-                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-            `);
-            
-            const isLive = streamData ? 1 : 0; // Convert boolean to integer
-            const title = streamData && streamData.title ? String(streamData.title) : null;
-            const game = streamData && streamData.game_name ? String(streamData.game_name) : null;
-            const viewers = streamData && streamData.viewer_count ? Number(streamData.viewer_count) : null;
-            const startedAt = streamData && streamData.started_at ? String(streamData.started_at) : null;
+            const accessToken = await this.getAccessToken();
+            if (!accessToken) {
+                console.warn('No Twitch access token available');
+                return false;
+            }
 
-            stmt.run(twitchUsername.toLowerCase(), isLive, title, game, viewers, startedAt);
-            return true;
+            const clientId = config.get('Twitch.client_id');
+            const response = await fetch(`https://api.twitch.tv/helix/streams?user_login=${twitchUsername}`, {
+                headers: {
+                    'Client-ID': clientId,
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    // Token expired, clear it and try again
+                    this.accessToken = null;
+                    this.tokenExpiry = null;
+                    return await this.updateStreamStatus(twitchUsername, streamData);
+                }
+                throw new Error(`Twitch API error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            if (data.data && data.data.length > 0) {
+                const stream = data.data[0];
+                const nowISOString = new Date().toISOString();
+                const stmt = sql.prepare(`
+                    INSERT OR REPLACE INTO stream_status 
+                    (twitch_username, is_live, stream_title, game_name, viewer_count, started_at, last_checked)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                `);
+                
+                const isLive = stream.data.length > 0 ? 1 : 0; // Convert boolean to integer
+                const title = stream.data[0].title ? String(stream.data[0].title) : null;
+                const game = stream.data[0].game_name ? String(stream.data[0].game_name) : null;
+                const viewers = stream.data[0].viewer_count ? Number(stream.data[0].viewer_count) : null;
+                const startedAt = stream.data[0].started_at ? String(stream.data[0].started_at) : null;
+
+                stmt.run(twitchUsername.toLowerCase(), isLive, title, game, viewers, startedAt, nowISOString);
+                return true;
+            }
+            
+            return false; // Stream is offline
         } catch (error) {
             console.error('Error updating stream status:', error);
             return false;

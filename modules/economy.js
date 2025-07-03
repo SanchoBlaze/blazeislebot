@@ -74,6 +74,7 @@ class Economy {
         let user = sql.prepare('SELECT * FROM economy WHERE user = ? AND guild = ?').get(userId, guildId);
         if (!user) {
             // Create new user if they don't exist
+            const nowISOString = new Date().toISOString();
             user = {
                 id: `${guildId}-${userId}`,
                 user: userId,
@@ -85,8 +86,8 @@ class Economy {
                 last_fishing: null,
                 total_earned: 0,
                 total_spent: 0,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+                created_at: nowISOString,
+                updated_at: nowISOString
             };
             this.createUser(user);
         }
@@ -119,11 +120,12 @@ class Economy {
         
         const newBalance = Math.max(0, oldBalance + finalAmount); // Prevent negative balance
         
+        const nowISOString = new Date().toISOString();
         sql.prepare(`
             UPDATE economy 
-            SET ${type} = ?, updated_at = CURRENT_TIMESTAMP
+            SET ${type} = ?, updated_at = ?
             WHERE user = ? AND guild = ?
-        `).run(newBalance, userId, guildId);
+        `).run(newBalance, nowISOString, userId, guildId);
 
         // Update totals (use original amount for tracking, not multiplied amount)
         if (amount > 0) {
@@ -281,11 +283,12 @@ class Economy {
         }
 
         // Update last daily time and add money
+        const nowISOString = new Date().toISOString();
         sql.prepare(`
             UPDATE economy 
-            SET last_daily = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+            SET last_daily = ?, updated_at = ?
             WHERE user = ? AND guild = ?
-        `).run(userId, guildId);
+        `).run(nowISOString, nowISOString, userId, guildId);
 
         await this.updateBalance(userId, guildId, finalAmount, 'balance');
         this.logTransaction(userId, guildId, 'daily', finalAmount, 'Daily reward');
@@ -298,7 +301,7 @@ class Economy {
         const user = this.getUser(userId, guildId);
         const now = new Date();
         const lastWork = user.last_work ? new Date(user.last_work) : null;
-        
+        console.log(`[work] User: ${userId}, Guild: ${guildId}, last_work before:`, user.last_work);
         // Check if user can work (1 hour cooldown)
         if (lastWork && (now - lastWork) < 60 * 60 * 1000) {
             const timeLeft = 60 * 60 * 1000 - (now - lastWork);
@@ -321,16 +324,19 @@ class Economy {
         }
 
         // Update last work time and add money
+        const nowISOString = new Date().toISOString();
         sql.prepare(`
             UPDATE economy 
-            SET last_work = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+            SET last_work = ?, updated_at = ?
             WHERE user = ? AND guild = ?
-        `).run(userId, guildId);
+        `).run(nowISOString, nowISOString, userId, guildId);
+        const updatedUser = this.getUser(userId, guildId);
+        console.log(`[work] User: ${userId}, Guild: ${guildId}, last_work after:`, updatedUser.last_work);
 
         await this.updateBalance(userId, guildId, amount, 'balance');
         this.logTransaction(userId, guildId, 'work', amount, 'Work reward');
         
-        return { user: this.getUser(userId, guildId), amount };
+        return { user: updatedUser, amount };
     }
 
     // Fishing reward
@@ -340,7 +346,7 @@ class Economy {
         const lastFishing = user.last_fishing ? new Date(user.last_fishing) : null;
         
         // Check if user can fish (30 minutes cooldown)
-        if (lastFishing && (now - lastFishing) < 1 * 60 * 1000) {
+        if (lastFishing && (now - lastFishing) < 30 * 60 * 1000) {
             const timeLeft = 30 * 60 * 1000 - (now - lastFishing);
             const minutes = Math.floor(timeLeft / (60 * 1000));
             const seconds = Math.floor((timeLeft % (60 * 1000)) / 1000);
@@ -404,11 +410,12 @@ class Economy {
         this.client.inventory.addItem(userId, guildId, caughtFish.id, 1);
 
         // Update last fishing time
+        const nowISOString = new Date().toISOString();
         sql.prepare(`
             UPDATE economy 
-            SET last_fishing = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+            SET last_fishing = ?, updated_at = ?
             WHERE user = ? AND guild = ?
-        `).run(userId, guildId);
+        `).run(nowISOString, nowISOString, userId, guildId);
 
         this.logTransaction(userId, guildId, 'fishing', 0, `Caught ${caughtFish.name}`);
         

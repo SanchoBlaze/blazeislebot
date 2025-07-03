@@ -150,6 +150,7 @@ class Inventory {
         const item = this.getItem(itemId, guildId);
         if (!item) throw new Error('Item not found');
 
+        const nowISOString = new Date().toISOString();
         const expiresAt = item.duration_hours > 0 
             ? new Date(Date.now() + item.duration_hours * 60 * 60 * 1000).toISOString()
             : null;
@@ -195,8 +196,8 @@ class Inventory {
 
         try {
             sql.prepare(`
-                INSERT INTO inventory (user, guild, item_id, quantity, expires_at)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO inventory (user, guild, item_id, quantity, expires_at, acquired_at)
+                VALUES (?, ?, ?, ?, ?, ?)
                 ON CONFLICT(user, guild, item_id) 
                 DO UPDATE SET 
                     quantity = quantity + ?,
@@ -204,7 +205,7 @@ class Inventory {
                         WHEN ? IS NOT NULL THEN ?
                         ELSE expires_at 
                     END
-            `).run(userId, guildId, itemId, toAdd, expiresAt, toAdd, expiresAt, expiresAt);
+            `).run(userId, guildId, itemId, toAdd, expiresAt, nowISOString, toAdd, expiresAt, expiresAt);
             // After updating or inserting, log the new quantity
             const updatedItem = this.getUserItem(userId, guildId, itemId);
             if (updatedItem) {
@@ -455,7 +456,7 @@ class Inventory {
 
     // Clean up expired items
     cleanupExpiredItems() {
-        const expired = sql.prepare('SELECT * FROM inventory WHERE expires_at IS NOT NULL AND expires_at < CURRENT_TIMESTAMP').all();
+        const expired = sql.prepare("SELECT * FROM inventory WHERE expires_at IS NOT NULL AND strftime('%s', expires_at) < strftime('%s', 'now')").all();
         
         for (const item of expired) {
             this.removeItem(item.user, item.guild, item.item_id, item.quantity);
@@ -619,15 +620,16 @@ class Inventory {
 
     // Add active effect
     addActiveEffect(userId, guildId, effectType, effectValue, durationHours) {
+        const nowISOString = new Date().toISOString();
         const expiresAt = durationHours > 0 
             ? new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString()
             : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // Default 24 hours for effects without duration
 
         try {
             sql.prepare(`
-                INSERT INTO active_effects (user, guild, effect_type, effect_value, expires_at)
-                VALUES (?, ?, ?, ?, ?)
-            `).run(userId, guildId, effectType, effectValue, expiresAt);
+                INSERT INTO active_effects (user, guild, effect_type, effect_value, expires_at, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            `).run(userId, guildId, effectType, effectValue, expiresAt, nowISOString);
             
             return true;
         } catch (error) {
@@ -640,7 +642,7 @@ class Inventory {
     getActiveEffect(userId, guildId, effectType) {
         const effect = sql.prepare(`
             SELECT * FROM active_effects 
-            WHERE user = ? AND guild = ? AND effect_type = ? AND expires_at > CURRENT_TIMESTAMP
+            WHERE user = ? AND guild = ? AND effect_type = ? AND strftime('%s', expires_at) > strftime('%s', 'now')
         `).get(userId, guildId, effectType);
         
         return effect || null;
@@ -668,7 +670,7 @@ class Inventory {
         this.cleanupExpiredEffects(userId, guildId);
         return sql.prepare(`
             SELECT * FROM active_effects 
-            WHERE user = ? AND guild = ? AND expires_at > CURRENT_TIMESTAMP
+            WHERE user = ? AND guild = ? AND strftime('%s', expires_at) > strftime('%s', 'now')
             ORDER BY created_at ASC
         `).all(userId, guildId);
     }
