@@ -136,6 +136,7 @@ The shop offers various items that users can purchase with their coins:
 - `/transfer <user> <amount>` - Send coins to another user
 - `/leaderboard` - View the richest users in the server
 - `/history` - View your transaction history
+- `/help-economy` - Get help with economy commands
 
 ### 🛒 Shop & Inventory Commands
 - `/shop` - Browse and buy items from the shop
