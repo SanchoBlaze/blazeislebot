@@ -585,6 +585,31 @@ module.exports = {
                         });
                     }
 
+                    // DM the user to notify them of the item addition
+                    try {
+                        const emoji = interaction.client.inventory.getItemEmoji(item);
+                        const emojiUrl = interaction.client.inventory.getEmojiUrl(emoji, interaction.client);
+                        await user.send({
+                            embeds: [
+                                new EmbedBuilder()
+                                    .setColor(interaction.client.inventory.getRarityColour(item.rarity))
+                                    .setTitle('🎁 You received an item!')
+                                    .setDescription(`An admin has given you **${quantity}x ${emoji} ${item.name}** in **${interaction.guild.name}**.`)
+                                    .setThumbnail(emojiUrl)
+                                    .addFields(
+                                        { name: '📦 Item', value: `${emoji} ${item.name}`, inline: true },
+                                        { name: '📊 Quantity', value: quantity.toString(), inline: true },
+                                        { name: '⭐ Rarity', value: item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1), inline: true },
+                                        { name: '📝 Description', value: item.description, inline: false }
+                                    )
+                                    .setFooter({ text: `Given by ${interaction.user.tag}` })
+                                    .setTimestamp()
+                            ]
+                        });
+                    } catch (err) {
+                        // Ignore DM errors (user may have DMs closed)
+                    }
+
                     const embed = new EmbedBuilder()
                         .setColor(0x00FF00)
                         .setTitle('✅ Item Added to User')

@@ -622,7 +622,8 @@ class Inventory {
         // Check if user has the item
         const userItem = this.getUserItem(userId, guildId, itemId);
         if (!userItem || userItem.quantity < quantity) {
-            return { success: false, message: `You don't have enough ${item.name} to sell.` };
+            const availableQty = userItem ? userItem.quantity : 0;
+            return { success: false, message: `You don't have enough ${item.name} to sell. You have ${availableQty}x but tried to sell ${quantity}x.` };
         }
 
         // Calculate sell price based on rarity and item type
