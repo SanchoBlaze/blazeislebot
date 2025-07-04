@@ -506,12 +506,16 @@ module.exports = {
 
                     interaction.client.inventory.populateDefaultItems(guildId);
 
+                    // Dynamically get the number of default items
+                    const defaultItems = require('../../data/default-items.json');
+                    const defaultItemCount = defaultItems.length;
+
                     const embed = new EmbedBuilder()
                         .setColor(0x00FF00)
                         .setTitle('✅ Default Items Added')
                         .setDescription('Successfully populated the shop with default items!')
                         .addFields(
-                            { name: '📦 Items Added', value: '9 default items', inline: true },
+                            { name: '📦 Items Added', value: `${defaultItemCount} default items`, inline: true },
                             { name: '🎯 Types', value: 'XP Boosts, Work Multipliers, Mystery Boxes, Coin Multipliers', inline: true }
                         )
                         .setFooter({ text: `Populated by ${interaction.user.tag}` })

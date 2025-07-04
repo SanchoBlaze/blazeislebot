@@ -84,9 +84,6 @@ module.exports = {
             });
 
             await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
-
-            // Add the fish to user's inventory
-            interaction.client.inventory.addItem(userId, guildId, result.fish.id, 1, interaction, interaction.client);
         } catch (error) {
             if (error.message.includes('Fishing available in')) {
                 const embed = new EmbedBuilder()
