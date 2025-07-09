@@ -13,6 +13,7 @@ const TwitchManager = require('./modules/twitch');
 const GuildSettings = require('./modules/guildSettings');
 const Economy = require('./modules/economy');
 const Inventory = require('./modules/inventory');
+const Farming = require('./modules/farming');
 
 
 // Create an instance of a Discord client
@@ -38,7 +39,7 @@ client.settings = new GuildSettings(client);
 client.loyalty = new Loyalty(client);
 client.economy = new Economy(client);
 client.inventory = new Inventory(client);
-
+client.farming = new Farming(client);
 
 const commandFolders = fs.readdirSync('./commands');
 
@@ -194,6 +195,12 @@ client.on('interactionCreate', async interaction => {
                     return;
                 }
             }
+            // Add farm command button interaction routing
+            const farmCommand = client.commands.get('farm');
+            if (farmCommand && farmCommand.handleButtonInteraction) {
+                const handled = await farmCommand.handleButtonInteraction(interaction);
+                if (handled) return;
+            }
         } catch (error) {
             console.error('Error handling button interaction:', error);
             if (!interaction.replied) {
@@ -243,6 +250,19 @@ client.on('interactionCreate', async interaction => {
                     });
                     const pages = useCommand.createPages(allItems, client);
                     await useCommand.usePaginator(interaction, pages, allItems);
+                    return;
+                }
+            }
+
+            // Farm select menu interactions
+            if (
+                interaction.customId === 'farm_plant_select' ||
+                interaction.customId === 'farm_seed_select' ||
+                interaction.customId === 'farm_plot_select'
+            ) {
+                const farmCommand = client.commands.get('farm');
+                if (farmCommand && farmCommand.handleSelect) {
+                    await farmCommand.handleSelect(interaction);
                     return;
                 }
             }

@@ -23,7 +23,7 @@ function getRankEmoji(position) {
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('leaderboard')
+        .setName('leaderboard_old')
         .setDescription('View the top XP leaders in the server'),
     async execute(interaction) {
         const top10 = interaction.client.loyalty.getLeaders(interaction.guild);

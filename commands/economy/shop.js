@@ -11,8 +11,8 @@ module.exports = {
 
         try {
             const user = interaction.client.economy.getUser(userId, guildId);
-            // Use SQL to exclude fish from shop for better performance
-            const allItems = interaction.client.inventory.getShopItemsExcludingTypes(guildId, ['fish']);
+            // Use SQL to exclude fish and crops from shop for better performance
+            const allItems = interaction.client.inventory.getShopItemsExcludingTypes(guildId, ['fish', 'crop']);
             
             if (allItems.length === 0) {
                 return interaction.reply({ 
@@ -134,7 +134,11 @@ module.exports = {
                 const filterType = i.values[0];
                 let filteredItems = originalItems;
                 if (filterType !== 'all') {
-                    filteredItems = originalItems.filter(item => item.type === filterType);
+                    if (filterType === 'seed') {
+                        filteredItems = originalItems.filter(item => item.type === 'seed');
+                    } else {
+                        filteredItems = originalItems.filter(item => item.type === filterType);
+                    }
                 }
                 if (filteredItems.length === 0) {
                     const noItemsEmbed = new EmbedBuilder()
@@ -176,7 +180,10 @@ module.exports = {
                         // Update user balance for the embed
                         const updatedUser = interaction.client.economy.getUser(interaction.user.id, interaction.guild.id);
                         const updatedEmbed = this.updateEmbedBalance(currentPage.embed, updatedUser, interaction.client);
-                        const updatedButtons = this.getButtons(currentPage.pageNumber, currentPage.totalPages, false); // Disable buy button after purchase
+                        // Get the user's new quantity for this item
+                        const newQuantity = interaction.client.inventory.getItemCount(interaction.user.id, interaction.guild.id, currentPage.item.id);
+                        const atMax = newQuantity >= currentPage.item.max_quantity;
+                        const updatedButtons = this.getButtons(currentPage.pageNumber, currentPage.totalPages, !atMax && currentPage.canAfford);
                         await i.editReply({ 
                             embeds: [updatedEmbed], 
                             components: [filterDropdown, updatedButtons]
@@ -233,6 +240,12 @@ module.exports = {
                             description: 'Show all available items',
                             value: 'all',
                             emoji: '📦'
+                        },
+                        {
+                            label: 'Seeds',
+                            description: 'Show only seeds',
+                            value: 'seed',
+                            emoji: '🌱'
                         },
                         {
                             label: 'Fishing Rods',

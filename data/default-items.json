@@ -1,5 +1,57 @@
 [
     {
+        "id": "crop_wheat",
+        "name": "Wheat",
+        "description": "A bundle of freshly harvested wheat.",
+        "type": "crop",
+        "rarity": "common",
+        "price": 20,
+        "max_quantity": 100,
+        "duration_hours": 0,
+        "effect_type": null,
+        "effect_value": null,
+        "emoji": "🌾"
+    },
+    {
+        "id": "seeds_wheat",
+        "name": "Wheat Seeds",
+        "description": "Seeds for planting wheat.",
+        "type": "seed",
+        "rarity": "common",
+        "price": 5,
+        "max_quantity": 100,
+        "duration_hours": 0,
+        "effect_type": null,
+        "effect_value": null,
+        "emoji": "🌱"
+    },
+    {
+        "id": "crop_corn",
+        "name": "Corn",
+        "description": "A fresh ear of corn, ready to eat or sell.",
+        "type": "crop",
+        "rarity": "common",
+        "price": 25,
+        "max_quantity": 100,
+        "duration_hours": 0,
+        "effect_type": null,
+        "effect_value": null,
+        "emoji": "🌽"
+    },
+    {
+        "id": "seeds_corn",
+        "name": "Corn Seeds",
+        "description": "Seeds for planting corn.",
+        "type": "seed",
+        "rarity": "common",
+        "price": 7,
+        "max_quantity": 100,
+        "duration_hours": 0,
+        "effect_type": null,
+        "effect_value": null,
+        "emoji": "🌱"
+    },
+    {
         "id": "fish_tiny_minnow",
         "name": "Tiny Minnow",
         "description": "A small, common fish. Good for beginners!",
