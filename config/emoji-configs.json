@@ -79,7 +79,13 @@
         "watering_can_silver": "<:watering_can_silver:1393398373054156851>",
         "watering_can_gold": "<:watering_can_gold:1393398333539749898>",
         "watering_can_diamond": "<:watering_can_diamond:1393398317727350875>",
-        "watering_can_mythic": "<:watering_can_mythic:1393398352451735725>"
+        "watering_can_mythic": "<:watering_can_mythic:1393398352451735725>",
+        "fertiliser_basic": "<:fertiliser_basic:1393625609728430190>",
+        "fertiliser_premium": "<:fertiliser_premium:1393625637582930113>",
+        "fertiliser_organic": "<:fertiliser_organic:1393625657820315790>",
+        "fertiliser_magical": "<:fertiliser_magical:1393625690204541094>",
+        "fertiliser_legendary": "<:fertiliser_legendary:1393625727483773061>",
+        "fertiliser_mythic": "<:fertiliser_mythic:1393625750556512256>"
     },
     "test_bot": {
         "fishing_rod_basic": "<:fishing_rod_basic:1389632536342429738>",
@@ -161,7 +167,13 @@
         "watering_can_silver": "<:watering_can_silver:1393398881009799179>",
         "watering_can_gold": "<:watering_can_gold:1393398854157865073>",
         "watering_can_diamond": "<:watering_can_diamond:1393398839527870555>",
-        "watering_can_mythic": "<:watering_can_mythic:1393398869697626252>"
+        "watering_can_mythic": "<:watering_can_mythic:1393398869697626252>",
+        "fertiliser_basic": "<:fertiliser_basic:1393624779386523648>",
+        "fertiliser_premium": "<:fertiliser_premium:1393624898290585840>",
+        "fertiliser_organic": "<:fertiliser_organic:1393624880506863748>",
+        "fertiliser_magical": "<:fertiliser_magical:1393624835246133392>",
+        "fertiliser_legendary": "<:fertiliser_legendary:1393624808305983560>",
+        "fertiliser_mythic": "<:fertiliser_mythic:1393624857396117775>"
     },
     "production_bot": {
         "fishing_rod_basic": "<:fishing_rod_basic:1389552382580363264>",
@@ -243,6 +255,12 @@
         "watering_can_silver": "<:watering_can_silver:1393398373054156851>",
         "watering_can_gold": "<:watering_can_gold:1393398333539749898>",
         "watering_can_diamond": "<:watering_can_diamond:1393398317727350875>",
-        "watering_can_mythic": "<:watering_can_mythic:1393398352451735725>"
+        "watering_can_mythic": "<:watering_can_mythic:1393398352451735725>",
+        "fertiliser_basic": "<:fertiliser_basic:1393625609728430190>",
+        "fertiliser_premium": "<:fertiliser_premium:1393625637582930113>",
+        "fertiliser_organic": "<:fertiliser_organic:1393625657820315790>",
+        "fertiliser_magical": "<:fertiliser_magical:1393625690204541094>",
+        "fertiliser_legendary": "<:fertiliser_legendary:1393625727483773061>",
+        "fertiliser_mythic": "<:fertiliser_mythic:1393625750556512256>"
     }
 } 

@@ -32,6 +32,41 @@ Watering cans are permanent items that reduce crop growth times, similar to fish
 - **Growth Time Reduction**: The multiplier is applied to all crop growth times
 - **Effect Value**: Lower values provide better boosts (0.1 = 90% faster growth)
 
+### 💩 Fertilisers
+Fertilisers are consumable items that increase crop yield when applied during planting. The chance of success decreases as seed rarity increases:
+
+#### Available Fertilisers
+| Fertilizer | Rarity | Emoji | Effect Value | Yield Boost | Price |
+|------------|--------|-------|--------------|-------------|-------|
+| **Basic** | Common | 💩 | 5 | 5% boost | 100 coins |
+| **Premium** | Uncommon | 🌱 | 10 | 10% boost | 300 coins |
+| **Organic** | Rare | 🍃 | 20 | 20% boost | 800 coins |
+| **Magical** | Epic | ✨ | 30 | 30% boost | 2,000 coins |
+| **Legendary** | Legendary | 🌟 | 40 | 40% boost | 5,000 coins |
+| **Mythic** | Mythic | 🌈 | 50 | 50% boost | 15,000 coins |
+
+#### How Fertilisers Work
+- **Consumable Items**: Fertilisers are consumed when applied to a plot
+- **Rarity-Based Success**: Higher rarity crops have lower success rates
+- **Yield Boost**: Successful application adds extra yield based on fertiliser quality
+- **Optional Application**: Fertilisers are optional during the planting process
+
+#### Fertilisers Success Rates by Crop Rarity
+| Crop Rarity | Success Rate | Description |
+|-------------|--------------|-------------|
+| **Common** | 80% | High chance of success on basic crops |
+| **Uncommon** | 60% | Good chance on standard crops |
+| **Rare** | 40% | Moderate chance on premium crops |
+| **Epic** | 25% | Low chance on high-value crops |
+| **Legendary** | 15% | Very low chance on rare specialty crops |
+
+#### Fertilisers Application Process
+1. **Plant Seed**: Select a seed to plant
+2. **Choose Plot**: Pick an empty plot (1-9)
+3. **Apply Fertilisers**: Optionally select fertiliser from inventory
+4. **Automatic Application**: Fertilisers is consumed and applied to the plot
+5. **Harvest Results**: Increased yield if fertiliser was successful
+
 ### 🍅 Crop Variants
 Many crops have multiple variants that provide different visual experiences and inventory management:
 
@@ -90,7 +125,7 @@ The farming system fully integrates with the economy and inventory systems:
 
 ### 🌾 Farming Commands
 - `/farm view` - Interactive farming interface with buttons for planting, harvesting, farm management, and viewing plot info
-- `/farm info` - View detailed information about each plot (what is planted, stage, and time left to fully grow)
+- `/farm info` - View detailed information about each plot (what is planted, stage, time left to fully grow, and applied fertilisers)
 - `/leaderboard farm` - View top users by crops harvested
 
 ### 📦 Related Commands
@@ -106,13 +141,15 @@ The `/farm view` command provides a complete interactive farming experience:
 1. **Click "🌱 Plant Seed"** - Opens seed and plot selection menus
 2. **Select a Seed** - Choose from seeds in your inventory
 3. **Select a Plot** - Pick an empty plot (1-9) to plant in
-4. **Automatic Planting** - Seed is consumed and crop begins growing
+4. **Apply Fertilisers** - Optionally select fertiliser from inventory (optional step)
+5. **Automatic Planting** - Seed and fertiliser (if selected) are consumed and crop begins growing
 
 #### 🌾 Harvesting Process
 1. **Click "🌾 Harvest All"** - Automatically harvests all ready crops
 2. **Crops Added to Inventory** - Harvested crops go directly to your inventory
-3. **Variant Selection** - Crops with variants get random variants when harvested
-4. **Plot Clearing** - Harvested plots become available for new crops
+3. **Fertilisers Effects** - Crops with successful fertiliser application show fertiliser emoji
+4. **Variant Selection** - Crops with variants get random variants when harvested
+5. **Plot Clearing** - Harvested plots become available for new crops
 
 #### 🔄 Farm Management
 - **Refresh** - Updates the farm display to show current growth progress

@@ -11,13 +11,15 @@ A feature-rich Discord bot with modular architecture, economy system, loyalty tr
 - **Advanced Twitch stream notifications** with real-time monitoring
 - **Advanced loyalty/XP system** with scaled leveling and multi-level progression
 - **💰 Comprehensive economy system** with wallet/bank, daily rewards, work, transfers, and shop
-- **🌾 Advanced farming system** with crop variants, watering cans, and growth acceleration
+- **🌾 Advanced farming system** with crop variants, watering cans, fertilisers, and growth acceleration
 - **Mythic rarity support**: Mythic items (🌈, magenta) are now available in the shop and inventory, with full support in all rarity tables and admin commands.
 - **Crop variants**: Crops like peppers, tomatoes, and carrots have multiple variants (e.g., red/yellow/green), tracked in the database with a `variant` field and displayed with the correct emoji and name in inventory, harvest, and sell commands.
 - **Watering cans**: All types (wood, copper, silver, gold, diamond, mythic) are available, each with increasing rarity and growth acceleration effect. Only the best can in your inventory is used for crop growth.
+- **Fertilisers**: Six types of fertilisers (basic, premium, organic, magical, legendary, mythic) that increase crop yield with rarity-based success rates. Higher rarity crops have lower success rates, making fertilisers more effective on common crops.
 - **Accurate staged growth system**: Crop growth times are now based on a staged system (e.g., common crops take 26 minutes, legendary 58 minutes, with each stage having a specific duration).
 - **/farm info command**: Shows detailed information about each plot, including what is planted, stage, and time left to fully grow.
 - **Sell confirmation**: When selling items (including via "Sell Quantity"), you now receive a confirmation message.
+- **Buy Quantity**: The shop now features a "Buy Quantity" modal for bulk purchases, similar to the sell quantity functionality.
 - **Command structure**: Farming commands are `/farm view` (interactive UI) and `/leaderboard farm` (top farmers). Removed references to `/farm plant` and `/farm harvest`.
 - **Documentation**: See `FARMING_README.md` and `ECONOMY_README.md` for full details on farming, inventory, and item mechanics.
 - **Engaging games**: Connect4, TicTacToe, RPS, RPSLS with XP rewards for winners

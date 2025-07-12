@@ -258,7 +258,10 @@ client.on('interactionCreate', async interaction => {
             if (
                 interaction.customId === 'farm_plant_select' ||
                 interaction.customId === 'farm_seed_select' ||
-                interaction.customId === 'farm_plot_select'
+                interaction.customId === 'farm_plot_select' ||
+                interaction.customId === 'farm_plant_seed' ||
+                interaction.customId === 'farm_plant_plot' ||
+                interaction.customId === 'farm_plant_fertiliser'
             ) {
                 const farmCommand = client.commands.get('farm');
                 if (farmCommand && farmCommand.handleSelect) {

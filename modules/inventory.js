@@ -13,9 +13,50 @@ class Inventory {
     }
 
     setupDatabase() {
-        // Create inventory table if it doesn't exist
+        // Check if we need to migrate the inventory table structure
         const table = sql.prepare('SELECT count(*) FROM sqlite_master WHERE type=\'table\' AND name = \'inventory\';').get();
-        if (!table['count(*)']) {
+        if (table['count(*)']) {
+            // Table exists, check if it has conflicting indexes
+            const indexes = sql.prepare("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='inventory';").all();
+            const hasConflictingIndex = indexes.some(idx => idx.name === 'sqlite_autoindex_inventory_1');
+            
+            if (hasConflictingIndex) {
+                console.log('[Inventory] Detected conflicting unique index, migrating inventory table...');
+                
+                // Backup existing data
+                const oldData = sql.prepare('SELECT * FROM inventory').all();
+                console.log(`[Inventory] Backing up ${oldData.length} inventory records`);
+                
+                // Create new table with correct structure
+                sql.prepare('DROP TABLE inventory').run();
+                sql.prepare(`
+                    CREATE TABLE inventory (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user TEXT NOT NULL,
+                        guild TEXT NOT NULL,
+                        item_id TEXT NOT NULL,
+                        quantity INTEGER DEFAULT 1,
+                        acquired_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                        expires_at TEXT,
+                        variant TEXT
+                    );
+                `).run();
+                
+                // Restore data (without variants for now)
+                for (const record of oldData) {
+                    sql.prepare(`
+                        INSERT INTO inventory (user, guild, item_id, quantity, acquired_at, expires_at, variant)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    `).run(
+                        record.user, record.guild, record.item_id, record.quantity,
+                        record.acquired_at, record.expires_at, null
+                    );
+                }
+                
+                console.log(`[Inventory] Successfully migrated ${oldData.length} records`);
+            }
+        } else {
+            // Create new table
             sql.prepare(`
                 CREATE TABLE inventory (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -25,54 +66,57 @@ class Inventory {
                     quantity INTEGER DEFAULT 1,
                     acquired_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     expires_at TEXT,
-                    UNIQUE(user, guild, item_id)
+                    variant TEXT
                 );
             `).run();
-            
-            // Create indexes for better performance
-            sql.prepare('CREATE INDEX idx_inventory_user_guild ON inventory (user, guild);').run();
-            sql.prepare('CREATE INDEX idx_inventory_item ON inventory (item_id);').run();
-            sql.prepare('CREATE INDEX idx_inventory_expires ON inventory (expires_at);').run();
-            sql.pragma('synchronous = 1');
-            sql.pragma('journal_mode = wal');
         }
-
-        // Add 'variant' column to inventory if missing
-        const pragma = sql.prepare("PRAGMA table_info(inventory);").all();
-        const hasVariant = pragma.some(col => col.name === 'variant');
-        if (!hasVariant) {
-            sql.prepare('ALTER TABLE inventory ADD COLUMN variant TEXT;').run();
-        }
-
-        // Add unique index for (user, guild, item_id, variant) if missing
+        
+        // Create indexes for better performance
+        sql.prepare('CREATE INDEX IF NOT EXISTS idx_inventory_user_guild ON inventory (user, guild);').run();
+        sql.prepare('CREATE INDEX IF NOT EXISTS idx_inventory_item ON inventory (item_id);').run();
+        sql.prepare('CREATE INDEX IF NOT EXISTS idx_inventory_expires ON inventory (expires_at);').run();
+        
+        // Create the correct unique index for (user, guild, item_id, variant)
         sql.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_inventory_user_guild_item_variant
             ON inventory (user, guild, item_id, variant)
         `).run();
+        
+        sql.pragma('synchronous = 1');
+        sql.pragma('journal_mode = wal');
 
         // Create items table for item definitions
         const itemsTable = sql.prepare('SELECT count(*) FROM sqlite_master WHERE type=\'table\' AND name = \'items\';').get();
         if (!itemsTable['count(*)']) {
             sql.prepare(`
-                CREATE TABLE IF NOT EXISTS items (
-                    id TEXT PRIMARY KEY,
+                CREATE TABLE items (
+                    id TEXT NOT NULL,
                     guild TEXT NOT NULL,
                     name TEXT NOT NULL,
                     description TEXT NOT NULL,
                     type TEXT NOT NULL,
-                    rarity TEXT NOT NULL,
-                    price INTEGER NOT NULL,
-                    max_quantity INTEGER NOT NULL DEFAULT 1,
-                    duration_hours INTEGER NOT NULL DEFAULT 0,
+                    rarity TEXT DEFAULT 'common',
+                    price INTEGER DEFAULT 0,
+                    max_quantity INTEGER DEFAULT 1,
+                    duration_hours INTEGER DEFAULT 0,
                     effect_type TEXT,
-                    effect_value INTEGER,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    emoji TEXT
-                )
+                    effect_value INTEGER DEFAULT 0,
+                    emoji TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id, guild)
+                );
             `).run();
             
+            // Create indexes for items table
             sql.prepare('CREATE INDEX idx_items_guild ON items (guild);').run();
             sql.prepare('CREATE INDEX idx_items_type ON items (type);').run();
             sql.prepare('CREATE INDEX idx_items_rarity ON items (rarity);').run();
+        }
+
+        // Add variants column to items table if missing
+        const itemsPragma = sql.prepare("PRAGMA table_info(items);").all();
+        const itemsHasVariants = itemsPragma.some(col => col.name === 'variants');
+        if (!itemsHasVariants) {
+            sql.prepare('ALTER TABLE items ADD COLUMN variants TEXT;').run();
         }
 
         // Create active_effects table for tracking active item effects
@@ -238,8 +282,8 @@ class Inventory {
             if (updatedItem) {
                 console.log(`[addItem] After operation: user ${userId} now has ${updatedItem.quantity} of item ${itemId}`);
             }
-            // Legendary notification logic
-            if (item.rarity === 'legendary' && toAdd > 0 && this.client && this.client.settings) {
+            // Unified legendary and mythic notification logic
+            if ((item.rarity === 'legendary' || item.rarity === 'mythic') && toAdd > 0 && this.client && this.client.settings) {
                 try {
                     const settings = this.client.settings.get(guildId);
                     const channelId = settings && settings.economy_channel_id;
@@ -251,10 +295,11 @@ class Inventory {
                                 const user = await this.client.users.fetch(userId);
                                 const { EmbedBuilder } = require('discord.js');
                                 const emoji = this.getItemEmoji(item);
+                                const rarity = item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1);
                                 const embed = new EmbedBuilder()
-                                    .setColor(this.getRarityColour('legendary'))
-                                    .setTitle('🏆 Legendary Item Acquired!')
-                                    .setDescription(`${user} just received a legendary item: **${emoji} ${item.name}**!`)
+                                    .setColor(this.getRarityColour(item.rarity))
+                                    .setTitle(item.rarity === 'mythic' ? '🌈 Mythic Item Acquired!' : '🏆 Legendary Item Acquired!')
+                                    .setDescription(`${user} just received a **${rarity}** item: **${emoji} ${item.name}**!`)
                                     .setThumbnail(this.getEmojiUrl(emoji, this.client))
                                     .setTimestamp();
                                 channel.send({ embeds: [embed] });
@@ -262,13 +307,100 @@ class Inventory {
                         }
                     }
                 } catch (err) {
-                    console.error('Error sending legendary item notification:', err);
+                    // Handle errors silently or log as needed
                 }
             }
             return { success: true, added: toAdd, capped, newQuantity: updatedItem ? updatedItem.quantity : 0 };
         } catch (error) {
             console.error('Error adding item to inventory:', error);
             return { success: false, added: 0, capped, newQuantity: currentQty };
+        }
+    }
+
+    // Add item to user's inventory with optimized variant storage
+    async addItemWithVariants(userId, guildId, itemId, variantQuantities, interaction = null, client = null) {
+        console.log(`[addItemWithVariants] Called for user ${userId} in guild ${guildId} for item ${itemId} with variants:`, variantQuantities);
+        
+        const item = this.getItem(itemId, guildId);
+        if (!item) throw new Error('Item not found');
+
+        const nowISOString = new Date().toISOString();
+        const expiresAt = item.duration_hours > 0 
+            ? new Date(Date.now() + item.duration_hours * 60 * 60 * 1000).toISOString()
+            : null;
+
+        // Get existing item data
+        const existing = this.getUserItem(userId, guildId, itemId);
+        let currentVariants = {};
+        let currentTotal = 0;
+        
+        if (existing) {
+            currentTotal = existing.quantity;
+            if (existing.variants) {
+                try {
+                    currentVariants = JSON.parse(existing.variants);
+                } catch (e) {
+                    currentVariants = {};
+                }
+            }
+        }
+
+        // Merge new variant quantities
+        for (const [variant, quantity] of Object.entries(variantQuantities)) {
+            currentVariants[variant] = (currentVariants[variant] || 0) + quantity;
+        }
+        
+        const newTotal = Object.values(currentVariants).reduce((a, b) => a + b, 0);
+        const addedQuantity = newTotal - currentTotal;
+
+        // Check max quantity limits
+        const maxQty = item.max_quantity || 1;
+        if (newTotal > maxQty) {
+            const excess = newTotal - maxQty;
+            const notify = async (msg) => {
+                if (interaction) {
+                    try {
+                        if (interaction.replied || interaction.deferred) {
+                            await interaction.followUp({ content: msg, flags: 64 });
+                        } else {
+                            await interaction.reply({ content: msg, flags: 64 });
+                        }
+                    } catch {}
+                }
+            };
+            notify(`You can only have ${maxQty} of **${item.name}** total (would exceed by ${excess}).`);
+            return { success: false, added: 0, capped: true, newQuantity: currentTotal };
+        }
+
+        try {
+            // Add variants column if it doesn't exist
+            const pragma = sql.prepare("PRAGMA table_info(inventory);").all();
+            const hasVariants = pragma.some(col => col.name === 'variants');
+            if (!hasVariants) {
+                sql.prepare('ALTER TABLE inventory ADD COLUMN variants TEXT;').run();
+            }
+
+            sql.prepare(`
+                INSERT INTO inventory (user, guild, item_id, quantity, expires_at, acquired_at, variants)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(user, guild, item_id) 
+                DO UPDATE SET 
+                    quantity = ?,
+                    variants = ?,
+                    expires_at = CASE 
+                        WHEN ? IS NOT NULL THEN ?
+                        ELSE expires_at 
+                    END
+            `).run(userId, guildId, itemId, newTotal, expiresAt, nowISOString, 
+                   JSON.stringify(currentVariants), newTotal, JSON.stringify(currentVariants), 
+                   expiresAt, expiresAt);
+
+            console.log(`[addItemWithVariants] After operation: user ${userId} now has ${newTotal} of item ${itemId} with variants:`, currentVariants);
+            
+            return { success: true, added: addedQuantity, capped: false, newQuantity: newTotal, variants: currentVariants };
+        } catch (error) {
+            console.error('Error adding item with variants to inventory:', error);
+            return { success: false, added: 0, capped: false, newQuantity: currentTotal };
         }
     }
 
@@ -740,8 +872,8 @@ class Inventory {
 
     // Get item count
     getItemCount(userId, guildId, itemId) {
-        const item = sql.prepare('SELECT quantity FROM inventory WHERE user = ? AND guild = ? AND item_id = ?').get(userId, guildId, itemId);
-        return item ? item.quantity : 0;
+        const row = sql.prepare('SELECT SUM(quantity) as total FROM inventory WHERE user = ? AND guild = ? AND item_id = ?').get(userId, guildId, itemId);
+        return row && row.total ? row.total : 0;
     }
 
     // Clean up expired items
@@ -1136,6 +1268,137 @@ class Inventory {
             this._itemConfigCache = JSON.parse(raw);
         }
         return this._itemConfigCache.find(item => item.id === itemId) || null;
+    }
+
+    // Get variant quantities for an item
+    getItemVariants(userId, guildId, itemId) {
+        const item = this.getUserItem(userId, guildId, itemId);
+        if (!item || !item.variants) return {};
+        
+        try {
+            return JSON.parse(item.variants);
+        } catch (e) {
+            return {};
+        }
+    }
+
+    // Remove specific variant quantities
+    async removeItemVariants(userId, guildId, itemId, variantQuantities) {
+        const existing = this.getUserItem(userId, guildId, itemId);
+        if (!existing) return { success: false, removed: 0 };
+
+        let currentVariants = {};
+        if (existing.variants) {
+            try {
+                currentVariants = JSON.parse(existing.variants);
+            } catch (e) {
+                currentVariants = {};
+            }
+        }
+
+        let totalRemoved = 0;
+        for (const [variant, quantity] of Object.entries(variantQuantities)) {
+            const currentQty = currentVariants[variant] || 0;
+            const toRemove = Math.min(currentQty, quantity);
+            currentVariants[variant] = currentQty - toRemove;
+            totalRemoved += toRemove;
+            
+            if (currentVariants[variant] <= 0) {
+                delete currentVariants[variant];
+            }
+        }
+
+        const newTotal = Object.values(currentVariants).reduce((a, b) => a + b, 0);
+
+        if (newTotal === 0) {
+            // Remove entire item if no variants left
+            this.removeItem(userId, guildId, itemId, existing.quantity);
+        } else {
+            // Update with remaining variants
+            sql.prepare(`
+                UPDATE inventory 
+                SET quantity = ?, variants = ?
+                WHERE user = ? AND guild = ? AND item_id = ?
+            `).run(newTotal, JSON.stringify(currentVariants), userId, guildId, itemId);
+        }
+
+        return { success: true, removed: totalRemoved, newQuantity: newTotal };
+    }
+
+    // Store complete item definition in database (including variants)
+    storeCompleteItem(itemData) {
+        try {
+            const {
+                id, guild, name, description, type, rarity, price,
+                max_quantity = 1, duration_hours = 0, effect_type = null,
+                effect_value = null, emoji = null, variants = null
+            } = itemData;
+
+            // Add variants column if it doesn't exist
+            const pragma = sql.prepare("PRAGMA table_info(items);").all();
+            const hasVariants = pragma.some(col => col.name === 'variants');
+            if (!hasVariants) {
+                sql.prepare('ALTER TABLE items ADD COLUMN variants TEXT;').run();
+            }
+
+            sql.prepare(`
+                INSERT OR REPLACE INTO items (
+                    id, guild, name, description, type, rarity, price, 
+                    max_quantity, duration_hours, effect_type, effect_value, 
+                    emoji, variants
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(
+                id, guild, name, description, type, rarity, price,
+                max_quantity, duration_hours, effect_type, effect_value,
+                emoji, variants ? JSON.stringify(variants) : null
+            );
+
+            return true;
+        } catch (error) {
+            console.error('Error storing complete item:', error);
+            return false;
+        }
+    }
+
+    // Populate default items with complete data (including variants)
+    populateDefaultItemsComplete(guildId) {
+        // Load default items from JSON file
+        const defaultItems = require('../data/default-items.json');
+        
+        // Determine which emoji set to use based on environment
+        const emojiSet = config.Enviroment.live 
+            ? emojiConfigs['production_bot'] 
+            : emojiConfigs['test_bot'] || emojiConfigs['default'];
+
+        // Insert complete default items for the specific guild
+        for (const item of defaultItems) {
+            // Use emoji from config if available, otherwise use the default emoji
+            const emoji = emojiSet[item.id] || item.emoji;
+            
+            this.storeCompleteItem({
+                ...item,
+                guild: guildId,
+                emoji: emoji
+            });
+        }
+    }
+
+    // Get complete item definition from database (including variants)
+    getCompleteItem(itemId, guildId) {
+        const item = sql.prepare('SELECT * FROM items WHERE id = ? AND guild = ?').get(itemId, guildId);
+        if (!item) return null;
+
+        // Parse variants if they exist
+        if (item.variants) {
+            try {
+                item.variants = JSON.parse(item.variants);
+            } catch (e) {
+                item.variants = null;
+            }
+        }
+
+        return item;
     }
 }
 

@@ -10,6 +10,14 @@ module.exports = {
                 .setDescription('Top users by crops harvested')
         )
         .addSubcommand(sub =>
+            sub.setName('farm-seeds')
+                .setDescription('Top users by seeds planted')
+        )
+        .addSubcommand(sub =>
+            sub.setName('farm-fertilisers')
+                .setDescription('Top users by fertilisers used')
+        )
+        .addSubcommand(sub =>
             sub.setName('economy')
                 .setDescription('Top users by net worth')
                 .addIntegerOption(option =>
@@ -31,11 +39,11 @@ module.exports = {
             const guildId = interaction.guild.id;
             // Ensure farm_stats table exists and is updated on harvests
             if (!interaction.client.farming.getFarmLeaderboard) {
-                return interaction.reply({ content: 'Farm leaderboard is not available.', ephemeral: true });
+                return interaction.reply({ content: 'Farm leaderboard is not available.', flags: MessageFlags.Ephemeral });
             }
             const top10 = interaction.client.farming.getFarmLeaderboard(guildId, 10);
             if (!top10 || top10.length === 0) {
-                return interaction.reply({ content: 'No farm data found for this server!', ephemeral: true });
+                return interaction.reply({ content: 'No farm data found for this server!', flags: MessageFlags.Ephemeral });
             }
             let description = '';
             for (let i = 0; i < top10.length; i++) {
@@ -50,6 +58,50 @@ module.exports = {
                 .setTitle('🌾 Farm Leaderboard')
                 .setDescription(description)
                 .setFooter({ text: `Showing top ${top10.length} users by crops harvested` })
+                .setTimestamp();
+            await interaction.reply({ embeds: [embed] });
+        } else if (sub === 'farm-seeds') {
+            // Seeds planted leaderboard
+            const guildId = interaction.guild.id;
+            const top10 = interaction.client.farming.getSeedsPlantedLeaderboard(guildId, 10);
+            if (!top10 || top10.length === 0) {
+                return interaction.reply({ content: 'No seed planting data found for this server!', flags: MessageFlags.Ephemeral });
+            }
+            let description = '';
+            for (let i = 0; i < top10.length; i++) {
+                const entry = top10[i];
+                const user = await interaction.client.users.fetch(entry.user).catch(() => null);
+                const username = user ? user.username : 'Unknown User';
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+                description += `${medal} **${username}** - **${entry.seeds_planted}** seeds planted\n`;
+            }
+            const embed = new EmbedBuilder()
+                .setColor(0x90EE90)
+                .setTitle('🌱 Seeds Planted Leaderboard')
+                .setDescription(description)
+                .setFooter({ text: `Showing top ${top10.length} users by seeds planted` })
+                .setTimestamp();
+            await interaction.reply({ embeds: [embed] });
+        } else if (sub === 'farm-fertilisers') {
+            // Fertilisers used leaderboard
+            const guildId = interaction.guild.id;
+            const top10 = interaction.client.farming.getFertilisersUsedLeaderboard(guildId, 10);
+            if (!top10 || top10.length === 0) {
+                return interaction.reply({ content: 'No fertiliser usage data found for this server!', flags: MessageFlags.Ephemeral });
+            }
+            let description = '';
+            for (let i = 0; i < top10.length; i++) {
+                const entry = top10[i];
+                const user = await interaction.client.users.fetch(entry.user).catch(() => null);
+                const username = user ? user.username : 'Unknown User';
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+                description += `${medal} **${username}** - **${entry.fertilisers_used}** fertilisers used\n`;
+            }
+            const embed = new EmbedBuilder()
+                .setColor(0x8B4513)
+                .setTitle('💩 Fertilisers Used Leaderboard')
+                .setDescription(description)
+                .setFooter({ text: `Showing top ${top10.length} users by fertilisers used` })
                 .setTimestamp();
             await interaction.reply({ embeds: [embed] });
         } else if (sub === 'economy') {

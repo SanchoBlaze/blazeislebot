@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, MessageFlags, StringSelectMenuBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, MessageFlags, StringSelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -134,7 +134,20 @@ module.exports = {
                 const filterType = i.values[0];
                 let filteredItems = originalItems;
                 if (filterType !== 'all') {
-                    if (filterType === 'seed') {
+                    if (filterType === 'farming') {
+                        // Group farming items: seeds, watering cans, and fertilisers
+                        filteredItems = originalItems.filter(item => 
+                            item.type === 'seed' || 
+                            item.type === 'watering_can' || 
+                            item.type === 'fertiliser'
+                        );
+                    } else if (filterType === 'fishing') {
+                        // Group fishing items: fishing rods and other fishing equipment
+                        filteredItems = originalItems.filter(item => 
+                            item.type === 'fishing_rod' || 
+                            item.type === 'fishing_equipment'
+                        );
+                    } else if (filterType === 'seed') {
                         filteredItems = originalItems.filter(item => item.type === 'seed');
                     } else {
                         filteredItems = originalItems.filter(item => item.type === filterType);
@@ -167,7 +180,35 @@ module.exports = {
             }
             // Handle button interactions
             if (i.isButton()) {
-                await i.deferUpdate();
+                if (i.customId === 'shop_buyQuantityButton') {
+                    // Show modal for quantity input (do NOT defer or edit reply)
+                    const currentPage = currentPages[page];
+                    const user = interaction.client.economy.getUser(interaction.user.id, interaction.guild.id);
+                    const currentQuantity = interaction.client.inventory.getItemCount(interaction.user.id, interaction.guild.id, currentPage.item.id);
+                    const maxCanBuy = Math.min(
+                        Math.floor(user.balance / currentPage.item.price),
+                        currentPage.item.max_quantity - currentQuantity
+                    );
+                    
+                    const modal = new ModalBuilder()
+                        .setCustomId('shop_buyQuantityModal')
+                        .setTitle('Buy Quantity')
+                        .addComponents(
+                            new ActionRowBuilder().addComponents(
+                                new TextInputBuilder()
+                                    .setCustomId('shop_buyQuantityInput')
+                                    .setLabel('Enter quantity to buy')
+                                    .setStyle(TextInputStyle.Short)
+                                    .setPlaceholder(`1 - ${maxCanBuy}`)
+                                    .setRequired(true)
+                            )
+                        );
+                    await i.showModal(modal);
+                    return;
+                } else {
+                    await i.deferUpdate();
+                }
+                
                 if (i.customId === 'shop_leftPaginationButton') {
                     page = page > 0 ? --page : currentPages.length - 1;
                 } else if (i.customId === 'shop_rightPaginationButton') {
@@ -205,10 +246,66 @@ module.exports = {
             const disabledButtons = this.getDisabledButtons(currentPage.pageNumber, currentPage.totalPages);
             interaction.editReply({ components: [filterDropdown, disabledButtons] });
         });
+
+        // Modal submit handler - create a named function so we can remove it later
+        const modalHandler = async (modalInteraction) => {
+            if (!modalInteraction.isModalSubmit() || modalInteraction.customId !== 'shop_buyQuantityModal') return;
+            if (modalInteraction.user.id !== interaction.user.id) return;
+            
+            const currentPage = currentPages[page];
+            const user = interaction.client.economy.getUser(interaction.user.id, interaction.guild.id);
+            const currentQuantity = interaction.client.inventory.getItemCount(interaction.user.id, interaction.guild.id, currentPage.item.id);
+            const maxCanBuy = Math.min(
+                Math.floor(user.balance / currentPage.item.price),
+                currentPage.item.max_quantity - currentQuantity
+            );
+            
+            const qtyStr = modalInteraction.fields.getTextInputValue('shop_buyQuantityInput');
+            let qty = parseInt(qtyStr, 10);
+            
+            if (isNaN(qty) || qty < 1 || qty > maxCanBuy) {
+                await modalInteraction.reply({ 
+                    content: `Please enter a valid quantity between 1 and ${maxCanBuy}.`, 
+                    ephemeral: true 
+                });
+                return;
+            }
+            
+            // Process the purchase
+            const success = await this.processBulkPurchase(modalInteraction, currentPage.item, qty);
+            if (!success) {
+                // Only handle UI update if purchase failed (success case already replied)
+                await modalInteraction.reply({ 
+                    content: 'There was an error processing your purchase.', 
+                    ephemeral: true 
+                });
+            }
+            // Note: If purchase succeeded, processBulkPurchase already replied to the interaction
+            // so we don't need to do anything else here
+        };
+
+        // Add modal handler to client
+        if (!interaction.client._shopModalHandlers) {
+            interaction.client._shopModalHandlers = new Map();
+        }
+        interaction.client._shopModalHandlers.set(interaction.user.id, modalHandler);
+        
+        // Set up modal listener if not already set up
+        if (!interaction.client._shopModalListener) {
+            interaction.client._shopModalListener = true;
+            interaction.client.on('interactionCreate', async (modalInteraction) => {
+                if (!modalInteraction.isModalSubmit() || modalInteraction.customId !== 'shop_buyQuantityModal') return;
+                const handler = interaction.client._shopModalHandlers.get(modalInteraction.user.id);
+                if (handler) {
+                    await handler(modalInteraction);
+                    interaction.client._shopModalHandlers.delete(modalInteraction.user.id);
+                }
+            });
+        }
     },
 
-    getButtons(pageNumber, totalPages, canAfford) {
-        return new ActionRowBuilder()
+    getButtons(pageNumber, totalPages, canAfford, showBuyQuantity = true) {
+        const row = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('shop_leftPaginationButton')
@@ -226,6 +323,18 @@ module.exports = {
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(pageNumber === totalPages)
             );
+        
+        if (showBuyQuantity) {
+            row.addComponents(
+                new ButtonBuilder()
+                    .setCustomId('shop_buyQuantityButton')
+                    .setLabel('🔢 Buy Quantity')
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(!canAfford)
+            );
+        }
+        
+        return row;
     },
 
     getFilterDropdown() {
@@ -242,10 +351,34 @@ module.exports = {
                             emoji: '📦'
                         },
                         {
+                            label: 'Farming Items',
+                            description: 'Seeds, watering cans, and fertilisers',
+                            value: 'farming',
+                            emoji: '🌾'
+                        },
+                        {
                             label: 'Seeds',
                             description: 'Show only seeds',
                             value: 'seed',
                             emoji: '🌱'
+                        },
+                        {
+                            label: 'Watering Cans',
+                            description: 'Show only watering cans',
+                            value: 'watering_can',
+                            emoji: '🚿'
+                        },
+                        {
+                            label: 'Fertilisers',
+                            description: 'Show only fertilisers',
+                            value: 'fertiliser',
+                            emoji: '💩'
+                        },
+                        {
+                            label: 'Fishing Items',
+                            description: 'Fishing rods and equipment',
+                            value: 'fishing',
+                            emoji: '🎣'
                         },
                         {
                             label: 'Fishing Rods',
@@ -285,6 +418,11 @@ module.exports = {
                 new ButtonBuilder()
                     .setCustomId('shop_rightPaginationButton')
                     .setLabel('▶️')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(true),
+                new ButtonBuilder()
+                    .setCustomId('shop_buyQuantityButton')
+                    .setLabel('🔢 Buy Quantity')
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(true)
             );
@@ -378,6 +516,85 @@ module.exports = {
         } catch (error) {
             console.error('Error processing shop purchase:', error);
             await interaction.followUp({ 
+                content: 'There was an error processing your purchase!', 
+                flags: MessageFlags.Ephemeral 
+            });
+            return false;
+        }
+    },
+
+    async processBulkPurchase(interaction, item, quantity) {
+        const guildId = interaction.guild.id;
+        const userId = interaction.user.id;
+
+        try {
+            console.log(`[shop bulk purchase] User ${userId} attempting to buy ${quantity}x ${item.id}`);
+            
+            // Prevent buying fish items
+            if (item.type === 'fish') {
+                await interaction.reply({
+                    content: 'Fish can only be obtained by fishing, not by purchasing from the shop!',
+                    flags: MessageFlags.Ephemeral
+                });
+                return false;
+            }
+
+            const user = interaction.client.economy.getUser(userId, guildId);
+            const totalCost = item.price * quantity;
+            
+            if (user.balance < totalCost) {
+                await interaction.reply({ 
+                    content: `You don't have enough coins! You need ${interaction.client.economy.formatCurrency(totalCost)} but have ${interaction.client.economy.formatCurrency(user.balance)}.`, 
+                    flags: MessageFlags.Ephemeral 
+                });
+                return false;
+            }
+
+            // Check if user already has the item and if there's a quantity limit
+            const currentQuantity = interaction.client.inventory.getItemCount(userId, guildId, item.id);
+            if (currentQuantity + quantity > item.max_quantity) {
+                await interaction.reply({ 
+                    content: `You cannot buy ${quantity}x ${item.name}! You would exceed the maximum quantity of ${item.max_quantity} (currently have ${currentQuantity}).`, 
+                    flags: MessageFlags.Ephemeral 
+                });
+                return false;
+            }
+
+            // Process the purchase
+            const success = await interaction.client.inventory.addItem(userId, guildId, item.id, quantity, interaction, interaction.client);
+            
+            if (success) {
+                console.log(`[shop bulk purchase] User ${userId} successfully bought ${quantity}x ${item.id}`);
+                // Deduct coins and log transaction
+                await interaction.client.economy.updateBalance(userId, guildId, -totalCost, 'balance');
+                interaction.client.economy.logTransaction(userId, guildId, 'shop_purchase', -totalCost, `Purchased ${quantity}x ${item.name}`);
+                
+                const emoji = interaction.client.inventory.getItemEmoji(item);
+                const embed = new EmbedBuilder()
+                    .setColor(interaction.client.inventory.getRarityColour(item.rarity))
+                    .setTitle('🛒 Bulk Purchase Successful!')
+                    .setDescription(`You purchased **${quantity}x ${emoji} ${item.name}** for ${interaction.client.economy.formatCurrency(totalCost)}`)
+                    .addFields(
+                        { name: '📦 Item Type', value: item.type.charAt(0).toUpperCase() + item.type.slice(1), inline: true },
+                        { name: '⭐ Rarity', value: item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1), inline: true },
+                        { name: '💵 New Balance', value: interaction.client.economy.formatCurrency(user.balance - totalCost), inline: true },
+                        { name: '📊 Total Owned', value: `${currentQuantity + quantity}x`, inline: true }
+                    )
+                    .setFooter({ text: 'Use /inventory to view your items, /use to use them!' })
+                    .setTimestamp();
+
+                await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                return true;
+            } else {
+                await interaction.reply({ 
+                    content: 'There was an error processing your purchase!', 
+                    flags: MessageFlags.Ephemeral 
+                });
+                return false;
+            }
+        } catch (error) {
+            console.error('Error processing shop bulk purchase:', error);
+            await interaction.reply({ 
                 content: 'There was an error processing your purchase!', 
                 flags: MessageFlags.Ephemeral 
             });

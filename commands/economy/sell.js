@@ -158,7 +158,22 @@ module.exports = {
                 const filterType = i.values[0];
                 let filteredItems = originalItems;
                 if (filterType !== 'all') {
-                    filteredItems = originalItems.filter(item => item.type === filterType);
+                    if (filterType === 'farming') {
+                        // Group farming items: seeds, watering cans, and fertilisers
+                        filteredItems = originalItems.filter(item => 
+                            item.type === 'seed' || 
+                            item.type === 'watering_can' || 
+                            item.type === 'fertiliser'
+                        );
+                    } else if (filterType === 'fishing') {
+                        // Group fishing items: fishing rods and fish
+                        filteredItems = originalItems.filter(item => 
+                            item.type === 'fishing_rod' || 
+                            item.type === 'fish'
+                        );
+                    } else {
+                        filteredItems = originalItems.filter(item => item.type === filterType);
+                    }
                 }
                 if (filteredItems.length === 0) {
                     const noItemsEmbed = new EmbedBuilder()
@@ -246,7 +261,9 @@ module.exports = {
             const qtyStr = modalInteraction.fields.getTextInputValue('sell_quantityInput');
             let qty = parseInt(qtyStr, 10);
             if (isNaN(qty) || qty < 1 || qty > maxQty) {
-                await modalInteraction.reply({ content: `Please enter a valid quantity between 1 and ${maxQty}.`, ephemeral: true });
+                if (!modalInteraction.replied && !modalInteraction.deferred) {
+                    await modalInteraction.reply({ content: `Please enter a valid quantity between 1 and ${maxQty}.`, flags: MessageFlags.Ephemeral });
+                }
                 return;
             }
             // Process the sale
@@ -258,11 +275,18 @@ module.exports = {
                 const newTotalPrice = currentPage.sellPrice * newQuantity;
                 const updatedEmbed = this.updateEmbedAfterSell(currentPage.embed, newQuantity, newTotalPrice, modalInteraction.client);
                 const updatedButtons = this.getButtons(currentPage.pageNumber, currentPage.totalPages, newQuantity > 0);
-                await modalInteraction.update({
-                    embeds: [updatedEmbed],
-                    components: [filterDropdown, updatedButtons]
-                });
-                // Send confirmation embed
+                if (!modalInteraction.replied && !modalInteraction.deferred) {
+                    await modalInteraction.update({
+                        embeds: [updatedEmbed],
+                        components: [filterDropdown, updatedButtons]
+                    });
+                } else {
+                    await modalInteraction.editReply({
+                        embeds: [updatedEmbed],
+                        components: [filterDropdown, updatedButtons]
+                    });
+                }
+                // Send confirmation embed (as a followUp only if not already replied)
                 const displayName = modalInteraction.client.inventory.getDisplayName(currentPage.item, currentPage.item.variant);
                 const displayEmoji = modalInteraction.client.inventory.getDisplayEmoji(currentPage.item, currentPage.item.variant);
                 const embed = new EmbedBuilder()
@@ -275,9 +299,16 @@ module.exports = {
                     )
                     .setFooter({ text: `Sold by ${modalInteraction.user.tag}` })
                     .setTimestamp();
-                await modalInteraction.followUp({ embeds: [embed], ephemeral: true });
+                if (!modalInteraction.replied && !modalInteraction.deferred) {
+                    await modalInteraction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                } else {
+                    // If already replied, send as a new ephemeral message
+                    await modalInteraction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                }
             } else {
-                await modalInteraction.reply({ content: 'There was an error processing your sale.', ephemeral: true });
+                if (!modalInteraction.replied && !modalInteraction.deferred) {
+                    await modalInteraction.reply({ content: 'There was an error processing your sale.', flags: MessageFlags.Ephemeral });
+                }
             }
         };
 
@@ -337,6 +368,42 @@ module.exports = {
                             description: 'Show all items in your inventory',
                             value: 'all',
                             emoji: '📦'
+                        },
+                        {
+                            label: 'Farming Items',
+                            description: 'Seeds, watering cans, and fertilisers',
+                            value: 'farming',
+                            emoji: '🌾'
+                        },
+                        {
+                            label: 'Seeds',
+                            description: 'Show only seeds',
+                            value: 'seed',
+                            emoji: '🌱'
+                        },
+                        {
+                            label: 'Watering Cans',
+                            description: 'Show only watering cans',
+                            value: 'watering_can',
+                            emoji: '🚿'
+                        },
+                        {
+                            label: 'Fertilisers',
+                            description: 'Show only fertilisers',
+                            value: 'fertiliser',
+                            emoji: '💩'
+                        },
+                        {
+                            label: 'Crops',
+                            description: 'Show only harvested crops',
+                            value: 'crop',
+                            emoji: '🌽'
+                        },
+                        {
+                            label: 'Fishing Items',
+                            description: 'Fishing rods and fish',
+                            value: 'fishing',
+                            emoji: '🎣'
                         },
                         {
                             label: 'Fish',
@@ -418,17 +485,17 @@ module.exports = {
                 if (isModal) {
                     await interaction.reply({
                         content: 'You don\'t have enough of this item to sell!',
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 } else if (interaction.replied || interaction.deferred) {
                     await interaction.followUp({
                         content: 'You don\'t have enough of this item to sell!',
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 } else {
                     await interaction.reply({
                         content: 'You don\'t have enough of this item to sell!',
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 }
                 return false;
@@ -439,17 +506,17 @@ module.exports = {
                 if (isModal) {
                     await interaction.reply({
                         content: `❌ ${result.message}`,
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 } else if (interaction.replied || interaction.deferred) {
                     await interaction.followUp({
                         content: `❌ ${result.message}`,
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 } else {
                     await interaction.reply({
                         content: `❌ ${result.message}`,
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 }
                 return false;
@@ -476,9 +543,9 @@ module.exports = {
                 // Success handled by modalInteraction.update in the modal handler
                 return true;
             } else if (interaction.replied || interaction.deferred) {
-                await interaction.followUp({ embeds: [embed], ephemeral: true });
+                await interaction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
             } else {
-                await interaction.reply({ embeds: [embed], ephemeral: true });
+                await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             }
             return true;
         } catch (error) {
@@ -486,17 +553,17 @@ module.exports = {
             if (isModal) {
                 await interaction.reply({
                     content: 'There was an error processing the sale!',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             } else if (interaction.replied || interaction.deferred) {
                 await interaction.followUp({
                     content: 'There was an error processing the sale!',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             } else {
                 await interaction.reply({
                     content: 'There was an error processing the sale!',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
             return false;

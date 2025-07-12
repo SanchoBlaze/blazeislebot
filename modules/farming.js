@@ -17,9 +17,20 @@ class Farming {
         crop TEXT,
         stage INTEGER DEFAULT 0,
         planted_at INTEGER,
+        fertiliser TEXT,
         PRIMARY KEY (user, guild, plot)
       );
     `).run();
+    
+    // Add fertiliser column to existing tables if it doesn't exist
+    try {
+      sql.prepare('SELECT fertiliser FROM farms LIMIT 1').get();
+    } catch (error) {
+      if (error.message.includes('no such column')) {
+        console.log('Adding fertiliser column to existing farms table...');
+        sql.prepare('ALTER TABLE farms ADD COLUMN fertiliser TEXT').run();
+      }
+    }
   }
 
   setupFarmStatsTable() {
@@ -28,9 +39,56 @@ class Farming {
         user TEXT NOT NULL,
         guild TEXT NOT NULL,
         crops_harvested INTEGER DEFAULT 0,
+        seeds_planted INTEGER DEFAULT 0,
+        fertilisers_used INTEGER DEFAULT 0,
         PRIMARY KEY (user, guild)
       );
     `).run();
+    // New: Per-item stats
+    sql.prepare(`
+      CREATE TABLE IF NOT EXISTS farm_stats_items (
+        user TEXT NOT NULL,
+        guild TEXT NOT NULL,
+        type TEXT NOT NULL, -- 'seed', 'crop', 'fertiliser'
+        item_id TEXT NOT NULL,
+        variant TEXT DEFAULT NULL,
+        count INTEGER DEFAULT 0,
+        PRIMARY KEY (user, guild, type, item_id, variant)
+      );
+    `).run();
+    
+    // Migration: Add variant column to existing farm_stats_items table if it doesn't exist
+    try {
+      sql.prepare('SELECT variant FROM farm_stats_items LIMIT 1').get();
+    } catch (error) {
+      if (error.message.includes('no such column')) {
+        console.log('[Farming] Adding variant column to existing farm_stats_items table...');
+        sql.prepare('ALTER TABLE farm_stats_items ADD COLUMN variant TEXT DEFAULT NULL').run();
+        // Update primary key to include variant
+        sql.prepare('DROP TABLE farm_stats_items').run();
+        sql.prepare(`
+          CREATE TABLE farm_stats_items (
+            user TEXT NOT NULL,
+            guild TEXT NOT NULL,
+            type TEXT NOT NULL, -- 'seed', 'crop', 'fertiliser'
+            item_id TEXT NOT NULL,
+            variant TEXT DEFAULT NULL,
+            count INTEGER DEFAULT 0,
+            PRIMARY KEY (user, guild, type, item_id, variant)
+          );
+        `).run();
+      }
+    }
+
+    // Migration: Add missing columns if they don't exist
+    const columns = sql.prepare("PRAGMA table_info(farm_stats);").all().map(col => col.name);
+    if (!columns.includes('seeds_planted')) {
+        sql.prepare('ALTER TABLE farm_stats ADD COLUMN seeds_planted INTEGER DEFAULT 0;').run();
+    }
+    if (!columns.includes('fertilisers_used')) {
+        sql.prepare('ALTER TABLE farm_stats ADD COLUMN fertilisers_used INTEGER DEFAULT 0;').run();
+    }
+    // Add similar checks for any other columns you add in the future
   }
 
   // Increment crops harvested for a user
@@ -42,10 +100,60 @@ class Farming {
     `).run(user, guild, amount, amount);
   }
 
+  // Increment seeds planted for a user
+  incrementSeedsPlanted(user, guild, amount = 1) {
+    sql.prepare(`
+      INSERT INTO farm_stats (user, guild, seeds_planted)
+      VALUES (?, ?, ?)
+      ON CONFLICT(user, guild) DO UPDATE SET seeds_planted = seeds_planted + ?
+    `).run(user, guild, amount, amount);
+  }
+
+  // Increment fertilisers used for a user
+  incrementFertilisersUsed(user, guild, amount = 1) {
+    sql.prepare(`
+      INSERT INTO farm_stats (user, guild, fertilisers_used)
+      VALUES (?, ?, ?)
+      ON CONFLICT(user, guild) DO UPDATE SET fertilisers_used = fertilisers_used + ?
+    `).run(user, guild, amount, amount);
+  }
+
+  // Get all per-item stats for a user and type
+  getFarmItemStats(user, guild, type) {
+    return sql.prepare(`
+      SELECT item_id, variant, count FROM farm_stats_items WHERE user = ? AND guild = ? AND type = ? ORDER BY count DESC
+    `).all(user, guild, type);
+  }
+
+  // Get all farm stats for a user
+  getFarmStats(user, guild) {
+    return sql.prepare('SELECT * FROM farm_stats WHERE user = ? AND guild = ?').get(user, guild) || {
+      user,
+      guild,
+      crops_harvested: 0,
+      seeds_planted: 0,
+      fertilisers_used: 0
+    };
+  }
+
   // Get farm leaderboard (top N by crops harvested)
   getFarmLeaderboard(guild, limit = 10) {
     return sql.prepare(`
       SELECT user, crops_harvested FROM farm_stats WHERE guild = ? ORDER BY crops_harvested DESC LIMIT ?
+    `).all(guild, limit);
+  }
+
+  // Get seeds planted leaderboard
+  getSeedsPlantedLeaderboard(guild, limit = 10) {
+    return sql.prepare(`
+      SELECT user, seeds_planted FROM farm_stats WHERE guild = ? ORDER BY seeds_planted DESC LIMIT ?
+    `).all(guild, limit);
+  }
+
+  // Get fertilisers used leaderboard
+  getFertilisersUsedLeaderboard(guild, limit = 10) {
+    return sql.prepare(`
+      SELECT user, fertilisers_used FROM farm_stats WHERE guild = ? ORDER BY fertilisers_used DESC LIMIT ?
     `).all(guild, limit);
   }
 
@@ -58,20 +166,21 @@ class Farming {
       return row ? {
         crop: row.crop,
         stage: row.stage,
-        planted_at: row.planted_at
-      } : { crop: null, stage: 0, planted_at: null };
+        planted_at: row.planted_at,
+        fertiliser: row.fertiliser
+      } : { crop: null, stage: 0, planted_at: null, fertiliser: null };
     });
     return farm;
   }
 
   // Plant a seed in a plot
-  plantSeed(user, guild, plot, crop) {
+  plantSeed(user, guild, plot, crop, fertiliser = null) {
     const now = Date.now();
     sql.prepare(`
-      INSERT INTO farms (user, guild, plot, crop, stage, planted_at)
-      VALUES (?, ?, ?, ?, 0, ?)
-      ON CONFLICT(user, guild, plot) DO UPDATE SET crop=excluded.crop, stage=0, planted_at=excluded.planted_at
-    `).run(user, guild, plot, crop, now);
+      INSERT INTO farms (user, guild, plot, crop, stage, planted_at, fertiliser)
+      VALUES (?, ?, ?, ?, 0, ?, ?)
+      ON CONFLICT(user, guild, plot) DO UPDATE SET crop=excluded.crop, stage=0, planted_at=excluded.planted_at, fertiliser=excluded.fertiliser
+    `).run(user, guild, plot, crop, now, fertiliser);
   }
 
   // Update a plot (e.g., for growth/harvest)
@@ -89,6 +198,32 @@ class Farming {
   // Get empty plot indices
   getEmptyPlots(farm) {
     return farm.map((p, i) => (p.crop ? null : i)).filter(i => i !== null);
+  }
+
+  // Check for weed growth on empty plots (5% chance per empty plot)
+  checkForWeedGrowth(user, guild) {
+    const farm = this.getFarm(user, guild);
+    const emptyPlots = this.getEmptyPlots(farm);
+    const weedChance = 0.05; // 5% chance per empty plot
+    
+    for (const plotIndex of emptyPlots) {
+      if (Math.random() < weedChance) {
+        // Plant weeds on this plot
+        const now = Date.now();
+        this.plantSeed(user, guild, plotIndex, 'crop_weeds');
+        // Set weeds to fully grown stage (stage 4) so they can be harvested immediately
+        this.updatePlot(user, guild, plotIndex, { stage: 4 });
+      }
+    }
+  }
+
+  // Increment per-item farm stats
+  incrementFarmItemStat(user, guild, type, itemId, amount = 1, variant = null) {
+    sql.prepare(`
+      INSERT INTO farm_stats_items (user, guild, type, item_id, variant, count)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(user, guild, type, item_id, variant) DO UPDATE SET count = count + ?
+    `).run(user, guild, type, itemId, variant, amount, amount);
   }
 }
 

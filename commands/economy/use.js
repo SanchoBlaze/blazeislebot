@@ -325,13 +325,13 @@ module.exports = {
                     });
                     await interaction.followUp({
                         embeds: [successEmbed],
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                     return true;
                 } catch (error) {
                     await interaction.followUp({
                         content: error.message || 'There was an error using the item!',
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                     return true;
                 }

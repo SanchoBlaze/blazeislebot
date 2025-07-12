@@ -66,7 +66,16 @@ The Blaze Isle Bot now includes a comprehensive economy system that allows users
 
 ### 🛒 Shop System
 
-The shop offers various items that users can purchase with their coins:
+The shop offers various items that users can purchase with their coins. The shop features an interactive paginator interface with filtering options and bulk purchase capabilities:
+
+#### Shop Features
+- **Interactive Paginator**: Navigate through items with arrow buttons
+- **Item Filtering**: Filter items by type (seeds, fishing rods, consumables, etc.)
+- **Single Purchase**: Buy one item at a time with the "Buy" button
+- **Bulk Purchase**: Buy multiple items at once with the "Buy Quantity" modal
+- **Real-time Balance**: See your current balance and net worth
+- **Quantity Limits**: Respects item maximum quantities
+- **Affordability Check**: Buttons are disabled if you can't afford items
 
 ### Item Types
 - **Consumable Items**: XP boosts, work multipliers, daily doublers, coin multipliers
@@ -139,7 +148,7 @@ The shop offers various items that users can purchase with their coins:
 - `/help-economy` - Get help with economy commands
 
 ### 🛒 Shop & Inventory Commands
-- `/shop` - Browse and buy items from the shop
+- `/shop` - Browse and buy items from the shop (with bulk purchase options via "Buy Quantity" modal)
 - `/inventory [user]` - View your or another user's inventory (shows crop variants and watering cans, deduplicated by item and variant)
 - `/use <item>` - Use an item from your inventory
 - `/sell` - Sell items back to the shop (rarity-based pricing, supports crop variants and confirmation messages)
@@ -184,6 +193,7 @@ The farming system allows players to plant, grow, and harvest crops for profit. 
 - **Harvesting**: Collect fully grown crops using the interactive `/farm` interface
 - **Crop Variants**: Many crops have multiple variants (e.g., red, yellow, green peppers)
 - **Watering Cans**: Permanent items that reduce crop growth times (similar to fishing rods)
+- **Fertilisers**: Consumable items that increase crop yield with rarity-based success rates
 
 #### Watering Cans
 - **Wood** (Common) - 500 coins - 0.95x growth (5% faster)
@@ -192,6 +202,14 @@ The farming system allows players to plant, grow, and harvest crops for profit. 
 - **Gold** (Epic) - 25,000 coins - 0.8x growth (20% faster)
 - **Diamond** (Legendary) - 75,000 coins - 0.7x growth (30% faster)
 - **Mythic** (Mythic) - 200,000 coins - 0.6x growth (40% faster)
+
+#### Fertilisers
+- **Basic** (Common) - 100 coins - 5% yield boost (80% success on common crops)
+- **Premium** (Uncommon) - 300 coins - 10% yield boost (60% success on uncommon crops)
+- **Organic** (Rare) - 800 coins - 20% yield boost (40% success on rare crops)
+- **Magical** (Epic) - 2,000 coins - 30% yield boost (25% success on epic crops)
+- **Legendary** (Legendary) - 5,000 coins - 40% yield boost (15% success on legendary crops)
+- **Mythic** (Mythic) - 15,000 coins - 50% yield boost (5% success on mythic crops)
 
 #### Crop Variants
 - **Unique Items**: Each variant is treated as a separate item in inventory
