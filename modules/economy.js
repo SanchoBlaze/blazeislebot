@@ -345,9 +345,14 @@ class Economy {
         const now = new Date();
         const lastFishing = user.last_fishing ? new Date(user.last_fishing) : null;
         
-        // Check if user can fish (30 minutes cooldown)
-        if (lastFishing && (now - lastFishing) < 30 * 60 * 1000) {
-            const timeLeft = 30 * 60 * 1000 - (now - lastFishing);
+        // Get user's fishing cooldown multiplier (rods reduce cooldown)
+        const cooldownMultiplier = this.client.inventory.getFishingCooldown(userId, guildId);
+        const baseCooldown = 30 * 60 * 1000; // 30 minutes in milliseconds
+        const actualCooldown = baseCooldown * cooldownMultiplier;
+        
+        // Check if user can fish (dynamic cooldown based on rod)
+        if (lastFishing && (now - lastFishing) < actualCooldown) {
+            const timeLeft = actualCooldown - (now - lastFishing);
             const minutes = Math.floor(timeLeft / (60 * 1000));
             const seconds = Math.floor((timeLeft % (60 * 1000)) / 1000);
             throw new Error(`Fishing available in ${minutes}m ${seconds}s`);
@@ -360,10 +365,10 @@ class Economy {
             throw new Error('No fish available for fishing in this server. Contact an administrator to add fish items.');
         }
 
-        // Get user's fishing rod boost
-        const fishingBoost = this.client.inventory.getFishingBoost(userId, guildId);
+        // Get user's bait boost (from active effects)
+        const baitBoost = this.client.inventory.getBaitBoost(userId, guildId);
         
-        // Create fish types array with chances based on rarity and fishing rod
+        // Create fish types array with chances based on rarity and bait
         const fishTypes = fishItems.filter(item => {
             if (item.types && Array.isArray(item.types)) {
                 return item.types.includes('fish');
@@ -379,10 +384,22 @@ class Economy {
                 case 'legendary': baseChance = 0.1; break;
                 default: baseChance = 10; break;
             }
-            // Apply fishing rod boost to rare+ fish only
+            // Apply bait boost to rare+ fish only (with success rate like fertilisers)
             let finalChance = baseChance;
             if (item.rarity === 'rare' || item.rarity === 'epic' || item.rarity === 'legendary') {
-                finalChance = baseChance * fishingBoost;
+                // Bait success rates (similar to fertiliser system)
+                const baitSuccessRates = {
+                    common: 0.8,    // 80% chance for basic bait
+                    uncommon: 0.6,  // 60% chance for premium bait
+                    rare: 0.4,      // 40% chance for magic bait
+                    epic: 0.25,     // 25% chance for epic bait
+                    legendary: 0.15 // 15% chance for legendary bait
+                };
+                
+                // Check if bait effect is active and succeeds
+                if (baitBoost > 1 && Math.random() < baitSuccessRates[item.rarity]) {
+                    finalChance = baseChance * baitBoost;
+                }
             }
             return {
                 ...item, // Spread all properties, including emoji

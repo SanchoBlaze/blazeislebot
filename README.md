@@ -22,6 +22,12 @@ A feature-rich Discord bot with modular architecture, economy system, loyalty tr
 - **Buy Quantity**: The shop now features a "Buy Quantity" modal for bulk purchases, similar to the sell quantity functionality.
 - **Command structure**: Farming commands are `/farm view` (interactive UI) and `/leaderboard farm` (top farmers). Removed references to `/farm plant` and `/farm harvest`.
 - **Documentation**: See `FARMING_README.md` and `ECONOMY_README.md` for full details on farming, inventory, and item mechanics.
+- **🎣 Advanced fishing system** with fishing rods (cooldown reduction) and bait (rarity boosts), mirroring the farming system design with permanent tools and consumable boosts.
+- **Fishing rods**: Six tiers (Basic to Mythic) that reduce fishing cooldown by 5% to 40%, allowing more frequent fishing sessions.
+- **Bait system**: Six types of bait (Basic to Mythic) that provide temporary rare fish boost multipliers (1.2x to 7.0x) with decreasing success rates for balance.
+- **Dynamic cooldown**: Fishing cooldown varies from 18-30 minutes based on your best fishing rod.
+- **Success rate mechanics**: Higher rarity bait has lower success rates (80% to 10%), creating strategic risk vs reward decisions.
+- **Consistent design**: Fishing system mirrors farming with permanent tools (rods/cans) and consumable boosts (bait/fertiliser).
 - **Engaging games**: Connect4, TicTacToe, RPS, RPSLS with XP rewards for winners
 - **Animal commands**: Cute pictures with small XP rewards (cat, dog, fox, bunny, duck)
 - **Social commands**: Hug and comfort other users for XP and community building
@@ -216,7 +222,7 @@ The bot features a complete virtual economy system that encourages community eng
 #### Earning Methods
 - **Daily rewards**: 100 coins every 24 hours (`/daily`)
 - **Work system**: 10-50 coins every hour (`/work`)
-- **Fishing system**: Catch fish to sell (prices vary by rarity, 30-minute cooldown)
+- **Fishing system**: Catch fish to sell (prices vary by rarity, dynamic cooldown based on rod)
 - **Admin rewards**: Server administrators can give coins
 
 #### Banking Features
@@ -229,7 +235,7 @@ The bot features a complete virtual economy system that encourages community eng
 - **`/balance [user]`**: Check wallet, bank, and net worth
 - **`/daily`**: Claim daily reward (100 coins)
 - **`/work`**: Work for coins (10-50 coins, 1 hour cooldown)
-- **`/fish`**: Go fishing to catch fish (30-minute cooldown)
+- **`/fish`**: Go fishing to catch fish (dynamic cooldown based on rod)
 - **`/deposit <amount>`**: Move coins to bank
 - **`/withdraw <amount>`**: Move coins from bank
 - **`/transfer <user> <amount>`**: Send coins to another user
@@ -252,7 +258,8 @@ The bot features a complete virtual economy system that encourages community eng
 - **Inventory management**: Store and manage your items
 - **Item rarity system**: Common, Uncommon, Rare, Epic, Legendary
 - **Consumable items**: XP boosts, work multipliers, daily doublers
-- **Fishing rods**: Permanent items that boost rare fish catch rates
+- **Fishing rods**: Permanent items that reduce fishing cooldown (5% to 40% faster)
+- **Bait**: Consumable items that boost rare fish catch rates with success rates
 - **Fish items**: Catchable fish with different rarities and sell prices
 - **Mystery boxes**: Random item rewards
 - **Item effects**: Temporary boosts and permanent rewards

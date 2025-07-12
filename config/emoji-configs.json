@@ -5,6 +5,7 @@
         "fishing_rod_golden": "<:fishing_rod_golden:1390066154428563536>",
         "fishing_rod_crystal": "<:fishing_rod_crystal:1390066135952654396>",
         "fishing_rod_legendary": "<:fishing_rod_legendary:1390066176159387709>",
+        "fishing_rod_mythic": "🔱",
         "fish_tiny_minnow": "<:fish_tiny_minnow:1390066406959354067>",
         "fish_small_bass": "<:fish_small_bass:1390066398964748388>",
         "fish_medium_trout": "<:fish_medium_trout:1390066378853060688>",
@@ -86,7 +87,13 @@
         "fertiliser_magical": "<:fertiliser_magical:1393625690204541094>",
         "fertiliser_legendary": "<:fertiliser_legendary:1393625727483773061>",
         "fertiliser_mythic": "<:fertiliser_mythic:1393625750556512256>",
-        "crop_weeds": "<:crop_weeds:1393646834622271649>"
+        "crop_weeds": "<:crop_weeds:1393646834622271649>",
+        "bait_basic": "🪱",
+        "bait_premium": "🦗",
+        "bait_magic": "✨",
+        "bait_epic": "💎",
+        "bait_legendary": "🌟",
+        "bait_mythic": "🌊"
     },
     "test_bot": {
         "fishing_rod_basic": "<:fishing_rod_basic:1389632536342429738>",
@@ -94,6 +101,7 @@
         "fishing_rod_golden": "<:fishing_rod_golden:1390034849678753822>",
         "fishing_rod_crystal": "<:fishing_rod_crystal:1390034825309589524>",
         "fishing_rod_legendary": "<:fishing_rod_legendary:1390034874446123211>",
+        "fishing_rod_mythic": "🔱",
         "fish_tiny_minnow": "<:fish_tiny_minnow:1389703962231570442>",
         "fish_small_bass": "<:fish_small_bass:1390034805223063602>",
         "fish_medium_trout": "<:fish_medium_trout:1390034771773751447>",
@@ -175,7 +183,13 @@
         "fertiliser_magical": "<:fertiliser_magical:1393624835246133392>",
         "fertiliser_legendary": "<:fertiliser_legendary:1393624808305983560>",
         "fertiliser_mythic": "<:fertiliser_mythic:1393624857396117775>",
-        "crop_weeds": "<:crop_weeds:1393646290717511832>"
+        "crop_weeds": "<:crop_weeds:1393646290717511832>",
+        "bait_basic": "🪱",
+        "bait_premium": "🦗",
+        "bait_magic": "✨",
+        "bait_epic": "💎",
+        "bait_legendary": "🌟",
+        "bait_mythic": "🌊"
     },
     "production_bot": {
         "fishing_rod_basic": "<:fishing_rod_basic:1389552382580363264>",
@@ -183,6 +197,7 @@
         "fishing_rod_golden": "<:fishing_rod_golden:1390066154428563536>",
         "fishing_rod_crystal": "<:fishing_rod_crystal:1390066135952654396>",
         "fishing_rod_legendary": "<:fishing_rod_legendary:1390066176159387709>",
+        "fishing_rod_mythic": "🔱",
         "fish_tiny_minnow": "<:fish_tiny_minnow:1390066406959354067>",
         "fish_small_bass": "<:fish_small_bass:1390066398964748388>",
         "fish_medium_trout": "<:fish_medium_trout:1390066378853060688>",
@@ -264,6 +279,12 @@
         "fertiliser_magical": "<:fertiliser_magical:1393625690204541094>",
         "fertiliser_legendary": "<:fertiliser_legendary:1393625727483773061>",
         "fertiliser_mythic": "<:fertiliser_mythic:1393625750556512256>",
-        "crop_weeds": "<:crop_weeds:1393646834622271649>"
+        "crop_weeds": "<:crop_weeds:1393646834622271649>",
+        "bait_basic": "🪱",
+        "bait_premium": "🦗",
+        "bait_magic": "✨",
+        "bait_epic": "💎",
+        "bait_legendary": "🌟",
+        "bait_mythic": "🌊"
     }
 } 

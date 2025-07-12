@@ -533,6 +533,12 @@ class Inventory {
                 result.effect = { type: 'coin_multiplier', value: item.effect_value, duration: item.duration_hours };
                 result.message = `Coin multiplier activated! You'll get ${item.effect_value}x coins from all sources for ${item.duration_hours} hour(s).`;
                 break;
+
+            case 'fishing_boost':
+                this.addActiveEffect(userId, guildId, 'fishing_boost', item.effect_value, item.duration_hours);
+                result.effect = { type: 'fishing_boost', value: item.effect_value, duration: item.duration_hours };
+                result.message = `🎣 Fishing bait activated! You'll get ${item.effect_value}x rare fish boost for ${item.duration_hours} hour(s).`;
+                break;
                 
             case 'random_item':
                 result = await this.openMysteryBox(userId, guildId);
@@ -1200,23 +1206,36 @@ class Inventory {
         return this.removeActiveEffect(userId, guildId, 'daily_multiplier');
     }
 
-    // Get user's best fishing rod
+    // Get user's best fishing rod (for cooldown reduction)
     getBestFishingRod(userId, guildId) {
         const userInventory = this.getUserInventory(userId, guildId);
         const fishingRods = userInventory.filter(item => item.type === 'fishing_rod');
         
         if (fishingRods.length === 0) return null;
         
-        // Return the rod with the highest effect value (best rod)
+        // Return the rod with the lowest effect value (best cooldown reduction)
         return fishingRods.reduce((best, current) => 
-            current.effect_value > best.effect_value ? current : best
+            current.effect_value < best.effect_value ? current : best
         );
     }
 
-    // Get fishing boost multiplier for a user
-    getFishingBoost(userId, guildId) {
+    // Get fishing cooldown multiplier for a user (lower = faster)
+    getFishingCooldown(userId, guildId) {
         const bestRod = this.getBestFishingRod(userId, guildId);
         return bestRod ? bestRod.effect_value : 1;
+    }
+
+    // Get bait boost multiplier for a user (from active effects)
+    getBaitBoost(userId, guildId) {
+        const effect = this.getActiveEffect(userId, guildId, 'fishing_boost');
+        if (!effect) return 1;
+        if (effect.expires_at && new Date(effect.expires_at) < new Date()) return 1;
+        return effect.effect_value;
+    }
+
+    // Get fishing boost multiplier for a user (legacy method for compatibility)
+    getFishingBoost(userId, guildId) {
+        return this.getBaitBoost(userId, guildId);
     }
 
     // Get user's best watering can

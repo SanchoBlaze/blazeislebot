@@ -31,9 +31,17 @@ module.exports = {
             const rarityColor = interaction.client.inventory.getRarityColour(result.fish.rarity);
             const emoji = interaction.client.inventory.getItemEmoji(result.fish);
 
-            // Check if user has a fishing rod
+            // Check if user has a fishing rod and bait
             const bestRod = interaction.client.inventory.getBestFishingRod(userId, guildId);
             const hasFishingRod = bestRod !== null;
+            const baitBoost = interaction.client.inventory.getBaitBoost(userId, guildId);
+            const hasBait = baitBoost > 1;
+
+            // Calculate cooldown info
+            const cooldownMultiplier = interaction.client.inventory.getFishingCooldown(userId, guildId);
+            const baseCooldown = 30;
+            const actualCooldown = Math.round(baseCooldown * cooldownMultiplier);
+            const cooldownReduction = Math.round((1 - cooldownMultiplier) * 100);
 
             // Get emoji URL for thumbnail
             const emojiUrl = interaction.client.inventory.getEmojiUrl(emoji, interaction.client);
@@ -49,7 +57,7 @@ module.exports = {
                         inline: false
                     }
                 )
-                .setFooter({ text: 'You can fish again in 30 minutes!' })
+                .setFooter({ text: `You can fish again in ${actualCooldown} minutes!` })
                 .setTimestamp();
 
             // Always set thumbnail to the caught fish's emoji if available
@@ -62,7 +70,16 @@ module.exports = {
                 const rodEmoji = interaction.client.inventory.getItemEmoji(bestRod);
                 embed.addFields({
                     name: '🎣 Fishing Rod',
-                    value: `${rodEmoji} **${bestRod.name}** (${bestRod.effect_value}x rare fish boost)`,
+                    value: `${rodEmoji} **${bestRod.name}** (${cooldownReduction}% faster cooldown)`,
+                    inline: false
+                });
+            }
+
+            // Add bait info if user has active bait
+            if (hasBait) {
+                embed.addFields({
+                    name: '🪱 Active Bait',
+                    value: `🎣 **Fishing Bait** (${baitBoost}x rare fish boost)`,
                     inline: false
                 });
             }
@@ -86,6 +103,11 @@ module.exports = {
             await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         } catch (error) {
             if (error.message.includes('Fishing available in')) {
+                // Calculate cooldown info for error message
+                const cooldownMultiplier = interaction.client.inventory.getFishingCooldown(userId, guildId);
+                const baseCooldown = 30;
+                const actualCooldown = Math.round(baseCooldown * cooldownMultiplier);
+
                 const embed = new EmbedBuilder()
                     .setColor(0xFF6B6B)
                     .setTitle('⏰ Fishing Not Ready')
@@ -93,7 +115,7 @@ module.exports = {
                     .addFields(
                         { name: '⏳ Time Remaining', value: error.message.replace('Fishing available in ', ''), inline: true }
                     )
-                    .setFooter({ text: 'Fishing has a 30-minute cooldown' })
+                    .setFooter({ text: `Fishing has a ${actualCooldown}-minute cooldown` })
                     .setTimestamp();
 
                 await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });

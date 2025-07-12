@@ -15,7 +15,7 @@ The Blaze Isle Bot now includes a comprehensive economy system that allows users
 ### 🎯 Earning Methods
 1. **Daily Rewards**: 100 coins every 24 hours (`/daily`)
 2. **Work**: 10-50 coins every hour (`/work`)
-3. **Fishing**: Catch fish to sell (prices vary by rarity, 30-minute cooldown)
+3. **Fishing**: Catch fish to sell (prices vary by rarity, dynamic cooldown based on rod)
 4. **Level Up Rewards**: Earn coins when leveling up (`/level` command or chat activity)
    - **Levels 1-5**: 50 coins per level
    - **Levels 6-10**: 100 coins per level
@@ -139,7 +139,7 @@ The shop offers various items that users can purchase with their coins. The shop
 - `/balance` - Check your wallet and bank balance
 - `/daily` - Collect your daily reward (cooldown: 24 hours)
 - `/work` - Work to earn coins (cooldown: 1 hour)
-- `/fish` - Go fishing to catch fish (cooldown: 30 minutes)
+- `/fish` - Go fishing to catch fish (dynamic cooldown based on rod)
 - `/deposit <amount>` - Move coins from wallet to bank
 - `/withdraw <amount>` - Move coins from bank to wallet
 - `/transfer <user> <amount>` - Send coins to another user
@@ -192,7 +192,7 @@ The farming system allows players to plant, grow, and harvest crops for profit. 
 - **Growth Times**: Each crop has a base growth time (26-58 minutes) that can be reduced with watering cans
 - **Harvesting**: Collect fully grown crops using the interactive `/farm` interface
 - **Crop Variants**: Many crops have multiple variants (e.g., red, yellow, green peppers)
-- **Watering Cans**: Permanent items that reduce crop growth times (similar to fishing rods)
+- **Watering Cans**: Permanent items that reduce crop growth times (similar to fishing rods for cooldown reduction)
 - **Fertilisers**: Consumable items that increase crop yield with rarity-based success rates
 
 #### Watering Cans
@@ -221,13 +221,14 @@ The farming system allows players to plant, grow, and harvest crops for profit. 
 
 ### 🎣 Fishing System
 
-The fishing system allows players to catch fish and sell them for coins. Fish have different rarities and sell prices, and fishing rods can improve your chances of catching rare fish.
+The fishing system allows players to catch fish and sell them for coins. The system features fishing rods for cooldown reduction and bait for rarity boosts, mirroring the farming system design.
 
 #### Fishing Mechanics
-- **Cooldown**: 30 minutes between fishing sessions
+- **Dynamic Cooldown**: 18-30 minutes between fishing sessions (based on your best fishing rod)
 - **Fish Rarities**: Common, Uncommon, Rare, Epic, Legendary
 - **Sell Prices**: Fish can be sold back to the shop for coins
-- **Fishing Rods**: Permanent items that boost rare fish catch rates
+- **Fishing Rods**: Permanent items that reduce fishing cooldown
+- **Bait**: Consumable items that boost rare fish catch rates with success rates
 - **Admin Control**: Server admins can add custom fish using `/economy-admin add-item`
 
 #### Default Fish Types
@@ -237,18 +238,33 @@ The fishing system allows players to catch fish and sell them for coins. Fish ha
 - **Epic**: Diamond Tuna (150 coins)
 - **Legendary**: Legendary Kraken (500 coins)
 
-#### Fishing Rods
-- **Basic Fishing Rod** (Common) - 1,000 coins - 1.2x rare fish boost
-- **Steel Fishing Rod** (Uncommon) - 5,000 coins - 1.5x rare fish boost
-- **Golden Fishing Rod** (Rare) - 15,000 coins - 2.0x rare fish boost
-- **Crystal Fishing Rod** (Epic) - 50,000 coins - 3.0x rare fish boost
-- **Legendary Fishing Rod** (Legendary) - 100,000 coins - 5.0x rare fish boost
+#### Fishing Rods (Cooldown Reduction)
+- **Basic Fishing Rod** (Common) - 1,000 coins - 5% faster (28.5 min cooldown)
+- **Steel Fishing Rod** (Uncommon) - 5,000 coins - 10% faster (27 min cooldown)
+- **Golden Fishing Rod** (Rare) - 15,000 coins - 15% faster (25.5 min cooldown)
+- **Crystal Fishing Rod** (Epic) - 50,000 coins - 20% faster (24 min cooldown)
+- **Legendary Fishing Rod** (Legendary) - 100,000 coins - 30% faster (21 min cooldown)
+- **Mythic Fishing Rod** (Mythic) - 250,000 coins - 40% faster (18 min cooldown)
+
+#### Bait (Rarity Boost)
+- **Basic Bait** (Common) - 100 coins - 1.2x rare fish boost, 80% success rate
+- **Premium Bait** (Uncommon) - 300 coins - 1.5x rare fish boost, 60% success rate
+- **Magic Bait** (Rare) - 800 coins - 2.0x rare fish boost, 40% success rate
+- **Epic Bait** (Epic) - 2,000 coins - 3.0x rare fish boost, 25% success rate
+- **Legendary Bait** (Legendary) - 5,000 coins - 5.0x rare fish boost, 15% success rate
+- **Mythic Bait** (Mythic) - 10,000 coins - 7.0x rare fish boost, 10% success rate
 
 #### How Fishing Rods Work
 - **Permanent Items**: Fishing rods don't expire or need to be used
-- **Best Rod Active**: Only the best fishing rod in your inventory provides the boost
+- **Best Rod Active**: Only the best fishing rod in your inventory provides cooldown reduction
+- **Progressive Investment**: Higher-tier rods cost more but provide better cooldown reduction
+
+#### How Bait Works
+- **Consumable Items**: Bait is used up when applied and provides temporary effects
+- **Success Rates**: Higher rarity bait has lower success rates for balance
 - **Rare Fish Only**: Boost only applies to rare, epic, and legendary fish
-- **Progressive Investment**: Higher-tier rods cost more but provide better boosts
+- **Duration**: Bait effects last for 1 hour
+- **Strategic Choice**: Players must decide between safe, reliable bait or risky, powerful bait
 
 ### 📦 Available Items
 
@@ -256,7 +272,8 @@ The shop offers various items that users can purchase with their coins:
 
 #### 🎣 Fishing Items
 - **Fish**: Various fish types with different rarities and sell prices
-- **Fishing Rods**: Permanent items that boost rare fish catch rates
+- **Fishing Rods**: Permanent items that reduce fishing cooldown
+- **Bait**: Consumable items that boost rare fish catch rates with success rates
 
 #### ⚡ Consumable Items
 - **XP Boost (1 Hour)** (Common) - 500 coins - 2x XP for 1 hour
@@ -367,6 +384,7 @@ CREATE TABLE items (
 
 - **Daily Reward**: 24 hours
 - **Work**: 1 hour
+- **Fishing**: 18-30 minutes (based on best fishing rod)
 - **Transfer**: No cooldown (limited by balance)
 - **Deposit/Withdraw**: No cooldown (limited by available funds)
 - **Item Usage**: Varies by item type
@@ -378,7 +396,7 @@ The system is designed to maintain a healthy economy:
 
 - **Daily Reward**: 100 coins (4,200 coins per week)
 - **Work**: 10-50 coins per hour (70-350 coins per week)
-- **Fishing**: Variable based on fish caught (5-500 coins per fish, 30-minute cooldown)
+- **Fishing**: Variable based on fish caught (5-500 coins per fish, 18-30 minute cooldown based on rod)
 - **Total Weekly Potential**: ~4,270-4,550+ coins for active users (fishing adds additional income)
 
 ## Item Strategy Guide
@@ -392,9 +410,10 @@ The system is designed to maintain a healthy economy:
 ### 💎 For Active Users
 1. **Use work multipliers** - Maximize work efficiency
 2. **Fish regularly** - Steady additional income
-3. **Buy fishing rods** - Improve rare fish chances
-4. **Buy mystery boxes** - Gamble for rare items
-5. **Invest in daily doublers** - Double your income
+3. **Buy fishing rods** - Reduce fishing cooldown for more frequent fishing
+4. **Buy bait** - Boost rare fish chances with strategic risk vs reward
+5. **Buy mystery boxes** - Gamble for rare items
+6. **Invest in daily doublers** - Double your income
 
 ### 🏆 For Wealthy Users
 1. **Collect rare items** - Show off your status
