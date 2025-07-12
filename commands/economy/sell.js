@@ -19,13 +19,21 @@ module.exports = {
                 });
             }
 
-            // Deduplicate items by id and sum quantities
+            // Deduplicate items by id and variant, sum quantities
             const uniqueItems = {};
             for (const item of inventory) {
-                if (!uniqueItems[item.id]) {
-                    uniqueItems[item.id] = { ...item };
+                const key = item.variant ? `${item.id}_${item.variant}` : item.id;
+                if (!uniqueItems[key]) {
+                    uniqueItems[key] = { ...item, variant: item.variant };
                 } else {
-                    uniqueItems[item.id].quantity += item.quantity;
+                    uniqueItems[key].quantity += item.quantity;
+                }
+            }
+            // Attach variants array from full item definition (config JSON)
+            for (const key in uniqueItems) {
+                const fullItem = interaction.client.inventory.getItemFromConfig(uniqueItems[key].id);
+                if (fullItem && fullItem.variants) {
+                    uniqueItems[key].variants = fullItem.variants;
                 }
             }
 
@@ -36,7 +44,9 @@ module.exports = {
                 const aRank = rarityOrder[a.rarity] || 99;
                 const bRank = rarityOrder[b.rarity] || 99;
                 if (aRank !== bRank) return aRank - bRank;
-                return a.name.localeCompare(b.name);
+                const aDisplayName = interaction.client.inventory.getDisplayName(a, a.variant);
+                const bDisplayName = interaction.client.inventory.getDisplayName(b, b.variant);
+                return aDisplayName.localeCompare(bDisplayName);
             });
             
             // Create pages with one item per page
@@ -68,17 +78,18 @@ module.exports = {
             const item = items[i];
             const pageNumber = i + 1;
             const totalPages = items.length;
-            
+
             const sellPercentage = client.inventory.getSellPricePercentage(item.rarity, item.type);
             const sellPrice = Math.floor(item.price * sellPercentage);
             const totalSellPrice = sellPrice * item.quantity;
-            const emoji = client.inventory.getItemEmoji(item);
+            const displayName = client.inventory.getDisplayName(item, item.variant);
+            const displayEmoji = client.inventory.getDisplayEmoji(item, item.variant);
             const rarityName = item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1);
-            const emojiUrl = client.inventory.getEmojiUrl(emoji, client);
+            const emojiUrl = client.inventory.getEmojiUrl(displayEmoji, client);
 
             const embed = new EmbedBuilder()
                 .setColor(client.inventory.getRarityColour(item.rarity))
-                .setTitle(`💰 ${item.name}`)
+                .setTitle(`💰 ${displayName}`)
                 .setDescription(item.description)
                 .setThumbnail(emojiUrl)
                 .addFields(
@@ -433,11 +444,12 @@ module.exports = {
             const newBalance = interaction.client.economy.updateBalance(userId, guildId, result.sellPrice, 'balance');
             interaction.client.economy.logTransaction(userId, guildId, 'item_sale', result.sellPrice, `Sold ${quantity}x ${result.item.name}`);
             // Create success embed
-            const emoji = interaction.client.inventory.getItemEmoji(item);
+            const displayName = interaction.client.inventory.getDisplayName(item, item.variant);
+            const displayEmoji = interaction.client.inventory.getDisplayEmoji(item, item.variant);
             const embed = new EmbedBuilder()
                 .setColor(0x00FF00)
                 .setTitle('💰 Item Sold')
-                .setDescription(`Successfully sold **${quantity}x ${emoji} ${result.item.name}**`)
+                .setDescription(`Successfully sold **${quantity}x ${displayEmoji} ${displayName}**`)
                 .addFields(
                     { name: '💵 Sale Price', value: interaction.client.economy.formatCurrency(result.sellPrice), inline: true },
                     { name: '💰 New Balance', value: interaction.client.economy.formatCurrency(newBalance), inline: true },
@@ -492,8 +504,9 @@ module.exports = {
             const choices = inventory.map(item => {
                 const sellPercentage = interaction.client.inventory.getSellPricePercentage(item.rarity, item.type);
                 const sellPrice = Math.floor(item.price * sellPercentage);
+                const displayName = interaction.client.inventory.getDisplayName(item, item.variant);
                 return {
-                    name: `${item.name} (${item.quantity}x) - ${interaction.client.economy.formatCurrency(sellPrice)} (${Math.round(sellPercentage * 100)}%)`,
+                    name: `${displayName} (${item.quantity}x) - ${interaction.client.economy.formatCurrency(sellPrice)} (${Math.round(sellPercentage * 100)}%)`,
                     value: item.id
                 };
             });

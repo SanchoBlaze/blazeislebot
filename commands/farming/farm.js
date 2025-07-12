@@ -56,14 +56,7 @@ module.exports = {
             // Get real farm data
             const farm = interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
             const basePath = path.join(__dirname, '../../assets/farming/farm_3x3.png');
-            const stageImages = [
-                'farm_planted_225.png',
-                'farm_sprout_225.png',
-                'farm_growing_225.png',
-                'farm_almost_grown_225.png',
-                'farm_wheat_225.png'
-            ];
-            const loadedStages = await Promise.all(stageImages.map(img => loadImage(path.join(__dirname, '../../assets/farming', img))));
+
             const baseImage = await loadImage(basePath);
             const plotCoords = [
                 { x: 147, y: 154 }, { x: 400, y: 154 }, { x: 656, y: 154 },
@@ -159,13 +152,10 @@ module.exports = {
     async handleButtonInteraction(interaction) {
         if (interaction.customId === 'farm_plant') {
             const farm = interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
-            console.log('[farm_plant] farm:', JSON.stringify(farm));
             const emptyPlots = interaction.client.farming.getEmptyPlots(farm);
-            console.log('[farm_plant] emptyPlots:', JSON.stringify(emptyPlots));
             const plotOptions = emptyPlots
                 .filter(i => typeof i === 'number' && i >= 0 && i < 9)
                 .map(i => ({ label: `Plot ${i + 1}`, value: String(i) }));
-            console.log('[farm_plant] plotOptions:', JSON.stringify(plotOptions));
             if (plotOptions.length === 0) {
                 await interaction.reply({
                     content: 'All your plots are full! Harvest a crop before planting more.',
@@ -223,10 +213,23 @@ module.exports = {
                     const rarity = cropItem ? cropItem.rarity : 'common';
                     const yieldAmount = getHarvestYield(rarity);
                     // Add crop to inventory (not seeds, but the crop itself)
-                    await interaction.client.inventory.addItem(interaction.user.id, interaction.guild.id, `crop_${cropType}`, yieldAmount);
+                    let variant = null;
+                    if (cropItem && cropItem.variants && cropItem.variants.length > 0) {
+                        const randomVariant = cropItem.variants[Math.floor(Math.random() * cropItem.variants.length)];
+                        variant = randomVariant.id;
+                    }
+                    await interaction.client.inventory.addItem(
+                        interaction.user.id,
+                        interaction.guild.id,
+                        `crop_${cropType}`,
+                        yieldAmount,
+                        undefined,
+                        undefined,
+                        variant // pass variant as the last argument
+                    );
                     // Clear the plot
                     interaction.client.farming.updatePlot(interaction.user.id, interaction.guild.id, i, { crop: null, stage: 0, planted_at: null });
-                    harvested.push({ crop: cropType, amount: yieldAmount });
+                    harvested.push({ crop: cropType, amount: yieldAmount, variant: variant });
                     totalHarvested += yieldAmount;
                 }
             }
@@ -283,10 +286,19 @@ module.exports = {
             }
             const buffer = canvas.toBuffer();
             const attachment = new AttachmentBuilder(buffer, { name: 'farm_preview.png' });
+            // Build harvest message with emojis
+            const harvestMessages = harvested.map(h => {
+                // Get the crop item data to get the emoji and display name
+                const cropItem = interaction.client.inventory.getItem(`crop_${h.crop}`, interaction.guild.id);
+                const emoji = cropItem ? interaction.client.inventory.getDisplayEmoji(cropItem, h.variant) : '🌾';
+                const cropName = cropItem ? interaction.client.inventory.getDisplayName(cropItem, h.variant) : h.crop.charAt(0).toUpperCase() + h.crop.slice(1);
+                return `**${h.amount}** ${emoji} ${cropName}`;
+            });
+            
             const embed = new EmbedBuilder()
                 .setColor(0x00FF00)
                 .setTitle('🌾 Your Farm')
-                .setDescription(`You harvested: ${harvested.map(h => `**${h.amount}** ${h.crop.charAt(0).toUpperCase() + h.crop.slice(1)}`).join(', ')}!`)
+                .setDescription(`You harvested: ${harvestMessages.join(', ')}!`)
                 .setImage('attachment://farm_preview.png')
                 .setFooter({ text: 'Your farm has been updated.' })
                 .setTimestamp();
@@ -584,26 +596,39 @@ module.exports = {
                 .setImage('attachment://farm_preview.png')
                 .setFooter({ text: 'Your farm has been updated.' })
                 .setTimestamp();
-            // Rebuild components (plant/harvest buttons)
+            // Rebuild components (plant/harvest/refresh/share buttons)
             const emptyPlots = interaction.client.farming.getEmptyPlots(updatedFarm2);
             const readyToHarvest = updatedFarm2.some(plot => plot.crop && (plot.stage || 0) >= 4);
-            const components = [];
+            const buttonRow = new ActionRowBuilder();
             if (emptyPlots.length > 0) {
-                components.push(new ActionRowBuilder().addComponents(
+                buttonRow.addComponents(
                     new ButtonBuilder()
                         .setCustomId('farm_plant')
                         .setLabel('🌱 Plant Seed')
                         .setStyle(ButtonStyle.Success)
-                ));
+                );
             }
             if (readyToHarvest) {
-                components.push(new ActionRowBuilder().addComponents(
+                buttonRow.addComponents(
                     new ButtonBuilder()
                         .setCustomId('farm_harvest_all')
                         .setLabel('🌾 Harvest All')
                         .setStyle(ButtonStyle.Primary)
-                ));
+                );
             }
+            buttonRow.addComponents(
+                new ButtonBuilder()
+                    .setCustomId('farm_refresh')
+                    .setLabel('🔄 Refresh')
+                    .setStyle(ButtonStyle.Secondary)
+            );
+            buttonRow.addComponents(
+                new ButtonBuilder()
+                    .setCustomId('farm_share')
+                    .setLabel('📸 Share')
+                    .setStyle(ButtonStyle.Secondary)
+            );
+            const components = [buttonRow];
             await interaction.update({
                 content: '',
                 embeds: [embed],

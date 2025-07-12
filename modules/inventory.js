@@ -1,5 +1,9 @@
 const SQLite = require('better-sqlite3');
 const sql = new SQLite('./db/inventory.sqlite');
+const emojiConfigs = require('../config/emoji-configs.json');
+const config = require('../config/default.json');
+const path = require('path');
+const fs = require('fs');
 
 class Inventory {
 
@@ -32,6 +36,18 @@ class Inventory {
             sql.pragma('synchronous = 1');
             sql.pragma('journal_mode = wal');
         }
+
+        // Add 'variant' column to inventory if missing
+        const pragma = sql.prepare("PRAGMA table_info(inventory);").all();
+        const hasVariant = pragma.some(col => col.name === 'variant');
+        if (!hasVariant) {
+            sql.prepare('ALTER TABLE inventory ADD COLUMN variant TEXT;').run();
+        }
+
+        // Add unique index for (user, guild, item_id, variant) if missing
+        sql.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_inventory_user_guild_item_variant
+            ON inventory (user, guild, item_id, variant)
+        `).run();
 
         // Create items table for item definitions
         const itemsTable = sql.prepare('SELECT count(*) FROM sqlite_master WHERE type=\'table\' AND name = \'items\';').get();
@@ -85,12 +101,6 @@ class Inventory {
     populateDefaultItems(guildId) {
         // Load default items from JSON file
         const defaultItems = require('../data/default-items.json');
-        
-        // Load emoji configurations
-        const emojiConfigs = require('../config/emoji-configs.json');
-        
-        // Load bot configuration to determine which emoji set to use
-        const config = require('../config/default.json');
         
         // Determine which emoji set to use based on environment
         const emojiSet = config.Enviroment.live 
@@ -153,7 +163,7 @@ class Inventory {
     // Get user's inventory
     getUserInventory(userId, guildId) {
         return sql.prepare(`
-            SELECT i.*, inv.quantity, inv.acquired_at, inv.expires_at
+            SELECT i.*, inv.quantity, inv.acquired_at, inv.expires_at, inv.variant
             FROM inventory inv
             JOIN items i ON inv.item_id = i.id
             WHERE inv.user = ? AND inv.guild = ?
@@ -162,8 +172,8 @@ class Inventory {
     }
 
     // Add item to user's inventory
-    async addItem(userId, guildId, itemId, quantity = 1, interaction = null, client = null) {
-        console.log(`[addItem] Called for user ${userId} in guild ${guildId} for item ${itemId} (quantity: ${quantity})`);
+    async addItem(userId, guildId, itemId, quantity = 1, interaction = null, client = null, variant = null) {
+        console.log(`[addItem] Called for user ${userId} in guild ${guildId} for item ${itemId} (quantity: ${quantity}, variant: ${variant})`);
         const item = this.getItem(itemId, guildId);
         if (!item) throw new Error('Item not found');
 
@@ -213,16 +223,16 @@ class Inventory {
 
         try {
             sql.prepare(`
-                INSERT INTO inventory (user, guild, item_id, quantity, expires_at, acquired_at)
-                VALUES (?, ?, ?, ?, ?, ?)
-                ON CONFLICT(user, guild, item_id) 
+                INSERT INTO inventory (user, guild, item_id, quantity, expires_at, acquired_at, variant)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(user, guild, item_id, variant) 
                 DO UPDATE SET 
                     quantity = quantity + ?,
                     expires_at = CASE 
                         WHEN ? IS NOT NULL THEN ?
                         ELSE expires_at 
                     END
-            `).run(userId, guildId, itemId, toAdd, expiresAt, nowISOString, toAdd, expiresAt, expiresAt);
+            `).run(userId, guildId, itemId, toAdd, expiresAt, nowISOString, variant, toAdd, expiresAt, expiresAt);
             // After updating or inserting, log the new quantity
             const updatedItem = this.getUserItem(userId, guildId, itemId);
             if (updatedItem) {
@@ -398,6 +408,248 @@ class Inventory {
                 const random = Math.floor(Math.random() * messages.length);
                 result.message = messages[random];
                 result.effect = { type: 'random_message' };
+                break;
+            }
+
+            case 'random_effect': {
+                // Define possible random effects with their probabilities
+                const effects = [
+                    // 25% chance - XP boost (1-3 hours, 2-3x multiplier)
+                    { 
+                        type: 'xp_boost', 
+                        weight: 25, 
+                        message: (duration, multiplier) => `🌟 **XP Boost!** You gain ${multiplier}x XP for ${duration} hour(s)!`,
+                        action: (duration, multiplier) => {
+                            this.addActiveEffect(userId, guildId, 'xp_multiplier', multiplier, duration);
+                            return { type: 'xp_multiplier', value: multiplier, duration: duration };
+                        },
+                        getParams: () => ({ duration: Math.floor(Math.random() * 3) + 1, multiplier: Math.floor(Math.random() * 2) + 2 })
+                    },
+                    // 20% chance - Work boost (1-2 hours, 2-4x multiplier)
+                    { 
+                        type: 'work_boost', 
+                        weight: 20, 
+                        message: (duration, multiplier) => `💼 **Work Boost!** You earn ${multiplier}x coins from work for ${duration} hour(s)!`,
+                        action: (duration, multiplier) => {
+                            this.addActiveEffect(userId, guildId, 'work_multiplier', multiplier, duration);
+                            return { type: 'work_multiplier', value: multiplier, duration: duration };
+                        },
+                        getParams: () => ({ duration: Math.floor(Math.random() * 2) + 1, multiplier: Math.floor(Math.random() * 3) + 2 })
+                    },
+                    // 15% chance - Coin boost (1-2 hours, 2-3x multiplier)
+                    { 
+                        type: 'coin_boost', 
+                        weight: 15, 
+                        message: (duration, multiplier) => `💰 **Coin Boost!** You earn ${multiplier}x coins from all sources for ${duration} hour(s)!`,
+                        action: (duration, multiplier) => {
+                            this.addActiveEffect(userId, guildId, 'coin_multiplier', multiplier, duration);
+                            return { type: 'coin_multiplier', value: multiplier, duration: duration };
+                        },
+                        getParams: () => ({ duration: Math.floor(Math.random() * 2) + 1, multiplier: Math.floor(Math.random() * 2) + 2 })
+                    },
+                    // 15% chance - Instant coins (500-2000)
+                    { 
+                        type: 'instant_coins', 
+                        weight: 15, 
+                        message: (amount) => `💸 **Instant Wealth!** You receive ${amount} coins!`,
+                        action: (amount) => {
+                            if (this.client && this.client.economy) {
+                                this.client.economy.updateBalance(userId, guildId, amount, 'balance');
+                                this.client.economy.logTransaction(userId, guildId, 'golden_apple_coins', amount, 'Golden Apple Coins');
+                            }
+                            return { type: 'coins', amount: amount };
+                        },
+                        getParams: () => ({ amount: Math.floor(Math.random() * 1501) + 500 })
+                    },
+                    // 10% chance - Random item (weighted by rarity)
+                    { 
+                        type: 'random_item', 
+                        weight: 10, 
+                        message: (itemName) => `🎁 **Magical Gift!** You receive a ${itemName}!`,
+                        action: (itemName) => {
+                            const allItems = this.getAllItems(guildId).filter(i => i.type !== 'mystery' && i.id !== 'crop_golden_apple');
+                            const rarityWeights = { common: 30, uncommon: 25, rare: 20, epic: 15, legendary: 10 };
+                            let weightedPool = [];
+                            for (const item of allItems) {
+                                const weight = rarityWeights[item.rarity] || 1;
+                                for (let i = 0; i < weight; i++) {
+                                    weightedPool.push(item);
+                                }
+                            }
+                            if (weightedPool.length > 0) {
+                                const randomItem = weightedPool[Math.floor(Math.random() * weightedPool.length)];
+                                this.addItem(userId, guildId, randomItem.id, 1);
+                                return { type: 'item', item: randomItem };
+                            }
+                            return { type: 'item', item: null };
+                        },
+                        getParams: () => ({ itemName: 'random item' })
+                    },
+                    // 8% chance - Daily multiplier (24 hours, 2-3x)
+                    { 
+                        type: 'daily_multiplier', 
+                        weight: 8, 
+                        message: (multiplier) => `📅 **Daily Boost!** Your next daily reward will be ${multiplier}x for 24 hours!`,
+                        action: (multiplier) => {
+                            this.addActiveEffect(userId, guildId, 'daily_multiplier', multiplier, 24);
+                            return { type: 'daily_multiplier', value: multiplier, duration: 24 };
+                        },
+                        getParams: () => ({ multiplier: Math.floor(Math.random() * 2) + 2 })
+                    },
+                    // 7% chance - Nothing (but funny message)
+                    { 
+                        type: 'nothing', 
+                        weight: 7, 
+                        message: () => {
+                            const messages = [
+                                `🍎 **Golden Apple Effect:** You feel... different. But also the same. The apple was delicious though!`,
+                                `🍎 **Golden Apple Effect:** The apple was so golden it blinded you temporarily. You're fine now, but still confused.`,
+                                `🍎 **Golden Apple Effect:** You ate the apple and now you're wondering if it was actually just a regular apple painted gold.`,
+                                `🍎 **Golden Apple Effect:** The apple disappears in a puff of golden smoke. At least it smelled nice!`,
+                                `🍎 **Golden Apple Effect:** You feel a brief surge of power... and then it's gone. Was that supposed to happen?`,
+                                `🍎 **Golden Apple Effect:** The apple was apparently just a very convincing prop. You've been tricked by a master illusionist!`,
+                                `🍎 **Golden Apple Effect:** You gain the power of... nothing. The apple was a dud, but it tasted amazing!`,
+                                `🍎 **Golden Apple Effect:** The golden apple grants you the wisdom of the ancients. Unfortunately, you forgot it immediately.`
+                            ];
+                            return messages[Math.floor(Math.random() * messages.length)];
+                        },
+                        action: () => null,
+                        getParams: () => ({})
+                    }
+                ];
+
+                // Create weighted pool
+                let weightedPool = [];
+                for (const effect of effects) {
+                    for (let i = 0; i < effect.weight; i++) {
+                        weightedPool.push(effect);
+                    }
+                }
+
+                // Select random effect
+                const selectedEffect = weightedPool[Math.floor(Math.random() * weightedPool.length)];
+                const params = selectedEffect.getParams();
+                
+                // Execute the effect
+                const effectResult = selectedEffect.action(...Object.values(params));
+                result.effect = effectResult;
+                result.message = selectedEffect.message(...Object.values(params));
+                break;
+            }
+
+            case 'crystal_random_effect': {
+                // Define possible crystal berry effects with better probabilities and values
+                const effects = [
+                    // 30% chance - XP boost (2-5 hours, 3-5x multiplier) - BETTER
+                    { 
+                        type: 'xp_boost', 
+                        weight: 30, 
+                        message: (duration, multiplier) => `💎 **Crystal XP Boost!** You gain ${multiplier}x XP for ${duration} hour(s)!`,
+                        action: (duration, multiplier) => {
+                            this.addActiveEffect(userId, guildId, 'xp_multiplier', multiplier, duration);
+                            return { type: 'xp_multiplier', value: multiplier, duration: duration };
+                        },
+                        getParams: () => ({ duration: Math.floor(Math.random() * 4) + 2, multiplier: Math.floor(Math.random() * 3) + 3 })
+                    },
+                    // 25% chance - Work boost (2-4 hours, 3-6x multiplier) - BETTER
+                    { 
+                        type: 'work_boost', 
+                        weight: 25, 
+                        message: (duration, multiplier) => `💎 **Crystal Work Boost!** You earn ${multiplier}x coins from work for ${duration} hour(s)!`,
+                        action: (duration, multiplier) => {
+                            this.addActiveEffect(userId, guildId, 'work_multiplier', multiplier, duration);
+                            return { type: 'work_multiplier', value: multiplier, duration: duration };
+                        },
+                        getParams: () => ({ duration: Math.floor(Math.random() * 3) + 2, multiplier: Math.floor(Math.random() * 4) + 3 })
+                    },
+                    // 20% chance - Coin boost (2-4 hours, 3-5x multiplier) - BETTER
+                    { 
+                        type: 'coin_boost', 
+                        weight: 20, 
+                        message: (duration, multiplier) => `💎 **Crystal Coin Boost!** You earn ${multiplier}x coins from all sources for ${duration} hour(s)!`,
+                        action: (duration, multiplier) => {
+                            this.addActiveEffect(userId, guildId, 'coin_multiplier', multiplier, duration);
+                            return { type: 'coin_multiplier', value: multiplier, duration: duration };
+                        },
+                        getParams: () => ({ duration: Math.floor(Math.random() * 3) + 2, multiplier: Math.floor(Math.random() * 3) + 3 })
+                    },
+                    // 15% chance - Instant coins (1000-3000) - BETTER
+                    { 
+                        type: 'instant_coins', 
+                        weight: 15, 
+                        message: (amount) => `💎 **Crystal Wealth!** You receive ${amount} coins!`,
+                        action: (amount) => {
+                            if (this.client && this.client.economy) {
+                                this.client.economy.updateBalance(userId, guildId, amount, 'balance');
+                                this.client.economy.logTransaction(userId, guildId, 'crystal_berry_coins', amount, 'Crystal Berry Coins');
+                            }
+                            return { type: 'coins', amount: amount };
+                        },
+                        getParams: () => ({ amount: Math.floor(Math.random() * 2001) + 1000 })
+                    },
+                    // 8% chance - Rare+ item (better rarity weights) - BETTER
+                    { 
+                        type: 'rare_item', 
+                        weight: 8, 
+                        message: (itemName) => `💎 **Crystal Gift!** You receive a ${itemName}!`,
+                        action: (itemName) => {
+                            const allItems = this.getAllItems(guildId).filter(i => i.type !== 'mystery' && i.id !== 'crop_crystal_berry' && i.id !== 'crop_golden_apple');
+                            // Better rarity weights: rare 40, epic 35, legendary 25
+                            const rarityWeights = { rare: 40, epic: 35, legendary: 25 };
+                            let weightedPool = [];
+                            for (const item of allItems) {
+                                const weight = rarityWeights[item.rarity] || 0;
+                                for (let i = 0; i < weight; i++) {
+                                    weightedPool.push(item);
+                                }
+                            }
+                            if (weightedPool.length > 0) {
+                                const randomItem = weightedPool[Math.floor(Math.random() * weightedPool.length)];
+                                this.addItem(userId, guildId, randomItem.id, 1);
+                                return { type: 'item', item: randomItem };
+                            }
+                            return { type: 'item', item: null };
+                        },
+                        getParams: () => ({ itemName: 'rare item' })
+                    },
+                    // 2% chance - Nothing (but funny message)
+                    { 
+                        type: 'nothing', 
+                        weight: 2, 
+                        message: () => {
+                            const messages = [
+                                `💎 **Crystal Berry Effect:** The berry dissolves into pure light, leaving you feeling... enlightened? Or maybe just confused.`,
+                                `💎 **Crystal Berry Effect:** The crystal shatters into a thousand tiny stars that fade into nothingness. At least it was pretty!`,
+                                `💎 **Crystal Berry Effect:** You feel a brief moment of cosmic clarity... then it's gone. What was that about?`,
+                                `💎 **Crystal Berry Effect:** The berry turns to dust in your hands. On the bright side, you now have magical dust! (It's just regular dust)`,
+                                `💎 **Crystal Berry Effect:** The crystal berry was actually just a very convincing piece of glass. You've been bamboozled!`,
+                                `💎 **Crystal Berry Effect:** The berry disappears with a tiny 'pop' sound. You're not sure if that was supposed to happen.`,
+                                `💎 **Crystal Berry Effect:** The berry's magic was in the journey, not the destination. Or maybe it was just defective.`,
+                                `💎 **Crystal Berry Effect:** Sometimes the greatest magic is the friends we made along the way. But you didn't make any friends.`
+                            ];
+                            return messages[Math.floor(Math.random() * messages.length)];
+                        },
+                        action: () => null,
+                        getParams: () => ({})
+                    }
+                ];
+
+                // Create weighted pool
+                let weightedPool = [];
+                for (const effect of effects) {
+                    for (let i = 0; i < effect.weight; i++) {
+                        weightedPool.push(effect);
+                    }
+                }
+
+                // Select random effect
+                const selectedEffect = weightedPool[Math.floor(Math.random() * weightedPool.length)];
+                const params = selectedEffect.getParams();
+                
+                // Execute the effect
+                const effectResult = selectedEffect.action(...Object.values(params));
+                result.effect = effectResult;
+                result.message = selectedEffect.message(...Object.values(params));
                 break;
             }
                 
@@ -826,6 +1078,45 @@ class Inventory {
             console.error('Error deleting default items for guild:', error);
             return 0;
         }
+    }
+
+    // Get display name for an item, using variant if present
+    getDisplayName(item, variant) {
+        if (item.variants && Array.isArray(item.variants) && variant) {
+            const found = item.variants.find(v => v.id === variant);
+            if (found && found.name) return found.name;
+        }
+        return item.name;
+    }
+
+    // Get display emoji for an item, using variant if present
+    getDisplayEmoji(item, variant) {
+        // Determine which emoji set to use based on environment
+        const emojiSet = config.Enviroment.live 
+            ? emojiConfigs['production_bot'] 
+            : emojiConfigs['test_bot'] || emojiConfigs['default'];
+        if (item.variants && Array.isArray(item.variants) && variant) {
+            const found = item.variants.find(v => v.id === variant);
+            if (found) {
+                // Try emoji config first using the format: itemId_variantId
+                const variantKey = `${item.id}_${variant}`;
+                if (emojiSet[variantKey]) return emojiSet[variantKey];
+                if (found.emoji) return found.emoji;
+            }
+        }
+        // Try emoji config for item id
+        if (emojiSet[item.id]) return emojiSet[item.id];
+        return item.emoji;
+    }
+
+    // Add this method to the Inventory class
+    getItemFromConfig(itemId) {
+        if (!this._itemConfigCache) {
+            const configPath = path.join(__dirname, '../data/default-items.json');
+            const raw = fs.readFileSync(configPath, 'utf8');
+            this._itemConfigCache = JSON.parse(raw);
+        }
+        return this._itemConfigCache.find(item => item.id === itemId) || null;
     }
 }
 

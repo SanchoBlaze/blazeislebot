@@ -21,13 +21,14 @@ module.exports = {
                 });
             }
 
-            // Deduplicate items by id and sum quantities
+            // Deduplicate items by id and variant, sum quantities
             const uniqueItems = {};
             for (const item of inventory) {
-                if (!uniqueItems[item.id]) {
-                    uniqueItems[item.id] = { ...item };
+                const key = item.variant ? `${item.id}_${item.variant}` : item.id;
+                if (!uniqueItems[key]) {
+                    uniqueItems[key] = { ...item };
                 } else {
-                    uniqueItems[item.id].quantity += item.quantity;
+                    uniqueItems[key].quantity += item.quantity;
                 }
             }
 
@@ -38,7 +39,9 @@ module.exports = {
                 const aRank = rarityOrder[a.rarity] || 99;
                 const bRank = rarityOrder[b.rarity] || 99;
                 if (aRank !== bRank) return aRank - bRank;
-                return a.name.localeCompare(b.name);
+                const aDisplayName = interaction.client.inventory.getDisplayName(a, a.variant);
+                const bDisplayName = interaction.client.inventory.getDisplayName(b, b.variant);
+                return aDisplayName.localeCompare(bDisplayName);
             });
 
             // Create pages with one item per page
@@ -67,13 +70,14 @@ module.exports = {
             const item = items[i];
             const pageNumber = i + 1;
             const totalPages = items.length;
-            const emoji = client.inventory.getItemEmoji(item);
+            const displayName = client.inventory.getDisplayName(item, item.variant);
+            const displayEmoji = client.inventory.getDisplayEmoji(item, item.variant);
             const rarityName = item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1);
-            const emojiUrl = client.inventory.getEmojiUrl(emoji, client);
+            const emojiUrl = client.inventory.getEmojiUrl(displayEmoji, client);
 
             const embed = new EmbedBuilder()
                 .setColor(client.inventory.getRarityColour(item.rarity))
-                .setTitle(`🎯 ${item.name}`)
+                .setTitle(`🎯 ${displayName}`)
                 .setDescription(item.description)
                 .setThumbnail(emojiUrl)
                 .addFields(
