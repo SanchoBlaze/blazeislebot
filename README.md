@@ -33,6 +33,8 @@ A feature-rich Discord bot with modular architecture, economy system, loyalty tr
 - **Scratch Card item**: A consumable with gambling logic—win coins or a random item, with the reward's emoji shown as the embed thumbnail.
 - **Profit margin logic for item pricing**: All shop items are priced so users always make a profit when using or selling them.
 - **Admin command stability**: All admin commands now handle Discord interactions robustly, preventing double reply errors.
+- **Weeds crop and mechanic**: Weeds can now grow on empty plots (5% chance per hour per plot). Weeds are a harvestable crop with their own emoji and are managed like other crops.
+- **Emoji config requirement**: Whenever you add a new item to data/default-items.json, you must also add a corresponding entry to config/emoji-configs.json with the correct emoji (Unicode or custom).
 
 ## Getting Started
 

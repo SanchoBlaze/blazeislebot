@@ -64,9 +64,30 @@ After changing the configuration, restart your bot and run `/economy-admin popul
 
 ## Adding New Items with Custom Emojis
 
-1. Add the item to `data/default-items.json` with a placeholder emoji (like `"🪝"`)
-2. Add the custom emoji ID to `config/emoji-configs.json` using the item's ID as the key
-3. The system will automatically use the custom emoji when available
+Whenever you add a new item to data/default-items.json (for example, a new crop like weeds), you must also add a corresponding entry to config/emoji-configs.json with the correct emoji (Unicode or custom).
+
+**Example: Adding Weeds**
+
+In `data/default-items.json`:
+```json
+{
+    "id": "crop_weeds",
+    "name": "Weeds",
+    "emoji": "🌿"
+}
+```
+
+In `config/emoji-configs.json`:
+```json
+{
+    "test_bot": {
+        "crop_weeds": "<:crop_weeds:1393646290717511832>"
+    },
+    "production_bot": {
+        "crop_weeds": "<:crop_weeds:1393646290717511832>"
+    }
+}
+```
 
 ### Farming Items
 

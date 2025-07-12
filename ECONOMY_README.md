@@ -216,6 +216,8 @@ The farming system allows players to plant, grow, and harvest crops for profit. 
 - **Visual Distinction**: Different emojis and names for each variant
 - **Database Storage**: Variants are stored with a `variant` field
 - **Sell System**: Crops can be sold with rarity-based pricing
+- **Weeds crop**: Weeds can grow on empty plots (5% chance per hour per plot) and are managed as a harvestable crop with their own emoji.
+- **Emoji config requirement**: Whenever you add a new item to data/default-items.json, you must also add a corresponding entry to config/emoji-configs.json with the correct emoji (Unicode or custom).
 
 ### 🎣 Fishing System
 

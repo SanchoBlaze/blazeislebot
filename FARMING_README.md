@@ -221,6 +221,14 @@ The farming system includes a variety of crops across different rarities:
 2. **Selling Strategy**: Sell crops when prices are favorable
 3. **Storage**: Use inventory space efficiently for farming supplies
 
+## Weeds Crop & Growth Mechanic
+
+- **Weeds** can grow on any empty plot with a 5% chance per hour (per plot).
+- Weeds are a harvestable crop: when they appear, they are fully grown and can be harvested for a small reward.
+- Weeds use their own emoji and are managed like other crops in inventory and the shop.
+- The weed growth check only happens once per hour per user, so refreshing your farm does not spawn more weeds within the hour.
+- **Emoji config requirement:** Whenever you add a new item to data/default-items.json, you must also add a corresponding entry to config/emoji-configs.json with the correct emoji (Unicode or custom).
+
 ## Technical Details
 
 ### 🗄️ Database Schema
