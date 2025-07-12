@@ -33,8 +33,8 @@ module.exports = {
             }
 
             const allItems = Object.values(uniqueItems);
-            // Sort by rarity (common < uncommon < rare < epic < legendary)
-            const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5 };
+            // Sort by rarity (common < uncommon < rare < epic < legendary < mythic)
+            const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6 };
             allItems.sort((a, b) => {
                 const aRank = rarityOrder[a.rarity] || 99;
                 const bRank = rarityOrder[b.rarity] || 99;
@@ -237,7 +237,7 @@ module.exports = {
         }
         const allItems = Object.values(uniqueItems);
         allItems.sort((a, b) => {
-            const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5 };
+            const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6 };
             const aRank = rarityOrder[a.rarity] || 99;
             const bRank = rarityOrder[b.rarity] || 99;
             if (aRank !== bRank) return aRank - bRank;

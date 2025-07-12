@@ -22,7 +22,7 @@ module.exports = {
             }
 
             // Store all items for filtering
-            const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5 };
+            const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6 };
             const originalItems = allItems.slice().sort((a, b) => {
                 const aRank = rarityOrder[a.rarity] || 99;
                 const bRank = rarityOrder[b.rarity] || 99;

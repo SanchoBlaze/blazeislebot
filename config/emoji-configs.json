@@ -73,7 +73,13 @@
         "crop_golden_apple": "<:crop_golden_apple:1393366142202155120>",
         "seeds_golden_apple": "<:seeds_golden_apple:1393366570616619068>",
         "crop_crystal_berry": "<:crop_crystal_berry:1393366103849435237>",
-        "seeds_crystal_berry": "<:seeds_crystal_berry:1393366540899844168>"
+        "seeds_crystal_berry": "<:seeds_crystal_berry:1393366540899844168>",
+        "watering_can_wood": "<:watering_can_wood:1393398397032988774>",
+        "watering_can_copper": "<:watering_can_copper:1393398297917653064>",
+        "watering_can_silver": "<:watering_can_silver:1393398373054156851>",
+        "watering_can_gold": "<:watering_can_gold:1393398333539749898>",
+        "watering_can_diamond": "<:watering_can_diamond:1393398317727350875>",
+        "watering_can_mythic": "<:watering_can_mythic:1393398352451735725>"
     },
     "test_bot": {
         "fishing_rod_basic": "<:fishing_rod_basic:1389632536342429738>",
@@ -149,7 +155,13 @@
         "crop_golden_apple": "<:crop_golden_apple:1393353177159696495>",
         "seeds_golden_apple": "<:seed_golden_apple:1393353490314563736>",
         "crop_crystal_berry": "<:crop_crystal_berry:1393353155382612219>",
-        "seeds_crystal_berry": "<:seed_crystal_berry:1393353443372175491>"
+        "seeds_crystal_berry": "<:seed_crystal_berry:1393353443372175491>",
+        "watering_can_wood": "<:watering_can_wood:1393398895605710979>",
+        "watering_can_copper": "<:watering_can_copper:1393398823270748170>",
+        "watering_can_silver": "<:watering_can_silver:1393398881009799179>",
+        "watering_can_gold": "<:watering_can_gold:1393398854157865073>",
+        "watering_can_diamond": "<:watering_can_diamond:1393398839527870555>",
+        "watering_can_mythic": "<:watering_can_mythic:1393398869697626252>"
     },
     "production_bot": {
         "fishing_rod_basic": "<:fishing_rod_basic:1389552382580363264>",
@@ -225,6 +237,12 @@
         "crop_golden_apple": "<:crop_golden_apple:1393366142202155120>",
         "seeds_golden_apple": "<:seeds_golden_apple:1393366570616619068>",
         "crop_crystal_berry": "<:crop_crystal_berry:1393366103849435237>",
-        "seeds_crystal_berry": "<:seeds_crystal_berry:1393366540899844168>"
+        "seeds_crystal_berry": "<:seeds_crystal_berry:1393366540899844168>",
+        "watering_can_wood": "<:watering_can_wood:1393398397032988774>",
+        "watering_can_copper": "<:watering_can_copper:1393398297917653064>",
+        "watering_can_silver": "<:watering_can_silver:1393398373054156851>",
+        "watering_can_gold": "<:watering_can_gold:1393398333539749898>",
+        "watering_can_diamond": "<:watering_can_diamond:1393398317727350875>",
+        "watering_can_mythic": "<:watering_can_mythic:1393398352451735725>"
     }
 } 

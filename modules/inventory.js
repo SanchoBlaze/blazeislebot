@@ -152,7 +152,7 @@ class Inventory {
             return item.type === 'fish';
         }).sort((a, b) => {
             // Sort by rarity ASC, price ASC
-            const rarityOrder = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+            const rarityOrder = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'];
             const aRarity = rarityOrder.indexOf(a.rarity);
             const bRarity = rarityOrder.indexOf(b.rarity);
             if (aRarity !== bRarity) return aRarity - bRarity;
@@ -758,11 +758,12 @@ class Inventory {
     // Get rarity colour
     getRarityColour(rarity) {
         const colours = {
-            common: 0xFFFFFF,      // White
-            uncommon: 0x00FF00,    // Green
-            rare: 0x0099FF,        // Blue
-            epic: 0x9932CC,        // Purple
-            legendary: 0xFFD700    // Gold
+            mythic: 0xFF00FF,      // Magenta
+            legendary: 0xFFD700,  // Gold
+            epic: 0x9932CC,       // Purple
+            rare: 0x0099FF,       // Blue
+            uncommon: 0x00FF00,   // Green
+            common: 0xFFFFFF      // White
         };
         return colours[rarity] || colours.common;
     }
@@ -770,11 +771,12 @@ class Inventory {
     // Get rarity emoji
     getRarityEmoji(rarity) {
         const emojis = {
-            common: '⚪',
-            uncommon: '🟢',
-            rare: '🔵',
+            mythic: '🌈',
+            legendary: '🟡',
             epic: '🟣',
-            legendary: '🟡'
+            rare: '🔵',
+            uncommon: '🟢',
+            common: '⚪'
         };
         return emojis[rarity] || emojis.common;
     }
@@ -1043,6 +1045,23 @@ class Inventory {
     getFishingBoost(userId, guildId) {
         const bestRod = this.getBestFishingRod(userId, guildId);
         return bestRod ? bestRod.effect_value : 1;
+    }
+
+    // Get user's best watering can
+    getBestWateringCan(userId, guildId) {
+        const userInventory = this.getUserInventory(userId, guildId);
+        const wateringCans = userInventory.filter(item => item.type === 'watering_can');
+        if (wateringCans.length === 0) return null;
+        // Return the can with the lowest effect_value (fastest growth)
+        return wateringCans.reduce((best, current) =>
+            current.effect_value < best.effect_value ? current : best
+        );
+    }
+
+    // Get watering boost multiplier for a user (default 1 if none)
+    getWateringBoost(userId, guildId) {
+        const bestCan = this.getBestWateringCan(userId, guildId);
+        return bestCan ? bestCan.effect_value : 1;
     }
 
     // Get all shop items for a guild, excluding certain types (SQL filtering)

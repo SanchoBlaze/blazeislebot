@@ -55,7 +55,7 @@ module.exports = {
             }
 
             let description = '';
-            const rarities = ['legendary', 'epic', 'rare', 'uncommon', 'common'];
+            const rarities = ['mythic', 'legendary', 'epic', 'rare', 'uncommon', 'common'];
             
             for (const rarity of rarities) {
                 if (itemsByRarity[rarity] && itemsByRarity[rarity].length > 0) {

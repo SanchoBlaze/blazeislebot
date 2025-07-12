@@ -907,5 +907,83 @@
         "effect_type": "random_message",
         "effect_value": null,
         "emoji": "🍾"
+    },
+    {
+        "id": "watering_can_wood",
+        "name": "Wooden Watering Can",
+        "description": "A basic wooden watering can. Reduces crop growth time by 5%.",
+        "type": "watering_can",
+        "rarity": "common",
+        "price": 500,
+        "max_quantity": 1,
+        "duration_hours": 0,
+        "effect_type": null,
+        "effect_value": 0.95,
+        "emoji": "🪣"
+    },
+    {
+        "id": "watering_can_copper",
+        "name": "Copper Watering Can",
+        "description": "A reliable copper watering can. Reduces crop growth time by 10%.",
+        "type": "watering_can",
+        "rarity": "uncommon",
+        "price": 2000,
+        "max_quantity": 1,
+        "duration_hours": 0,
+        "effect_type": null,
+        "effect_value": 0.9,
+        "emoji": "🪣"
+    },
+    {
+        "id": "watering_can_silver",
+        "name": "Silver Watering Can",
+        "description": "A shiny silver watering can. Reduces crop growth time by 15%.",
+        "type": "watering_can",
+        "rarity": "rare",
+        "price": 8000,
+        "max_quantity": 1,
+        "duration_hours": 0,
+        "effect_type": null,
+        "effect_value": 0.85,
+        "emoji": "🪣"
+    },
+    {
+        "id": "watering_can_gold",
+        "name": "Golden Watering Can",
+        "description": "A luxurious golden watering can. Reduces crop growth time by 20%.",
+        "type": "watering_can",
+        "rarity": "epic",
+        "price": 25000,
+        "max_quantity": 1,
+        "duration_hours": 0,
+        "effect_type": null,
+        "effect_value": 0.8,
+        "emoji": "🪣"
+    },
+    {
+        "id": "watering_can_diamond",
+        "name": "Diamond Watering Can",
+        "description": "A sparkling diamond watering can. Reduces crop growth time by 30%.",
+        "type": "watering_can",
+        "rarity": "legendary",
+        "price": 75000,
+        "max_quantity": 1,
+        "duration_hours": 0,
+        "effect_type": null,
+        "effect_value": 0.7,
+        "emoji": "💎"
+    },
+    {
+        "id": "watering_can_mythic",
+        "name": "Mythic Watering Can",
+        "description": "A mythical can said to be blessed by the harvest gods. Reduces crop growth time by 40%.",
+        "type": "watering_can",
+        "rarity": "mythic",
+        "price": 200000,
+        "max_quantity": 1,
+        "duration_hours": 0,
+        "effect_type": null,
+        "effect_value": 0.6,
+        "emoji": "🌈"
     }
 ] 

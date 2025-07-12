@@ -38,8 +38,8 @@ module.exports = {
             }
 
             const allItems = Object.values(uniqueItems);
-            // Sort by rarity (common < uncommon < rare < epic < legendary)
-            const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5 };
+            // Sort by rarity (common < uncommon < rare < epic < legendary < mythic)
+            const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6 };
             allItems.sort((a, b) => {
                 const aRank = rarityOrder[a.rarity] || 99;
                 const bRank = rarityOrder[b.rarity] || 99;
@@ -262,6 +262,20 @@ module.exports = {
                     embeds: [updatedEmbed],
                     components: [filterDropdown, updatedButtons]
                 });
+                // Send confirmation embed
+                const displayName = modalInteraction.client.inventory.getDisplayName(currentPage.item, currentPage.item.variant);
+                const displayEmoji = modalInteraction.client.inventory.getDisplayEmoji(currentPage.item, currentPage.item.variant);
+                const embed = new EmbedBuilder()
+                    .setColor(0x00FF00)
+                    .setTitle('💰 Item Sold')
+                    .setDescription(`Successfully sold **${qty}x ${displayEmoji} ${displayName}**`)
+                    .addFields(
+                        { name: '💵 Sale Price', value: modalInteraction.client.economy.formatCurrency(currentPage.sellPrice * qty), inline: true },
+                        { name: '📦 Remaining', value: `${newQuantity}x`, inline: true }
+                    )
+                    .setFooter({ text: `Sold by ${modalInteraction.user.tag}` })
+                    .setTimestamp();
+                await modalInteraction.followUp({ embeds: [embed], ephemeral: true });
             } else {
                 await modalInteraction.reply({ content: 'There was an error processing your sale.', ephemeral: true });
             }

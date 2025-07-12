@@ -43,108 +43,182 @@ function getHarvestYield(rarity) {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('farm')
-        .setDescription('View your 3x3 farm plot and plant seeds'),
+        .setDescription('Farming system commands')
+        .addSubcommand(sub =>
+            sub.setName('view')
+                .setDescription('View your 3x3 farm plot and plant seeds')
+        )
+        .addSubcommand(sub =>
+            sub.setName('info')
+                .setDescription('Show details about what is planted in each plot, stage, and time left to grow')
+        ),
 
-    // Only handle slash commands here!
     async execute(interaction) {
         if (!interaction.isChatInputCommand()) return false;
-        await interaction.reply({
-            content: '🌾 Generating your farm plot, please wait...',
-            flags: MessageFlags.Ephemeral
-        });
-        try {
-            // Get real farm data
-            const farm = interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
-            const basePath = path.join(__dirname, '../../assets/farming/farm_3x3.png');
+        const sub = interaction.options.getSubcommand();
+        if (sub === 'view') {
+            await interaction.reply({
+                content: '🌾 Generating your farm plot, please wait...',
+                flags: MessageFlags.Ephemeral
+            });
+            try {
+                // Get real farm data
+                const farm = interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
+                const basePath = path.join(__dirname, '../../assets/farming/farm_3x3.png');
 
-            const baseImage = await loadImage(basePath);
-            const plotCoords = [
-                { x: 147, y: 154 }, { x: 400, y: 154 }, { x: 656, y: 154 },
-                { x: 147, y: 400 }, { x: 400, y: 400 }, { x: 656, y: 400 },
-                { x: 147, y: 650 }, { x: 400, y: 650 }, { x: 656, y: 650 }
-            ];
-            const canvas = createCanvas(baseImage.width, baseImage.height);
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(baseImage, 0, 0);
-            // Preload shared images for stages 0-3
-            const sharedStageImages = [
-                'farm_planted_225.png',      // stage 0
-                'farm_sprout_225.png',       // stage 1
-                'farm_growing_225.png',      // stage 2
-                'farm_almost_grown_225.png'  // stage 3
-            ];
-            const loadedSharedStages = await Promise.all(sharedStageImages.map(img => loadImage(path.join(__dirname, '../../assets/farming', img))));
+                const baseImage = await loadImage(basePath);
+                const plotCoords = [
+                    { x: 147, y: 154 }, { x: 400, y: 154 }, { x: 656, y: 154 },
+                    { x: 147, y: 400 }, { x: 400, y: 400 }, { x: 656, y: 400 },
+                    { x: 147, y: 650 }, { x: 400, y: 650 }, { x: 656, y: 650 }
+                ];
+                const canvas = createCanvas(baseImage.width, baseImage.height);
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(baseImage, 0, 0);
+                // Preload shared images for stages 0-3
+                const sharedStageImages = [
+                    'farm_planted_225.png',      // stage 0
+                    'farm_sprout_225.png',       // stage 1
+                    'farm_growing_225.png',      // stage 2
+                    'farm_almost_grown_225.png'  // stage 3
+                ];
+                const loadedSharedStages = await Promise.all(sharedStageImages.map(img => loadImage(path.join(__dirname, '../../assets/farming', img))));
+                for (let i = 0; i < 9; i++) {
+                    const plot = farm[i];
+                    if (!plot.crop) continue; // Don't draw a stage image for empty plots
+                    // Get crop item data
+                    const cropType = plot.crop.startsWith('seeds_') ? plot.crop.replace('seeds_', '') : plot.crop; // e.g., 'wheat' or 'corn'
+                    const cropItem = interaction.client.inventory.getItem(`seeds_${cropType}`, interaction.guild.id) || interaction.client.inventory.getItem(cropType, interaction.guild.id);
+                    const rarity = cropItem ? cropItem.rarity : 'common';
+                    // Apply watering can boost
+                    let growthTimes = getGrowthTimesForRarity(rarity);
+                    const wateringBoost = interaction.client.inventory.getWateringBoost(interaction.user.id, interaction.guild.id);
+                    if (wateringBoost && wateringBoost !== 1) {
+                        growthTimes = growthTimes.map(t => t * wateringBoost);
+                    }
+                    const stage = getCurrentStage(plot.planted_at, plot.stage || 0, growthTimes);
+                    // If stage advanced, update DB
+                    if (stage > (plot.stage || 0)) {
+                        interaction.client.farming.updatePlot(interaction.user.id, interaction.guild.id, i, { stage });
+                    }
+                    let img;
+                    if (stage < 4) {
+                        img = loadedSharedStages[stage];
+                    } else {
+                        // Final stage: use crop-specific image
+                        const cropStageImagePath = path.join(__dirname, `../../assets/farming/farm_${cropType}_225.png`);
+                        img = await loadImage(cropStageImagePath);
+                    }
+                    ctx.drawImage(img, plotCoords[i].x, plotCoords[i].y, 225, 225);
+                }
+                const buffer = canvas.toBuffer();
+                const attachment = new AttachmentBuilder(buffer, { name: 'farm_preview.png' });
+                const embed = new EmbedBuilder()
+                    .setColor(0x00FF00)
+                    .setTitle('🌾 Your Farm')
+                    .setDescription('Your real farm plots and growth stages!')
+                    .setImage('attachment://farm_preview.png')
+                    .setFooter({ text: 'Ready for dynamic farming!' })
+                    .setTimestamp();
+                const emptyPlots = interaction.client.farming.getEmptyPlots(farm);
+                const readyToHarvest = farm.some(plot => plot.crop && (plot.stage || 0) >= 4);
+                // Add Plant, Harvest, Refresh, and Share buttons in a single row
+                const buttonRow = new ActionRowBuilder();
+                if (emptyPlots.length > 0) {
+                    buttonRow.addComponents(
+                        new ButtonBuilder()
+                            .setCustomId('farm_plant')
+                            .setLabel('🌱 Plant Seed')
+                            .setStyle(ButtonStyle.Success)
+                    );
+                }
+                if (readyToHarvest) {
+                    buttonRow.addComponents(
+                        new ButtonBuilder()
+                            .setCustomId('farm_harvest_all')
+                            .setLabel('🌾 Harvest All')
+                            .setStyle(ButtonStyle.Primary)
+                    );
+                }
+                buttonRow.addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('farm_refresh')
+                        .setLabel('🔄 Refresh')
+                        .setStyle(ButtonStyle.Secondary)
+                );
+                buttonRow.addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('farm_share')
+                        .setLabel('📸 Share')
+                        .setStyle(ButtonStyle.Secondary)
+                );
+                const components = [buttonRow];
+                await interaction.editReply({ content: '', embeds: [embed], files: [attachment], components });
+            } catch (error) {
+                console.error('Error in farm command:', error);
+                try {
+                    await interaction.editReply({ content: 'There was an error displaying your farm image!', embeds: [], files: [], components: [] });
+                } catch {}
+            }
+        } else if (sub === 'info') {
+            // /farm info logic
+            const farm = interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
+            const now = Date.now();
+            let infoLines = [];
             for (let i = 0; i < 9; i++) {
                 const plot = farm[i];
-                if (!plot.crop) continue; // Don't draw a stage image for empty plots
-                // Get crop item data
-                const cropType = plot.crop.startsWith('seeds_') ? plot.crop.replace('seeds_', '') : plot.crop; // e.g., 'wheat' or 'corn'
-                const cropItem = interaction.client.inventory.getItem(`seeds_${cropType}`, interaction.guild.id) || interaction.client.inventory.getItem(cropType, interaction.guild.id);
-                const rarity = cropItem ? cropItem.rarity : 'common';
-                const growthTimes = getGrowthTimesForRarity(rarity);
-                const stage = getCurrentStage(plot.planted_at, plot.stage || 0, growthTimes);
-                // If stage advanced, update DB
-                if (stage > (plot.stage || 0)) {
-                    interaction.client.farming.updatePlot(interaction.user.id, interaction.guild.id, i, { stage });
-                }
-                let img;
-                if (stage < 4) {
-                    img = loadedSharedStages[stage];
+                let line = `**Plot ${i + 1}:** `;
+                if (!plot.crop) {
+                    line += 'Empty';
                 } else {
-                    // Final stage: use crop-specific image
-                    const cropStageImagePath = path.join(__dirname, `../../assets/farming/farm_${cropType}_225.png`);
-                    img = await loadImage(cropStageImagePath);
+                    const cropType = plot.crop.startsWith('seeds_') ? plot.crop.replace('seeds_', '') : plot.crop;
+                    const cropItem = interaction.client.inventory.getItem(`seeds_${cropType}`, interaction.guild.id) || interaction.client.inventory.getItem(cropType, interaction.guild.id);
+                    const rarity = cropItem ? cropItem.rarity : 'common';
+                    let growthTimes = getGrowthTimesForRarity(rarity);
+                    const wateringBoost = interaction.client.inventory.getWateringBoost(interaction.user.id, interaction.guild.id);
+                    if (wateringBoost && wateringBoost !== 1) {
+                        growthTimes = growthTimes.map(t => t * wateringBoost);
+                    }
+                    const stage = getCurrentStage(plot.planted_at, plot.stage || 0, growthTimes);
+                    const totalStages = growthTimes.length;
+                    // Calculate time left to next stage and to fully grown
+                    let elapsed = now - plot.planted_at;
+                    let timeToNextStage = 0;
+                    let timeToFull = 0;
+                    for (let s = 0; s < totalStages; s++) {
+                        const stageMs = growthTimes[s] * 60 * 1000;
+                        if (s < stage) {
+                            elapsed -= stageMs;
+                        } else if (s === stage) {
+                            timeToNextStage = Math.max(0, stageMs - elapsed);
+                            timeToFull += timeToNextStage;
+                        } else {
+                            timeToFull += stageMs;
+                        }
+                    }
+                    // Format times
+                    function formatMs(ms) {
+                        const min = Math.floor(ms / 60000);
+                        const sec = Math.floor((ms % 60000) / 1000);
+                        return `${min}m ${sec}s`;
+                    }
+                    const cropName = cropItem ? cropItem.name : cropType;
+                    line += `${cropName} | Stage ${stage + 1}/${totalStages}`;
+                    if (stage < totalStages) {
+                        line += ` | Next: ${formatMs(timeToNextStage)}, Full: ${formatMs(timeToFull)}`;
+                    } else {
+                        line += ' | Fully grown!';
+                    }
                 }
-                ctx.drawImage(img, plotCoords[i].x, plotCoords[i].y, 225, 225);
+                infoLines.push(line);
             }
-            const buffer = canvas.toBuffer();
-            const attachment = new AttachmentBuilder(buffer, { name: 'farm_preview.png' });
             const embed = new EmbedBuilder()
                 .setColor(0x00FF00)
-                .setTitle('🌾 Your Farm')
-                .setDescription('Your real farm plots and growth stages!')
-                .setImage('attachment://farm_preview.png')
-                .setFooter({ text: 'Ready for dynamic farming!' })
+                .setTitle('🌾 Farm Info')
+                .setDescription(infoLines.join('\n'))
+                .setFooter({ text: 'Shows what is planted, stage, and time left for each plot.' })
                 .setTimestamp();
-            const emptyPlots = interaction.client.farming.getEmptyPlots(farm);
-            const readyToHarvest = farm.some(plot => plot.crop && (plot.stage || 0) >= 4);
-            // Add Plant, Harvest, Refresh, and Share buttons in a single row
-            const buttonRow = new ActionRowBuilder();
-            if (emptyPlots.length > 0) {
-                buttonRow.addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('farm_plant')
-                        .setLabel('🌱 Plant Seed')
-                        .setStyle(ButtonStyle.Success)
-                );
-            }
-            if (readyToHarvest) {
-                buttonRow.addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('farm_harvest_all')
-                        .setLabel('🌾 Harvest All')
-                        .setStyle(ButtonStyle.Primary)
-                );
-            }
-            buttonRow.addComponents(
-                new ButtonBuilder()
-                    .setCustomId('farm_refresh')
-                    .setLabel('🔄 Refresh')
-                    .setStyle(ButtonStyle.Secondary)
-            );
-            buttonRow.addComponents(
-                new ButtonBuilder()
-                    .setCustomId('farm_share')
-                    .setLabel('📸 Share')
-                    .setStyle(ButtonStyle.Secondary)
-            );
-            const components = [buttonRow];
-            await interaction.editReply({ content: '', embeds: [embed], files: [attachment], components });
-        } catch (error) {
-            console.error('Error in farm command:', error);
-            try {
-                await interaction.editReply({ content: 'There was an error displaying your farm image!', embeds: [], files: [], components: [] });
-            } catch {}
+            await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
     },
 
@@ -209,8 +283,9 @@ module.exports = {
                 if (plot.crop && (plot.stage || 0) >= 4) {
                     // Get crop item data
                     const cropType = plot.crop.startsWith('seeds_') ? plot.crop.replace('seeds_', '') : plot.crop;
-                    const cropItem = interaction.client.inventory.getItem(`seeds_${cropType}`, interaction.guild.id) || interaction.client.inventory.getItem(cropType, interaction.guild.id);
-                    const rarity = cropItem ? cropItem.rarity : 'common';
+                    const seedItem = interaction.client.inventory.getItem(`seeds_${cropType}`, interaction.guild.id);
+                    const cropItem = interaction.client.inventory.getItem(`crop_${cropType}`, interaction.guild.id);
+                    const rarity = seedItem ? seedItem.rarity : 'common';
                     const yieldAmount = getHarvestYield(rarity);
                     // Add crop to inventory (not seeds, but the crop itself)
                     let variant = null;

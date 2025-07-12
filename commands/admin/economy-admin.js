@@ -78,7 +78,8 @@ module.exports = {
                             { name: 'Uncommon', value: 'uncommon' },
                             { name: 'Rare', value: 'rare' },
                             { name: 'Epic', value: 'epic' },
-                            { name: 'Legendary', value: 'legendary' }
+                            { name: 'Legendary', value: 'legendary' },
+                            { name: 'Mythic', value: 'mythic' }
                         ))
                 .addIntegerOption(option =>
                     option.setName('price')

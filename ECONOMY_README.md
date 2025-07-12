@@ -140,9 +140,13 @@ The shop offers various items that users can purchase with their coins:
 
 ### 🛒 Shop & Inventory Commands
 - `/shop` - Browse and buy items from the shop
-- `/inventory [user]` - View your or another user's inventory
+- `/inventory [user]` - View your or another user's inventory (shows crop variants and watering cans, deduplicated by item and variant)
 - `/use <item>` - Use an item from your inventory
-- `/sell` - Sell items back to the shop (rarity-based pricing)
+- `/sell` - Sell items back to the shop (rarity-based pricing, supports crop variants and confirmation messages)
+
+### 🌾 Farming Commands
+- `/farm view` - Interactive farming interface with buttons for planting, harvesting, and farm management
+- `/leaderboard farm` - View top users by crops harvested
 
 ### Admin Commands
 
@@ -168,6 +172,32 @@ The shop offers various items that users can purchase with their coins:
 | **Rare** | 🔵 | Blue | Powerful items, high cost |
 | **Epic** | 🟣 | Purple | Very powerful items, very high cost |
 | **Legendary** | 🟡 | Gold | Extremely powerful items, extremely high cost |
+| **Mythic** | 🌈 | Magenta | Ultimate items, extremely high cost |
+
+### 🌾 Farming System
+
+The farming system allows players to plant, grow, and harvest crops for profit. The system features crop variants, watering cans for growth acceleration, and full integration with the economy and inventory systems.
+
+#### Farming Mechanics
+- **Planting**: Plant seeds to grow crops using the interactive `/farm` interface
+- **Growth Times**: Each crop has a base growth time (26-58 minutes) that can be reduced with watering cans
+- **Harvesting**: Collect fully grown crops using the interactive `/farm` interface
+- **Crop Variants**: Many crops have multiple variants (e.g., red, yellow, green peppers)
+- **Watering Cans**: Permanent items that reduce crop growth times (similar to fishing rods)
+
+#### Watering Cans
+- **Wood** (Common) - 500 coins - 0.95x growth (5% faster)
+- **Copper** (Uncommon) - 2,000 coins - 0.9x growth (10% faster)
+- **Silver** (Rare) - 8,000 coins - 0.85x growth (15% faster)
+- **Gold** (Epic) - 25,000 coins - 0.8x growth (20% faster)
+- **Diamond** (Legendary) - 75,000 coins - 0.7x growth (30% faster)
+- **Mythic** (Mythic) - 200,000 coins - 0.6x growth (40% faster)
+
+#### Crop Variants
+- **Unique Items**: Each variant is treated as a separate item in inventory
+- **Visual Distinction**: Different emojis and names for each variant
+- **Database Storage**: Variants are stored with a `variant` field
+- **Sell System**: Crops can be sold with rarity-based pricing
 
 ### 🎣 Fishing System
 
