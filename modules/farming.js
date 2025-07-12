@@ -200,18 +200,33 @@ class Farming {
     return farm.map((p, i) => (p.crop ? null : i)).filter(i => i !== null);
   }
 
-  // Check for weed growth on empty plots (5% chance per empty plot)
+  // Check for weed growth on empty plots (5% chance per empty plot), only once per hour
   checkForWeedGrowth(user, guild) {
+    // Ensure weed_growth_checks table exists
+    sql.prepare(`CREATE TABLE IF NOT EXISTS weed_growth_checks (
+      user TEXT NOT NULL,
+      guild TEXT NOT NULL,
+      last_check INTEGER,
+      PRIMARY KEY (user, guild)
+    );`).run();
+
+    // Get last check time
+    const row = sql.prepare('SELECT last_check FROM weed_growth_checks WHERE user = ? AND guild = ?').get(user, guild);
+    const now = Date.now();
+    if (row && now - row.last_check < 60 * 60 * 1000) {
+      // Less than 1 hour since last check, skip
+      return;
+    }
+    // Update last check time
+    sql.prepare('INSERT INTO weed_growth_checks (user, guild, last_check) VALUES (?, ?, ?) ON CONFLICT(user, guild) DO UPDATE SET last_check = ?')
+      .run(user, guild, now, now);
+
     const farm = this.getFarm(user, guild);
     const emptyPlots = this.getEmptyPlots(farm);
     const weedChance = 0.05; // 5% chance per empty plot
-    
     for (const plotIndex of emptyPlots) {
       if (Math.random() < weedChance) {
-        // Plant weeds on this plot
-        const now = Date.now();
         this.plantSeed(user, guild, plotIndex, 'crop_weeds');
-        // Set weeds to fully grown stage (stage 4) so they can be harvested immediately
         this.updatePlot(user, guild, plotIndex, { stage: 4 });
       }
     }

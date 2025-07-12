@@ -173,7 +173,7 @@ client.on('interactionCreate', async interaction => {
                     const userId = interaction.user.id;
                     const guildId = interaction.guild.id;
                     const inventory = client.inventory.getUserInventory(userId, guildId)
-                        .filter(item => item.effect_type && item.quantity > 0 && (!item.expires_at || new Date(item.expires_at) > new Date()));
+                        .filter(item => item.effect_type && item.quantity > 0);
                     const uniqueItems = {};
                     for (const item of inventory) {
                         if (!uniqueItems[item.id]) {
@@ -231,7 +231,7 @@ client.on('interactionCreate', async interaction => {
                     const userId = interaction.user.id;
                     const guildId = interaction.guild.id;
                     const inventory = client.inventory.getUserInventory(userId, guildId)
-                        .filter(item => item.effect_type && item.quantity > 0 && (!item.expires_at || new Date(item.expires_at) > new Date()));
+                        .filter(item => item.effect_type && item.quantity > 0);
                     const uniqueItems = {};
                     for (const item of inventory) {
                         if (!uniqueItems[item.id]) {
@@ -481,7 +481,7 @@ function startCleanupScheduler() {
             }
             
             // Clean up expired inventory items
-            const expiredItems = client.inventory.cleanupExpiredItems();
+            const expiredItems = client.inventory.cleanupExpiredEffects();
             if (expiredItems > 0) {
                 console.log(`[cleanup] Removed ${expiredItems} expired inventory items`);
             }
@@ -494,7 +494,7 @@ function startCleanupScheduler() {
     setTimeout(() => {
         try {
             const expiredEffects = client.inventory.cleanupExpiredEffects();
-            const expiredItems = client.inventory.cleanupExpiredItems();
+            const expiredItems = client.inventory.cleanupExpiredEffects();
             if (expiredEffects > 0 || expiredItems > 0) {
                 console.log(`[startup cleanup] Removed ${expiredEffects} expired effects and ${expiredItems} expired items`);
             }

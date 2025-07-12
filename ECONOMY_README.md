@@ -337,9 +337,8 @@ CREATE TABLE inventory (
     guild TEXT NOT NULL,
     item_id TEXT NOT NULL,
     quantity INTEGER DEFAULT 1,
-    acquired_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    expires_at TEXT,
-    UNIQUE(user, guild, item_id)
+    variant TEXT,
+    UNIQUE(user, guild, item_id, variant)
 );
 ```
 

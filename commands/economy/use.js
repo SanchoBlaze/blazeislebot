@@ -12,7 +12,7 @@ module.exports = {
         try {
             // Get user's inventory and filter for usable items
             const inventory = interaction.client.inventory.getUserInventory(userId, guildId)
-                .filter(item => item.effect_type && item.quantity > 0 && (!item.expires_at || new Date(item.expires_at) > new Date()));
+                .filter(item => item.effect_type && item.quantity > 0);
 
             if (!inventory || inventory.length === 0) {
                 return interaction.reply({
@@ -226,7 +226,7 @@ module.exports = {
         const userId = interaction.user.id;
         const guildId = interaction.guild.id;
         const inventory = interaction.client.inventory.getUserInventory(userId, guildId)
-            .filter(item => item.effect_type && item.quantity > 0 && (!item.expires_at || new Date(item.expires_at) > new Date()));
+            .filter(item => item.effect_type && item.quantity > 0);
         const uniqueItems = {};
         for (const item of inventory) {
             if (!uniqueItems[item.id]) {

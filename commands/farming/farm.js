@@ -292,13 +292,14 @@ module.exports = {
                             growthTimes = growthTimes.map(t => t * wateringBoost);
                         }
                         const stage = getCurrentStage(plot.planted_at, plot.stage || 0, growthTimes);
-                        const totalStages = growthTimes.length;
+                        const totalStages = growthTimes.length + 1;
                         
                         // Calculate time left to next stage and to fully grown
                         let elapsed = now - plot.planted_at;
+                        if (isNaN(elapsed) || elapsed < 0) elapsed = 0;
                         let timeToNextStage = 0;
                         let timeToFull = 0;
-                        for (let s = 0; s < totalStages; s++) {
+                        for (let s = 0; s < totalStages - 1; s++) {
                             const stageMs = growthTimes[s] * 60 * 1000;
                             if (s < stage) {
                                 elapsed -= stageMs;
@@ -309,6 +310,8 @@ module.exports = {
                                 timeToFull += stageMs;
                             }
                         }
+                        // Defensive: if timeToFull is NaN, set to 0
+                        if (isNaN(timeToFull)) timeToFull = 0;
                         // Format times
                         function formatMs(ms) {
                             const min = Math.floor(ms / 60000);
@@ -316,7 +319,7 @@ module.exports = {
                             return `${min}m ${sec}s`;
                         }
                         const cropName = cropItem ? cropItem.name : cropType;
-                        line += `${cropName} | Stage ${stage + 1}/${totalStages}`;
+                        line += `${cropName} | Stage ${Math.min(stage + 1, totalStages)}/${totalStages}`;
                         
                         // Add fertiliser information
                         if (plot.fertiliser) {
@@ -326,7 +329,7 @@ module.exports = {
                             line += ` | ${fertiliserEmoji} ${fertiliserName}`;
                         }
                         
-                        if (stage < totalStages) {
+                        if (stage < totalStages - 1) {
                             line += ` | Next: ${formatMs(timeToNextStage)}, Full: ${formatMs(timeToFull)}`;
                         } else {
                             line += ' | Fully grown!';
@@ -363,12 +366,16 @@ module.exports = {
             const allFerts = interaction.client.farming.getFarmItemStats(interaction.user.id, interaction.guild.id, 'fertiliser');
             // Helper to get item name/emoji
             function getItemDisplay(itemId, type, variant = null) {
-                const item = interaction.client.inventory.getItem(type === 'seed' ? `seeds_${itemId}` : (type === 'crop' ? `crop_${itemId}` : itemId), interaction.guild.id);
+                // Remove prefix if present
+                let baseId = itemId;
+                if (type === 'seed' && itemId.startsWith('seeds_')) baseId = itemId.slice(6);
+                if (type === 'crop' && itemId.startsWith('crop_')) baseId = itemId.slice(5);
+                const lookupId = type === 'seed' ? `seeds_${baseId}` : (type === 'crop' ? `crop_${baseId}` : baseId);
+                const item = interaction.client.inventory.getItem(lookupId, interaction.guild.id);
                 if (!item) return itemId;
                 let display = `${item.emoji || ''} ${item.name}`;
                 if (variant && type === 'crop') {
-                    // Get variant-specific display name and emoji
-                    const completeItem = interaction.client.inventory.getCompleteItem(type === 'seed' ? `seeds_${itemId}` : (type === 'crop' ? `crop_${itemId}` : itemId), interaction.guild.id);
+                    const completeItem = interaction.client.inventory.getCompleteItem(lookupId, interaction.guild.id);
                     if (completeItem && completeItem.variants) {
                         const variantData = completeItem.variants.find(v => v.id === variant);
                         if (variantData) {
@@ -392,16 +399,71 @@ module.exports = {
             
             // Add seeds section
             if (allSeeds.length > 0) {
-                const seedsText = allSeeds.map(s => `• ${getItemDisplay(s.item_id, 'seed')}: ${s.count}`).join('\n');
-                embed.addFields({ name: `🌱 Seeds Planted (${allSeeds.length} types)`, value: seedsText, inline: false });
+                // Deduplicate by base seed id
+                const seedMap = new Map();
+                for (const s of allSeeds) {
+                    const baseSeedId = s.item_id.startsWith('seeds_') ? s.item_id.slice(6) : s.item_id;
+                    if (!seedMap.has(baseSeedId)) {
+                        seedMap.set(baseSeedId, { ...s, count: s.count });
+                    } else {
+                        seedMap.get(baseSeedId).count += s.count;
+                    }
+                }
+                const seedsText = Array.from(seedMap.values()).map(s => `• ${getItemDisplay(s.item_id, 'seed')}: ${s.count}`).join('\n');
+                embed.addFields({ name: `🌱 Seeds Planted (${seedMap.size} types)`, value: seedsText, inline: false });
             } else {
                 embed.addFields({ name: '🌱 Seeds Planted', value: 'No seeds planted yet!', inline: false });
             }
             
             // Add crops section
             if (allCrops.length > 0) {
-                const cropsText = allCrops.map(c => `• ${getItemDisplay(c.item_id, 'crop', c.variant)}: ${c.count}`).join('\n');
-                embed.addFields({ name: `🌾 Crops Harvested (${allCrops.length} types)`, value: cropsText, inline: false });
+                // Group and sum crops by item_id and variant
+                const cropStatsMap = new Map();
+                for (const c of allCrops) {
+                    // Always use base crop id for grouping
+                    const baseCropId = c.item_id.startsWith('crop_') ? c.item_id.slice(5) : c.item_id;
+                    const key = `${baseCropId}__${c.variant || ''}`;
+                    if (!cropStatsMap.has(key)) {
+                        cropStatsMap.set(key, { ...c, item_id: baseCropId });
+                    } else {
+                        cropStatsMap.get(key).count += c.count;
+                    }
+                }
+                // Build a map of cropId -> { hasVariants: bool, variants: Set, base: stat }
+                const cropVariantMap = new Map();
+                for (const c of cropStatsMap.values()) {
+                    const cropId = c.item_id;
+                    if (!cropVariantMap.has(cropId)) {
+                        cropVariantMap.set(cropId, { hasVariants: false, variants: new Set(), base: null });
+                    }
+                    if (c.variant) {
+                        cropVariantMap.get(cropId).hasVariants = true;
+                        cropVariantMap.get(cropId).variants.add(`${c.variant}`);
+                    } else {
+                        cropVariantMap.get(cropId).base = c;
+                    }
+                }
+                const cropsText = [];
+                for (const [cropId, info] of cropVariantMap.entries()) {
+                    const cropItem = interaction.client.inventory.getCompleteItem(`crop_${cropId}`, interaction.guild.id);
+                    if (info.hasVariants) {
+                        // Show only variants
+                        for (const c of cropStatsMap.values()) {
+                            if (c.item_id === cropId && c.variant) {
+                                const cropName = cropItem ? interaction.client.inventory.getDisplayName(cropItem, c.variant) : c.item_id;
+                                const cropEmoji = cropItem ? interaction.client.inventory.getDisplayEmoji(cropItem, c.variant) : '🌾';
+                                cropsText.push(`• ${cropEmoji} ${cropName}: ${c.count}`);
+                            }
+                        }
+                    } else if (info.base) {
+                        // Show base crop (no variants)
+                        const c = info.base;
+                        const cropName = cropItem ? interaction.client.inventory.getDisplayName(cropItem, null) : c.item_id;
+                        const cropEmoji = cropItem ? interaction.client.inventory.getDisplayEmoji(cropItem, null) : '🌾';
+                        cropsText.push(`• ${cropEmoji} ${cropName}: ${c.count}`);
+                    }
+                }
+                embed.addFields({ name: `🌾 Crops Harvested (${cropStatsMap.size} types)`, value: cropsText.join('\n'), inline: false });
             } else {
                 embed.addFields({ name: '🌾 Crops Harvested', value: 'No crops harvested yet!', inline: false });
             }
@@ -553,10 +615,13 @@ module.exports = {
                         }
                         
                         // Use optimized variant storage
-                        await interaction.client.inventory.addItemWithVariants(
+                        await interaction.client.inventory.addItem(
                             interaction.user.id,
                             interaction.guild.id,
                             itemId,
+                            yieldAmount,
+                            null,
+                            null,
                             variantQuantities
                         );
                         // Increment per-variant crop stats

@@ -36,8 +36,6 @@ class Inventory {
                         guild TEXT NOT NULL,
                         item_id TEXT NOT NULL,
                         quantity INTEGER DEFAULT 1,
-                        acquired_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                        expires_at TEXT,
                         variant TEXT
                     );
                 `).run();
@@ -45,11 +43,10 @@ class Inventory {
                 // Restore data (without variants for now)
                 for (const record of oldData) {
                     sql.prepare(`
-                        INSERT INTO inventory (user, guild, item_id, quantity, acquired_at, expires_at, variant)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO inventory (user, guild, item_id, quantity, variant)
+                        VALUES (?, ?, ?, ?, ?)
                     `).run(
-                        record.user, record.guild, record.item_id, record.quantity,
-                        record.acquired_at, record.expires_at, null
+                        record.user, record.guild, record.item_id, record.quantity, null
                     );
                 }
                 
@@ -64,8 +61,6 @@ class Inventory {
                     guild TEXT NOT NULL,
                     item_id TEXT NOT NULL,
                     quantity INTEGER DEFAULT 1,
-                    acquired_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    expires_at TEXT,
                     variant TEXT
                 );
             `).run();
@@ -74,8 +69,6 @@ class Inventory {
         // Create indexes for better performance
         sql.prepare('CREATE INDEX IF NOT EXISTS idx_inventory_user_guild ON inventory (user, guild);').run();
         sql.prepare('CREATE INDEX IF NOT EXISTS idx_inventory_item ON inventory (item_id);').run();
-        sql.prepare('CREATE INDEX IF NOT EXISTS idx_inventory_expires ON inventory (expires_at);').run();
-        
         // Create the correct unique index for (user, guild, item_id, variant)
         sql.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_inventory_user_guild_item_variant
             ON inventory (user, guild, item_id, variant)
@@ -138,6 +131,47 @@ class Inventory {
             sql.prepare('CREATE INDEX idx_active_effects_user_guild ON active_effects (user, guild);').run();
             sql.prepare('CREATE INDEX idx_active_effects_type ON active_effects (effect_type);').run();
             sql.prepare('CREATE INDEX idx_active_effects_expires ON active_effects (expires_at);').run();
+        }
+
+        // MIGRATION: Remove acquired_at and expires_at, dedupe inventory
+        const pragma = sql.prepare("PRAGMA table_info(inventory);").all();
+        const hasAcquiredAt = pragma.some(col => col.name === 'acquired_at');
+        const hasExpiresAt = pragma.some(col => col.name === 'expires_at');
+        if (hasAcquiredAt || hasExpiresAt) {
+            console.log('[Inventory] Migrating inventory table: removing acquired_at and expires_at, deduplicating...');
+            // 1. Create new table
+            sql.prepare(`
+                CREATE TABLE IF NOT EXISTS inventory_new (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user TEXT NOT NULL,
+                    guild TEXT NOT NULL,
+                    item_id TEXT NOT NULL,
+                    quantity INTEGER DEFAULT 1,
+                    variant TEXT
+                );
+            `).run();
+            // 2. Copy deduped data
+            const deduped = sql.prepare(`
+                SELECT user, guild, item_id, variant, SUM(quantity) as quantity
+                FROM inventory
+                GROUP BY user, guild, item_id, variant
+            `).all();
+            const insert = sql.prepare(`
+                INSERT INTO inventory_new (user, guild, item_id, quantity, variant)
+                VALUES (?, ?, ?, ?, ?)
+            `);
+            for (const row of deduped) {
+                insert.run(row.user, row.guild, row.item_id, row.quantity, row.variant);
+            }
+            // 3. Drop old table
+            sql.prepare('DROP TABLE inventory').run();
+            // 4. Rename new table
+            sql.prepare('ALTER TABLE inventory_new RENAME TO inventory').run();
+            // 5. Recreate indexes and unique constraint
+            sql.prepare('CREATE INDEX IF NOT EXISTS idx_inventory_user_guild ON inventory (user, guild);').run();
+            sql.prepare('CREATE INDEX IF NOT EXISTS idx_inventory_item ON inventory (item_id);').run();
+            sql.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_inventory_user_guild_item_variant ON inventory (user, guild, item_id, variant);').run();
+            console.log(`[Inventory] Migration complete: removed acquired_at and expires_at, deduped to ${deduped.length} rows.`);
         }
     }
 
@@ -207,7 +241,7 @@ class Inventory {
     // Get user's inventory
     getUserInventory(userId, guildId) {
         return sql.prepare(`
-            SELECT i.*, inv.quantity, inv.acquired_at, inv.expires_at, inv.variant
+            SELECT i.*, inv.quantity, inv.variant
             FROM inventory inv
             JOIN items i ON inv.item_id = i.id
             WHERE inv.user = ? AND inv.guild = ?
@@ -215,9 +249,9 @@ class Inventory {
         `).all(userId, guildId);
     }
 
-    // Add item to user's inventory
-    async addItem(userId, guildId, itemId, quantity = 1, interaction = null, client = null, variant = null) {
-        console.log(`[addItem] Called for user ${userId} in guild ${guildId} for item ${itemId} (quantity: ${quantity}, variant: ${variant})`);
+    // Refactor addItem to handle variants and remove addItemWithVariants
+    async addItem(userId, guildId, itemId, quantity = 1, interaction = null, client = null, variant = null, variantQuantities = null) {
+        console.log(`[addItem] Called for user ${userId} in guild ${guildId} for item ${itemId} (quantity: ${quantity}, variant: ${variant}, variantQuantities: ${JSON.stringify(variantQuantities)})`);
         const item = this.getItem(itemId, guildId);
         if (!item) throw new Error('Item not found');
 
@@ -228,7 +262,18 @@ class Inventory {
 
         // Enforce max_quantity
         const userItem = this.getUserItem(userId, guildId, itemId);
-        const currentQty = userItem ? userItem.quantity : 0;
+        let currentVariants = {};
+        let currentQty = 0;
+        if (userItem) {
+            currentQty = userItem.quantity;
+            if (userItem.variants) {
+                try {
+                    currentVariants = JSON.parse(userItem.variants);
+                } catch (e) {
+                    currentVariants = {};
+                }
+            }
+        }
         const maxQty = item.max_quantity || 1;
         let toAdd = quantity;
         let capped = false;
@@ -250,6 +295,117 @@ class Inventory {
                 console.log('[addItem notify]', msg);
             }
         };
+
+        // Handle variantQuantities (for crops with variants)
+        if (variantQuantities && typeof variantQuantities === 'object') {
+            // Merge new variant quantities
+            for (const [v, q] of Object.entries(variantQuantities)) {
+                currentVariants[v] = (currentVariants[v] || 0) + q;
+            }
+            const newTotal = Object.values(currentVariants).reduce((a, b) => a + b, 0);
+            toAdd = newTotal - currentQty;
+            if (newTotal > maxQty) {
+                const excess = newTotal - maxQty;
+                notify(`You can only have ${maxQty} of **${item.name}** total (would exceed by ${excess}).`);
+                return { success: false, added: 0, capped: true, newQuantity: currentQty };
+            }
+            // Store variants JSON and total quantity
+            sql.prepare(`
+                INSERT INTO inventory (user, guild, item_id, quantity, variants)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(user, guild, item_id) 
+                DO UPDATE SET 
+                    quantity = ?,
+                    variants = ?
+            `).run(userId, guildId, itemId, newTotal, JSON.stringify(currentVariants), newTotal, JSON.stringify(currentVariants));
+            const updatedItem = this.getUserItem(userId, guildId, itemId);
+            if (updatedItem) {
+                console.log(`[addItem] After operation: user ${userId} now has ${updatedItem.quantity} of item ${itemId} with variants:`, currentVariants);
+            }
+            // Legendary/mythic notification logic (unchanged)
+            if ((item.rarity === 'legendary' || item.rarity === 'mythic') && toAdd > 0 && this.client && this.client.settings) {
+                try {
+                    const settings = this.client.settings.get(guildId);
+                    const channelId = settings && settings.economy_channel_id;
+                    if (channelId) {
+                        const guild = this.client.guilds.cache.get(guildId);
+                        if (guild) {
+                            const channel = guild.channels.cache.get(channelId);
+                            if (channel) {
+                                const user = await this.client.users.fetch(userId);
+                                const { EmbedBuilder } = require('discord.js');
+                                const emoji = this.getItemEmoji(item);
+                                const rarity = item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1);
+                                const embed = new EmbedBuilder()
+                                    .setColor(this.getRarityColour(item.rarity))
+                                    .setTitle(item.rarity === 'mythic' ? '🌈 Mythic Item Acquired!' : '🏆 Legendary Item Acquired!')
+                                    .setDescription(`${user} just received a **${rarity}** item: **${emoji} ${item.name}**!`)
+                                    .setThumbnail(this.getEmojiUrl(emoji, this.client))
+                                    .setTimestamp();
+                                channel.send({ embeds: [embed] });
+                            }
+                        }
+                    }
+                } catch (err) {
+                    // Handle errors silently or log as needed
+                }
+            }
+            return { success: true, added: toAdd, capped, newQuantity: updatedItem ? updatedItem.quantity : 0 };
+        }
+
+        // Handle single variant (for single-variant crops)
+        if (variant) {
+            currentVariants[variant] = (currentVariants[variant] || 0) + toAdd;
+            const newTotal = Object.values(currentVariants).reduce((a, b) => a + b, 0);
+            if (newTotal > maxQty) {
+                const excess = newTotal - maxQty;
+                notify(`You can only have ${maxQty} of **${item.name}** total (would exceed by ${excess}).`);
+                return { success: false, added: 0, capped: true, newQuantity: currentQty };
+            }
+            sql.prepare(`
+                INSERT INTO inventory (user, guild, item_id, quantity, variants)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(user, guild, item_id) 
+                DO UPDATE SET 
+                    quantity = ?,
+                    variants = ?
+            `).run(userId, guildId, itemId, newTotal, JSON.stringify(currentVariants), newTotal, JSON.stringify(currentVariants));
+            const updatedItem = this.getUserItem(userId, guildId, itemId);
+            if (updatedItem) {
+                console.log(`[addItem] After operation: user ${userId} now has ${updatedItem.quantity} of item ${itemId} with variants:`, currentVariants);
+            }
+            // Legendary/mythic notification logic (unchanged)
+            if ((item.rarity === 'legendary' || item.rarity === 'mythic') && toAdd > 0 && this.client && this.client.settings) {
+                try {
+                    const settings = this.client.settings.get(guildId);
+                    const channelId = settings && settings.economy_channel_id;
+                    if (channelId) {
+                        const guild = this.client.guilds.cache.get(guildId);
+                        if (guild) {
+                            const channel = guild.channels.cache.get(channelId);
+                            if (channel) {
+                                const user = await this.client.users.fetch(userId);
+                                const { EmbedBuilder } = require('discord.js');
+                                const emoji = this.getItemEmoji(item);
+                                const rarity = item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1);
+                                const embed = new EmbedBuilder()
+                                    .setColor(this.getRarityColour(item.rarity))
+                                    .setTitle(item.rarity === 'mythic' ? '🌈 Mythic Item Acquired!' : '🏆 Legendary Item Acquired!')
+                                    .setDescription(`${user} just received a **${rarity}** item: **${emoji} ${item.name}**!`)
+                                    .setThumbnail(this.getEmojiUrl(emoji, this.client))
+                                    .setTimestamp();
+                                channel.send({ embeds: [embed] });
+                            }
+                        }
+                    }
+                } catch (err) {
+                    // Handle errors silently or log as needed
+                }
+            }
+            return { success: true, added: toAdd, capped, newQuantity: updatedItem ? updatedItem.quantity : 0 };
+        }
+
+        // No variants: regular add
         if (currentQty >= maxQty) {
             console.log(`[addItem] User ${userId} already at or above max_quantity (${maxQty}) for item ${itemId}`);
             notify(`You are already at the maximum quantity (${maxQty}) for **${item.name}**!`);
@@ -264,25 +420,19 @@ class Inventory {
         if (toAdd <= 0) {
             return { success: false, added: 0, capped: true, newQuantity: currentQty };
         }
-
         try {
             sql.prepare(`
-                INSERT INTO inventory (user, guild, item_id, quantity, expires_at, acquired_at, variant)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO inventory (user, guild, item_id, quantity, variant)
+                VALUES (?, ?, ?, ?, ?)
                 ON CONFLICT(user, guild, item_id, variant) 
                 DO UPDATE SET 
-                    quantity = quantity + ?,
-                    expires_at = CASE 
-                        WHEN ? IS NOT NULL THEN ?
-                        ELSE expires_at 
-                    END
-            `).run(userId, guildId, itemId, toAdd, expiresAt, nowISOString, variant, toAdd, expiresAt, expiresAt);
-            // After updating or inserting, log the new quantity
+                    quantity = quantity + ?
+            `).run(userId, guildId, itemId, toAdd, null, toAdd);
             const updatedItem = this.getUserItem(userId, guildId, itemId);
             if (updatedItem) {
                 console.log(`[addItem] After operation: user ${userId} now has ${updatedItem.quantity} of item ${itemId}`);
             }
-            // Unified legendary and mythic notification logic
+            // Legendary/mythic notification logic (unchanged)
             if ((item.rarity === 'legendary' || item.rarity === 'mythic') && toAdd > 0 && this.client && this.client.settings) {
                 try {
                     const settings = this.client.settings.get(guildId);
@@ -317,93 +467,6 @@ class Inventory {
         }
     }
 
-    // Add item to user's inventory with optimized variant storage
-    async addItemWithVariants(userId, guildId, itemId, variantQuantities, interaction = null, client = null) {
-        console.log(`[addItemWithVariants] Called for user ${userId} in guild ${guildId} for item ${itemId} with variants:`, variantQuantities);
-        
-        const item = this.getItem(itemId, guildId);
-        if (!item) throw new Error('Item not found');
-
-        const nowISOString = new Date().toISOString();
-        const expiresAt = item.duration_hours > 0 
-            ? new Date(Date.now() + item.duration_hours * 60 * 60 * 1000).toISOString()
-            : null;
-
-        // Get existing item data
-        const existing = this.getUserItem(userId, guildId, itemId);
-        let currentVariants = {};
-        let currentTotal = 0;
-        
-        if (existing) {
-            currentTotal = existing.quantity;
-            if (existing.variants) {
-                try {
-                    currentVariants = JSON.parse(existing.variants);
-                } catch (e) {
-                    currentVariants = {};
-                }
-            }
-        }
-
-        // Merge new variant quantities
-        for (const [variant, quantity] of Object.entries(variantQuantities)) {
-            currentVariants[variant] = (currentVariants[variant] || 0) + quantity;
-        }
-        
-        const newTotal = Object.values(currentVariants).reduce((a, b) => a + b, 0);
-        const addedQuantity = newTotal - currentTotal;
-
-        // Check max quantity limits
-        const maxQty = item.max_quantity || 1;
-        if (newTotal > maxQty) {
-            const excess = newTotal - maxQty;
-            const notify = async (msg) => {
-                if (interaction) {
-                    try {
-                        if (interaction.replied || interaction.deferred) {
-                            await interaction.followUp({ content: msg, flags: 64 });
-                        } else {
-                            await interaction.reply({ content: msg, flags: 64 });
-                        }
-                    } catch {}
-                }
-            };
-            notify(`You can only have ${maxQty} of **${item.name}** total (would exceed by ${excess}).`);
-            return { success: false, added: 0, capped: true, newQuantity: currentTotal };
-        }
-
-        try {
-            // Add variants column if it doesn't exist
-            const pragma = sql.prepare("PRAGMA table_info(inventory);").all();
-            const hasVariants = pragma.some(col => col.name === 'variants');
-            if (!hasVariants) {
-                sql.prepare('ALTER TABLE inventory ADD COLUMN variants TEXT;').run();
-            }
-
-            sql.prepare(`
-                INSERT INTO inventory (user, guild, item_id, quantity, expires_at, acquired_at, variants)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(user, guild, item_id) 
-                DO UPDATE SET 
-                    quantity = ?,
-                    variants = ?,
-                    expires_at = CASE 
-                        WHEN ? IS NOT NULL THEN ?
-                        ELSE expires_at 
-                    END
-            `).run(userId, guildId, itemId, newTotal, expiresAt, nowISOString, 
-                   JSON.stringify(currentVariants), newTotal, JSON.stringify(currentVariants), 
-                   expiresAt, expiresAt);
-
-            console.log(`[addItemWithVariants] After operation: user ${userId} now has ${newTotal} of item ${itemId} with variants:`, currentVariants);
-            
-            return { success: true, added: addedQuantity, capped: false, newQuantity: newTotal, variants: currentVariants };
-        } catch (error) {
-            console.error('Error adding item with variants to inventory:', error);
-            return { success: false, added: 0, capped: false, newQuantity: currentTotal };
-        }
-    }
-
     // Remove item from user's inventory
     removeItem(userId, guildId, itemId, quantity = 1) {
         const current = sql.prepare('SELECT quantity FROM inventory WHERE user = ? AND guild = ? AND item_id = ?').get(userId, guildId, itemId);
@@ -427,12 +490,6 @@ class Inventory {
 
         const inventoryItem = sql.prepare('SELECT * FROM inventory WHERE user = ? AND guild = ? AND item_id = ?').get(userId, guildId, itemId);
         if (!inventoryItem) throw new Error('Item not in inventory');
-
-        // Check if item is expired
-        if (inventoryItem.expires_at && new Date(inventoryItem.expires_at) < new Date()) {
-            this.removeItem(userId, guildId, itemId, inventoryItem.quantity);
-            throw new Error('Item has expired');
-        }
 
         // Check for existing effects of the same type
         if (item.effect_type && ['xp_multiplier', 'work_multiplier', 'daily_multiplier', 'coin_multiplier'].includes(item.effect_type)) {
@@ -861,12 +918,6 @@ class Inventory {
         const item = sql.prepare('SELECT * FROM inventory WHERE user = ? AND guild = ? AND item_id = ?').get(userId, guildId, itemId);
         if (!item) return false;
         
-        // Check if expired
-        if (item.expires_at && new Date(item.expires_at) < new Date()) {
-            this.removeItem(userId, guildId, itemId, item.quantity);
-            return false;
-        }
-        
         return true;
     }
 
@@ -874,17 +925,6 @@ class Inventory {
     getItemCount(userId, guildId, itemId) {
         const row = sql.prepare('SELECT SUM(quantity) as total FROM inventory WHERE user = ? AND guild = ? AND item_id = ?').get(userId, guildId, itemId);
         return row && row.total ? row.total : 0;
-    }
-
-    // Clean up expired items
-    cleanupExpiredItems() {
-        const expired = sql.prepare("SELECT * FROM inventory WHERE expires_at IS NOT NULL AND strftime('%s', expires_at) < strftime('%s', 'now')").all();
-        
-        for (const item of expired) {
-            this.removeItem(item.user, item.guild, item.item_id, item.quantity);
-        }
-        
-        return expired.length;
     }
 
     // Get rarity colour

@@ -65,12 +65,11 @@ module.exports = {
                     
                     for (const item of itemsByRarity[rarity]) {
                         const quantityText = item.quantity > 1 ? ` (x${item.quantity})` : '';
-                        const expiryText = item.expires_at ? ` ⏰` : '';
                         const sellPercentage = interaction.client.inventory.getSellPricePercentage(item.rarity, item.type);
                         const sellPrice = Math.floor(item.price * sellPercentage);
                         const displayName = interaction.client.inventory.getDisplayName(item, item.variant);
                         const displayEmoji = interaction.client.inventory.getDisplayEmoji(item, item.variant);
-                        description += `• **${displayEmoji} ${displayName}**${quantityText}${expiryText}\n`;
+                        description += `• **${displayEmoji} ${displayName}**${quantityText}\n`;
                         description += `  └ ${item.description}\n`;
                         description += `  └ 💰 Buy: ${interaction.client.economy.formatCurrency(item.price)} | 💵 Sell: ${interaction.client.economy.formatCurrency(sellPrice)} (${Math.round(sellPercentage * 100)}%)\n\n`;
                     }

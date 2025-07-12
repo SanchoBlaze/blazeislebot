@@ -85,7 +85,8 @@
         "fertiliser_organic": "<:fertiliser_organic:1393625657820315790>",
         "fertiliser_magical": "<:fertiliser_magical:1393625690204541094>",
         "fertiliser_legendary": "<:fertiliser_legendary:1393625727483773061>",
-        "fertiliser_mythic": "<:fertiliser_mythic:1393625750556512256>"
+        "fertiliser_mythic": "<:fertiliser_mythic:1393625750556512256>",
+        "crop_weeds": "<:crop_weeds:1393646834622271649>"
     },
     "test_bot": {
         "fishing_rod_basic": "<:fishing_rod_basic:1389632536342429738>",
@@ -173,7 +174,8 @@
         "fertiliser_organic": "<:fertiliser_organic:1393624880506863748>",
         "fertiliser_magical": "<:fertiliser_magical:1393624835246133392>",
         "fertiliser_legendary": "<:fertiliser_legendary:1393624808305983560>",
-        "fertiliser_mythic": "<:fertiliser_mythic:1393624857396117775>"
+        "fertiliser_mythic": "<:fertiliser_mythic:1393624857396117775>",
+        "crop_weeds": "<:crop_weeds:1393646290717511832>"
     },
     "production_bot": {
         "fishing_rod_basic": "<:fishing_rod_basic:1389552382580363264>",
@@ -261,6 +263,7 @@
         "fertiliser_organic": "<:fertiliser_organic:1393625657820315790>",
         "fertiliser_magical": "<:fertiliser_magical:1393625690204541094>",
         "fertiliser_legendary": "<:fertiliser_legendary:1393625727483773061>",
-        "fertiliser_mythic": "<:fertiliser_mythic:1393625750556512256>"
+        "fertiliser_mythic": "<:fertiliser_mythic:1393625750556512256>",
+        "crop_weeds": "<:crop_weeds:1393646834622271649>"
     }
 } 
