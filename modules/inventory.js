@@ -182,7 +182,7 @@ class Inventory {
         
         // Determine which emoji set to use based on environment
         const emojiSet = config.Enviroment.live 
-            ? emojiConfigs['production_bot'] 
+            ? emojiConfigs['default'] 
             : emojiConfigs['test_bot'] || emojiConfigs['default'];
 
         // Insert complete default items for the specific guild with emoji overrides
@@ -1317,7 +1317,7 @@ class Inventory {
     getDisplayEmoji(item, variant) {
         // Determine which emoji set to use based on environment
         const emojiSet = config.Enviroment.live 
-            ? emojiConfigs['production_bot'] 
+            ? emojiConfigs['default'] 
             : emojiConfigs['test_bot'] || emojiConfigs['default'];
         if (item.variants && Array.isArray(item.variants) && variant) {
             const found = item.variants.find(v => v.id === variant);

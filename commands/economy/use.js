@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, StringSelectMenuBuilder } = require('discord.js');
+const { getDropdownOptions, filterItemsByCategory } = require('../../modules/itemCategories');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -128,32 +129,7 @@ module.exports = {
                 new StringSelectMenuBuilder()
                     .setCustomId('use_filterDropdown')
                     .setPlaceholder('🔍 Filter by item type...')
-                    .addOptions([
-                        {
-                            label: 'All Usable Items',
-                            description: 'Show all usable items in your inventory',
-                            value: 'all',
-                            emoji: '📦'
-                        },
-                        {
-                            label: 'Consumables',
-                            description: 'Show only consumable items',
-                            value: 'consumable',
-                            emoji: '⚡'
-                        },
-                        {
-                            label: 'Boosts',
-                            description: 'Show only boost items',
-                            value: 'boost',
-                            emoji: '🚀'
-                        },
-                        {
-                            label: 'Mystery Boxes',
-                            description: 'Show only mystery boxes',
-                            value: 'mystery',
-                            emoji: '🎁'
-                        }
-                    ])
+                    .addOptions(getDropdownOptions())
             );
     },
 
@@ -262,7 +238,11 @@ module.exports = {
             const filterType = interaction.values[0];
             let filteredItems = allItems;
             if (filterType !== 'all') {
-                filteredItems = allItems.filter(item => item.type === filterType);
+                if (filterType === 'fishing') {
+                    filteredItems = filterItemsByCategory(allItems, filterType);
+                } else {
+                    filteredItems = allItems.filter(item => item.type === filterType);
+                }
             }
             if (filteredItems.length === 0) {
                 const noItemsEmbed = new EmbedBuilder()

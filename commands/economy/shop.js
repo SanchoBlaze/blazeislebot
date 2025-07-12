@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, MessageFlags, StringSelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+const { getDropdownOptions, filterItemsByCategory } = require('../../modules/itemCategories');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -134,24 +135,7 @@ module.exports = {
                 const filterType = i.values[0];
                 let filteredItems = originalItems;
                 if (filterType !== 'all') {
-                    if (filterType === 'farming') {
-                        // Group farming items: seeds, watering cans, and fertilisers
-                        filteredItems = originalItems.filter(item => 
-                            item.type === 'seed' || 
-                            item.type === 'watering_can' || 
-                            item.type === 'fertiliser'
-                        );
-                    } else if (filterType === 'fishing') {
-                        // Group fishing items: fishing rods and other fishing equipment
-                        filteredItems = originalItems.filter(item => 
-                            item.type === 'fishing_rod' || 
-                            item.type === 'fishing_equipment'
-                        );
-                    } else if (filterType === 'seed') {
-                        filteredItems = originalItems.filter(item => item.type === 'seed');
-                    } else {
-                        filteredItems = originalItems.filter(item => item.type === filterType);
-                    }
+                    filteredItems = filterItemsByCategory(originalItems, filterType);
                 }
                 if (filteredItems.length === 0) {
                     const noItemsEmbed = new EmbedBuilder()
@@ -343,62 +327,7 @@ module.exports = {
                 new StringSelectMenuBuilder()
                     .setCustomId('shop_filterDropdown')
                     .setPlaceholder('🔍 Filter by item type...')
-                    .addOptions([
-                        {
-                            label: 'All Items',
-                            description: 'Show all available items',
-                            value: 'all',
-                            emoji: '📦'
-                        },
-                        {
-                            label: 'Farming Items',
-                            description: 'Seeds, watering cans, and fertilisers',
-                            value: 'farming',
-                            emoji: '🌾'
-                        },
-                        {
-                            label: 'Seeds',
-                            description: 'Show only seeds',
-                            value: 'seed',
-                            emoji: '🌱'
-                        },
-                        {
-                            label: 'Watering Cans',
-                            description: 'Show only watering cans',
-                            value: 'watering_can',
-                            emoji: '🚿'
-                        },
-                        {
-                            label: 'Fertilisers',
-                            description: 'Show only fertilisers',
-                            value: 'fertiliser',
-                            emoji: '💩'
-                        },
-                        {
-                            label: 'Fishing Items',
-                            description: 'Fishing rods and equipment',
-                            value: 'fishing',
-                            emoji: '🎣'
-                        },
-                        {
-                            label: 'Fishing Rods',
-                            description: 'Show only fishing rods',
-                            value: 'fishing_rod',
-                            emoji: '🎣'
-                        },
-                        {
-                            label: 'Consumables',
-                            description: 'Show only consumable items',
-                            value: 'consumable',
-                            emoji: '⚡'
-                        },
-                        {
-                            label: 'Mystery Boxes',
-                            description: 'Show only mystery boxes',
-                            value: 'mystery',
-                            emoji: '🎁'
-                        }
-                    ])
+                    .addOptions(getDropdownOptions())
             );
     },
 
