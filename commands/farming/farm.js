@@ -622,6 +622,7 @@ module.exports = {
                             yieldAmount,
                             null,
                             null,
+                            null,
                             variantQuantities
                         );
                         // Increment per-variant crop stats
@@ -679,8 +680,13 @@ module.exports = {
                 // Get the crop item data to get the emoji and display name (single lookup)
                 const cropItem = interaction.client.inventory.getCompleteItem(`crop_${h.crop}`, interaction.guild.id);
                 let message = '';
-                
-                if (h.variantQuantities && Object.keys(h.variantQuantities).length > 0) {
+                // Special case for weeds
+                if (h.crop === 'crop_weeds') {
+                    // Use getDisplayEmoji to fetch the correct emoji from config
+                    const weedsEmoji = cropItem ? interaction.client.inventory.getDisplayEmoji(cropItem, null) : '🌿';
+                    const weedsName = cropItem && cropItem.name ? cropItem.name : 'Weeds';
+                    message = `**${h.amount}** ${weedsEmoji} ${weedsName}`;
+                } else if (h.variantQuantities && Object.keys(h.variantQuantities).length > 0) {
                     // Display each variant separately
                     const variantMessages = [];
                     for (const [variantId, quantity] of Object.entries(h.variantQuantities)) {
@@ -689,20 +695,23 @@ module.exports = {
                         variantMessages.push(`**${quantity}** ${emoji} ${cropName}`);
                     }
                     message = variantMessages.join(', ');
+                } else if (h.variant) {
+                    // Single variant (if tracked)
+                    const emoji = cropItem ? interaction.client.inventory.getDisplayEmoji(cropItem, h.variant) : '🌾';
+                    const cropName = cropItem ? interaction.client.inventory.getDisplayName(cropItem, h.variant) : h.crop.charAt(0).toUpperCase() + h.crop.slice(1);
+                    message = `**${h.amount}** ${emoji} ${cropName}`;
                 } else {
                     // No variants - use default item display
                     const emoji = cropItem ? cropItem.emoji : '🌾';
                     const cropName = cropItem ? cropItem.name : h.crop.charAt(0).toUpperCase() + h.crop.slice(1);
                     message = `**${h.amount}** ${emoji} ${cropName}`;
                 }
-                
                 // Add fertiliser indicator if used
                 if (h.fertiliser) {
                     const fertiliserItem = interaction.client.inventory.getItem(h.fertiliser, interaction.guild.id);
                     const fertiliserEmoji = fertiliserItem ? fertiliserItem.emoji : '💩';
                     message += ` ${fertiliserEmoji}`;
                 }
-                
                 return message;
             });
 
@@ -841,6 +850,16 @@ module.exports = {
                         interaction.client.farming.incrementFarmItemStat(interaction.user.id, interaction.guild.id, 'fertiliser', fertiliserId, 1);
                     }
                 }
+
+                // Check for random worm chance (15% chance)
+                let wormFound = false;
+                let wormAmount = 0;
+                if (Math.random() < 0.15) {
+                    wormFound = true;
+                    wormAmount = Math.floor(Math.random() * 3) + 1; // 1-3 basic bait
+                    await interaction.client.inventory.addItem(interaction.user.id, interaction.guild.id, 'bait_basic', wormAmount);
+                }
+
                 delete interaction.client._farmSelections[interaction.user.id];
                 // Re-render farm after planting
                 const updatedFarm2 = interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
@@ -867,6 +886,27 @@ module.exports = {
                     components,
                     flags: MessageFlags.Ephemeral
                 });
+
+                // Send worm message if found
+                if (wormFound) {
+                    const wormEmbed = new EmbedBuilder()
+                        .setColor(0x8B4513) // Brown color for worms
+                        .setTitle('🪱 You Found a Worm!')
+                        .setDescription(`While digging in the soil, you discovered a wriggly worm! You've added **${wormAmount} Basic Bait** to your inventory.`)
+                        .setThumbnail('attachment://worm_thumbnail.png')
+                        .setFooter({ text: 'Worms are great for fishing!' })
+                        .setTimestamp();
+
+                    // Create worm thumbnail attachment
+                    const wormPath = path.join(__dirname, '../../assets/farming/farm_worm_225.png');
+                    const wormAttachment = new AttachmentBuilder(wormPath, { name: 'worm_thumbnail.png' });
+
+                    await interaction.followUp({
+                        embeds: [wormEmbed],
+                        files: [wormAttachment],
+                        flags: MessageFlags.Ephemeral
+                    });
+                }
                 return true;
             }
         } catch (err) {

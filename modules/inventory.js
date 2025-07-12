@@ -175,7 +175,7 @@ class Inventory {
         }
     }
 
-    // Populate default items for a specific guild
+    // Populate default items for a specific guild (including variants)
     populateDefaultItems(guildId) {
         // Load default items from JSON file
         const defaultItems = require('../data/default-items.json');
@@ -185,19 +185,16 @@ class Inventory {
             ? emojiConfigs['production_bot'] 
             : emojiConfigs['test_bot'] || emojiConfigs['default'];
 
-        // Insert default items for the specific guild with emoji overrides
+        // Insert complete default items for the specific guild with emoji overrides
         for (const item of defaultItems) {
             // Use emoji from config if available, otherwise use the default emoji
             const emoji = emojiSet[item.id] || item.emoji;
             
-            sql.prepare(`
-                INSERT OR IGNORE INTO items (id, guild, name, description, type, rarity, price, max_quantity, duration_hours, effect_type, effect_value, emoji)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `).run(
-                item.id, guildId, item.name, item.description, item.type, item.rarity, 
-                item.price, item.max_quantity, item.duration_hours, item.effect_type, 
-                item.effect_value, emoji
-            );
+            this.storeCompleteItem({
+                ...item,
+                guild: guildId,
+                emoji: emoji
+            });
         }
     }
 
@@ -298,32 +295,37 @@ class Inventory {
 
         // Handle variantQuantities (for crops with variants)
         if (variantQuantities && typeof variantQuantities === 'object') {
-            // Merge new variant quantities
+            let totalAdded = 0;
             for (const [v, q] of Object.entries(variantQuantities)) {
-                currentVariants[v] = (currentVariants[v] || 0) + q;
+                const safeVariant = v == null ? 'no_variant' : v;
+                const currentVariantQty = this.getUserItemVariant(userId, guildId, itemId, safeVariant)?.quantity || 0;
+                const newVariantQty = currentVariantQty + q;
+                
+                if (newVariantQty > maxQty) {
+                    const excess = newVariantQty - maxQty;
+                    notify(`You can only have ${maxQty} of **${item.name}** total (would exceed by ${excess}).`);
+                    return { success: false, added: 0, capped: true, newQuantity: currentQty };
+                }
+                
+                // Insert or update this specific variant
+                sql.prepare(`
+                    INSERT INTO inventory (user, guild, item_id, quantity, variant)
+                    VALUES (?, ?, ?, ?, ?)
+                    ON CONFLICT(user, guild, item_id, variant) 
+                    DO UPDATE SET 
+                        quantity = ?
+                `).run(userId, guildId, itemId, newVariantQty, safeVariant, newVariantQty);
+                
+                totalAdded += q;
             }
-            const newTotal = Object.values(currentVariants).reduce((a, b) => a + b, 0);
-            toAdd = newTotal - currentQty;
-            if (newTotal > maxQty) {
-                const excess = newTotal - maxQty;
-                notify(`You can only have ${maxQty} of **${item.name}** total (would exceed by ${excess}).`);
-                return { success: false, added: 0, capped: true, newQuantity: currentQty };
-            }
-            // Store variants JSON and total quantity
-            sql.prepare(`
-                INSERT INTO inventory (user, guild, item_id, quantity, variants)
-                VALUES (?, ?, ?, ?, ?)
-                ON CONFLICT(user, guild, item_id) 
-                DO UPDATE SET 
-                    quantity = ?,
-                    variants = ?
-            `).run(userId, guildId, itemId, newTotal, JSON.stringify(currentVariants), newTotal, JSON.stringify(currentVariants));
+            
             const updatedItem = this.getUserItem(userId, guildId, itemId);
             if (updatedItem) {
-                console.log(`[addItem] After operation: user ${userId} now has ${updatedItem.quantity} of item ${itemId} with variants:`, currentVariants);
+                console.log(`[addItem] After operation: user ${userId} now has variants for item ${itemId}:`, variantQuantities);
             }
-            // Legendary/mythic notification logic (unchanged)
-            if ((item.rarity === 'legendary' || item.rarity === 'mythic') && toAdd > 0 && this.client && this.client.settings) {
+            
+            // Legendary/mythic notification logic
+            if ((item.rarity === 'legendary' || item.rarity === 'mythic') && totalAdded > 0 && this.client && this.client.settings) {
                 try {
                     const settings = this.client.settings.get(guildId);
                     const channelId = settings && settings.economy_channel_id;
@@ -350,31 +352,35 @@ class Inventory {
                     // Handle errors silently or log as needed
                 }
             }
-            return { success: true, added: toAdd, capped, newQuantity: updatedItem ? updatedItem.quantity : 0 };
+            return { success: true, added: totalAdded, capped, newQuantity: updatedItem ? updatedItem.quantity : 0 };
         }
 
         // Handle single variant (for single-variant crops)
         if (variant) {
-            currentVariants[variant] = (currentVariants[variant] || 0) + toAdd;
-            const newTotal = Object.values(currentVariants).reduce((a, b) => a + b, 0);
-            if (newTotal > maxQty) {
-                const excess = newTotal - maxQty;
+            const safeVariant = variant == null ? 'no_variant' : variant;
+            const currentVariantQty = this.getUserItemVariant(userId, guildId, itemId, safeVariant)?.quantity || 0;
+            const newVariantQty = currentVariantQty + toAdd;
+            
+            if (newVariantQty > maxQty) {
+                const excess = newVariantQty - maxQty;
                 notify(`You can only have ${maxQty} of **${item.name}** total (would exceed by ${excess}).`);
                 return { success: false, added: 0, capped: true, newQuantity: currentQty };
             }
+            
             sql.prepare(`
-                INSERT INTO inventory (user, guild, item_id, quantity, variants)
+                INSERT INTO inventory (user, guild, item_id, quantity, variant)
                 VALUES (?, ?, ?, ?, ?)
-                ON CONFLICT(user, guild, item_id) 
+                ON CONFLICT(user, guild, item_id, variant) 
                 DO UPDATE SET 
-                    quantity = ?,
-                    variants = ?
-            `).run(userId, guildId, itemId, newTotal, JSON.stringify(currentVariants), newTotal, JSON.stringify(currentVariants));
+                    quantity = ?
+            `).run(userId, guildId, itemId, newVariantQty, safeVariant, newVariantQty);
+            
             const updatedItem = this.getUserItem(userId, guildId, itemId);
             if (updatedItem) {
-                console.log(`[addItem] After operation: user ${userId} now has ${updatedItem.quantity} of item ${itemId} with variants:`, currentVariants);
+                console.log(`[addItem] After operation: user ${userId} now has ${newVariantQty} of item ${itemId} variant ${safeVariant}`);
             }
-            // Legendary/mythic notification logic (unchanged)
+            
+            // Legendary/mythic notification logic
             if ((item.rarity === 'legendary' || item.rarity === 'mythic') && toAdd > 0 && this.client && this.client.settings) {
                 try {
                     const settings = this.client.settings.get(guildId);
@@ -427,7 +433,7 @@ class Inventory {
                 ON CONFLICT(user, guild, item_id, variant) 
                 DO UPDATE SET 
                     quantity = quantity + ?
-            `).run(userId, guildId, itemId, toAdd, null, toAdd);
+            `).run(userId, guildId, itemId, toAdd, 'no_variant', toAdd);
             const updatedItem = this.getUserItem(userId, guildId, itemId);
             if (updatedItem) {
                 console.log(`[addItem] After operation: user ${userId} now has ${updatedItem.quantity} of item ${itemId}`);
@@ -1089,6 +1095,14 @@ class Inventory {
         return row || null;
     }
 
+    getUserItemVariant(userId, guildId, itemId, variant) {
+        const safeVariant = variant == null ? 'no_variant' : variant;
+        const row = sql.prepare(
+            'SELECT * FROM inventory WHERE user = ? AND guild = ? AND item_id = ? AND variant = ?'
+        ).get(userId, guildId, itemId, safeVariant);
+        return row || null;
+    }
+
     // Add active effect
     addActiveEffect(userId, guildId, effectType, effectValue, durationHours) {
         const nowISOString = new Date().toISOString();
@@ -1331,57 +1345,52 @@ class Inventory {
 
     // Get variant quantities for an item
     getItemVariants(userId, guildId, itemId) {
-        const item = this.getUserItem(userId, guildId, itemId);
-        if (!item || !item.variants) return {};
+        const variants = sql.prepare(`
+            SELECT variant, quantity 
+            FROM inventory 
+            WHERE user = ? AND guild = ? AND item_id = ?
+        `).all(userId, guildId, itemId);
         
-        try {
-            return JSON.parse(item.variants);
-        } catch (e) {
-            return {};
+        const result = {};
+        for (const row of variants) {
+            const variantKey = row.variant === 'no_variant' ? null : row.variant;
+            result[variantKey] = row.quantity;
         }
+        
+        return result;
     }
 
     // Remove specific variant quantities
     async removeItemVariants(userId, guildId, itemId, variantQuantities) {
-        const existing = this.getUserItem(userId, guildId, itemId);
-        if (!existing) return { success: false, removed: 0 };
-
-        let currentVariants = {};
-        if (existing.variants) {
-            try {
-                currentVariants = JSON.parse(existing.variants);
-            } catch (e) {
-                currentVariants = {};
-            }
-        }
-
         let totalRemoved = 0;
+
         for (const [variant, quantity] of Object.entries(variantQuantities)) {
-            const currentQty = currentVariants[variant] || 0;
-            const toRemove = Math.min(currentQty, quantity);
-            currentVariants[variant] = currentQty - toRemove;
-            totalRemoved += toRemove;
+            const safeVariant = variant == null ? 'no_variant' : variant;
+            const existing = this.getUserItemVariant(userId, guildId, itemId, safeVariant);
             
-            if (currentVariants[variant] <= 0) {
-                delete currentVariants[variant];
+            if (!existing) continue;
+
+            const toRemove = Math.min(existing.quantity, quantity);
+            const newQuantity = existing.quantity - toRemove;
+            totalRemoved += toRemove;
+
+            if (newQuantity <= 0) {
+                // Remove this variant entirely
+                sql.prepare(`
+                    DELETE FROM inventory 
+                    WHERE user = ? AND guild = ? AND item_id = ? AND variant = ?
+                `).run(userId, guildId, itemId, safeVariant);
+            } else {
+                // Update quantity for this variant
+                sql.prepare(`
+                    UPDATE inventory 
+                    SET quantity = ?
+                    WHERE user = ? AND guild = ? AND item_id = ? AND variant = ?
+                `).run(newQuantity, userId, guildId, itemId, safeVariant);
             }
         }
 
-        const newTotal = Object.values(currentVariants).reduce((a, b) => a + b, 0);
-
-        if (newTotal === 0) {
-            // Remove entire item if no variants left
-            this.removeItem(userId, guildId, itemId, existing.quantity);
-        } else {
-            // Update with remaining variants
-            sql.prepare(`
-                UPDATE inventory 
-                SET quantity = ?, variants = ?
-                WHERE user = ? AND guild = ? AND item_id = ?
-            `).run(newTotal, JSON.stringify(currentVariants), userId, guildId, itemId);
-        }
-
-        return { success: true, removed: totalRemoved, newQuantity: newTotal };
+        return { success: true, removed: totalRemoved };
     }
 
     // Store complete item definition in database (including variants)
@@ -1420,28 +1429,7 @@ class Inventory {
         }
     }
 
-    // Populate default items with complete data (including variants)
-    populateDefaultItemsComplete(guildId) {
-        // Load default items from JSON file
-        const defaultItems = require('../data/default-items.json');
-        
-        // Determine which emoji set to use based on environment
-        const emojiSet = config.Enviroment.live 
-            ? emojiConfigs['production_bot'] 
-            : emojiConfigs['test_bot'] || emojiConfigs['default'];
 
-        // Insert complete default items for the specific guild
-        for (const item of defaultItems) {
-            // Use emoji from config if available, otherwise use the default emoji
-            const emoji = emojiSet[item.id] || item.emoji;
-            
-            this.storeCompleteItem({
-                ...item,
-                guild: guildId,
-                emoji: emoji
-            });
-        }
-    }
 
     // Get complete item definition from database (including variants)
     getCompleteItem(itemId, guildId) {

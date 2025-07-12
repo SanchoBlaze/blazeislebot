@@ -8,6 +8,7 @@ The Blaze Isle Bot features a comprehensive farming system that allows users to 
 
 ### 🌱 Crop System
 - **Planting**: Plant seeds to grow crops using the interactive `/farm` interface
+- **Worm Discovery**: 15% chance to find worms when planting seeds, rewarding you with 1-3 Basic Bait
 - **Growth Times**: Each crop has a base growth time that can be reduced with watering cans
 - **Harvesting**: Collect fully grown crops using the interactive `/farm` interface
 - **Crop Variants**: Many crops have multiple variants (e.g., red, yellow, green peppers)
@@ -66,6 +67,9 @@ Fertilisers are consumable items that increase crop yield when applied during pl
 3. **Apply Fertilisers**: Optionally select fertiliser from inventory
 4. **Automatic Application**: Fertilisers is consumed and applied to the plot
 5. **Harvest Results**: Increased yield if fertiliser was successful
+
+### 🪱 Worm Discovery
+When planting seeds, there's a 15% chance you'll discover a worm in the soil! This exciting discovery rewards you with 1-3 Basic Bait items, which are perfect for fishing. The worm discovery appears as a separate ephemeral message with the worm image as the thumbnail.
 
 ### 🍅 Crop Variants
 Many crops have multiple variants that provide different visual experiences and inventory management:

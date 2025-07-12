@@ -505,7 +505,7 @@ module.exports = {
                         });
                     }
 
-                    interaction.client.inventory.populateDefaultItemsComplete(guildId);
+                    interaction.client.inventory.populateDefaultItems(guildId);
 
                     // Dynamically get the number of default items
                     const defaultItems = require('../../data/default-items.json');

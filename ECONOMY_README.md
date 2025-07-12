@@ -189,6 +189,7 @@ The farming system allows players to plant, grow, and harvest crops for profit. 
 
 #### Farming Mechanics
 - **Planting**: Plant seeds to grow crops using the interactive `/farm` interface
+- **Worm Discovery**: 15% chance to find worms when planting seeds, rewarding you with 1-3 Basic Bait
 - **Growth Times**: Each crop has a base growth time (26-58 minutes) that can be reduced with watering cans
 - **Harvesting**: Collect fully grown crops using the interactive `/farm` interface
 - **Crop Variants**: Many crops have multiple variants (e.g., red, yellow, green peppers)
