@@ -358,6 +358,26 @@ class Economy {
             throw new Error(`Fishing available in ${minutes}m ${seconds}s`);
         }
 
+        // Check for mermaid event (5% chance)
+        const mermaidChance = 0.05; // 5% chance
+        if (Math.random() < mermaidChance) {
+            // Update last fishing time even for mermaid event
+            const nowISOString = new Date().toISOString();
+            sql.prepare(`
+                UPDATE economy 
+                SET last_fishing = ?, updated_at = ?
+                WHERE user = ? AND guild = ?
+            `).run(nowISOString, nowISOString, userId, guildId);
+
+            this.logTransaction(userId, guildId, 'fishing', 0, 'Encountered a mermaid');
+            
+            return { 
+                user: this.getUser(userId, guildId), 
+                mermaid: true,
+                id: null
+            };
+        }
+
         // Get all fish items from the inventory system (optimized)
         const fishItems = this.client.inventory.getAllFish(guildId);
         
@@ -377,23 +397,25 @@ class Economy {
         }).map(item => {
             let baseChance;
             switch (item.rarity) {
-                case 'common': baseChance = 40; break;
-                case 'uncommon': baseChance = 25; break;
-                case 'rare': baseChance = 5; break;
-                case 'epic': baseChance = 0.5; break;
-                case 'legendary': baseChance = 0.1; break;
+                case 'common': baseChance = 35; break;
+                case 'uncommon': baseChance = 30; break;
+                case 'rare': baseChance = 20; break;
+                case 'epic': baseChance = 10; break;
+                case 'legendary': baseChance = 4; break;
+                case 'mythic': baseChance = 1; break;
                 default: baseChance = 10; break;
             }
             // Apply bait boost to rare+ fish only (with success rate like fertilisers)
             let finalChance = baseChance;
-            if (item.rarity === 'rare' || item.rarity === 'epic' || item.rarity === 'legendary') {
+            if (item.rarity === 'rare' || item.rarity === 'epic' || item.rarity === 'legendary' || item.rarity === 'mythic') {
                 // Bait success rates (similar to fertiliser system)
                 const baitSuccessRates = {
                     common: 0.8,    // 80% chance for basic bait
                     uncommon: 0.6,  // 60% chance for premium bait
                     rare: 0.4,      // 40% chance for magic bait
                     epic: 0.25,     // 25% chance for epic bait
-                    legendary: 0.15 // 15% chance for legendary bait
+                    legendary: 0.15, // 15% chance for legendary bait
+                    mythic: 0.05    // 5% chance for mythic bait
                 };
                 
                 // Check if bait effect is active and succeeds

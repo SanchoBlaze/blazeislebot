@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags, AttachmentBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -11,6 +11,64 @@ module.exports = {
 
         try {
             const result = await interaction.client.economy.fish(userId, guildId);
+            
+            // Check if this is a mermaid event
+            if (result.mermaid) {
+                const mermaidMessages = [
+                    "You feel a gentle tug on your line, but it's not a fish...",
+                    "Something magical brushes against your fishing line...",
+                    "The water sparkles with an otherworldly light...",
+                    "You hear the faint sound of singing beneath the waves...",
+                    "A mysterious presence approaches your fishing spot...",
+                    "The water ripples with an enchanting energy...",
+                    "You sense something extraordinary in the depths...",
+                    "The waves seem to dance with an ancient rhythm...",
+                    "A magical aura surrounds your fishing area...",
+                    "The sea whispers secrets to your fishing rod..."
+                ];
+                
+                const mermaidDialogues = [
+                    "Oh! You caught me instead of a fish! How embarrassing! *giggles*",
+                    "Hello there, land-dweller! I was just swimming by when I got tangled in your line!",
+                    "Well, this is a surprise! I don't usually get caught by fishermen!",
+                    "Oops! I was admiring your fishing technique and got too close!",
+                    "Greetings from the depths! Your fishing skills are quite impressive!",
+                    "I was just curious about what you were doing up here! Sorry for the confusion!",
+                    "Oh my! I've never been 'caught' before! This is quite exciting!",
+                    "Hello! I was following the fish you were trying to catch, but I got caught instead!",
+                    "What a delightful encounter! I don't often meet surface-dwellers!",
+                    "I was just exploring the shallows when your line found me! How serendipitous!"
+                ];
+                
+                const randomMessage = mermaidMessages[Math.floor(Math.random() * mermaidMessages.length)];
+                const randomDialogue = mermaidDialogues[Math.floor(Math.random() * mermaidDialogues.length)];
+
+                // Calculate cooldown info
+                const cooldownMultiplier = interaction.client.inventory.getFishingCooldown(userId, guildId);
+                const baseCooldown = 30;
+                const actualCooldown = Math.round(baseCooldown * cooldownMultiplier);
+
+                // Mermaid image attachment
+                const mermaidImage = new AttachmentBuilder('assets/fishing_mermaid_225.png', { name: 'fishing_mermaid_225.png' });
+
+                const embed = new EmbedBuilder()
+                    .setColor(0x00BFFF) // Light blue for mermaid theme
+                    .setTitle('🧜‍♀️ A Mermaid Appears!')
+                    .setDescription(`${randomMessage}`)
+                    .addFields(
+                        { 
+                            name: '🧜‍♀️ The Mermaid Says', 
+                            value: `*"${randomDialogue}"*\n\n*She smiles warmly and gracefully swims away, leaving you with a magical memory of this special encounter.*`, 
+                            inline: false
+                        }
+                    )
+                    .setThumbnail('attachment://fishing_mermaid_225.png')
+                    .setFooter({ text: `You can fish again in ${actualCooldown} minutes!` })
+                    .setTimestamp();
+
+                await interaction.reply({ embeds: [embed], files: [mermaidImage], flags: MessageFlags.Ephemeral });
+                return;
+            }
             
             const fishingMessages = [
                 "You cast your line and wait patiently...",
@@ -85,9 +143,11 @@ module.exports = {
             }
 
             // Add special message for rare catches
-            if (result.fish.rarity === 'rare' || result.fish.rarity === 'epic' || result.fish.rarity === 'legendary') {
+            if (result.fish.rarity === 'rare' || result.fish.rarity === 'epic' || result.fish.rarity === 'legendary' || result.fish.rarity === 'mythic') {
+                const rarityEmoji = result.fish.rarity === 'mythic' ? '🌈' : '🎉';
+                const rarityText = result.fish.rarity === 'mythic' ? 'Mythic Catch!' : 'Rare Catch!';
                 embed.addFields({
-                    name: '🎉 Rare Catch!',
+                    name: `${rarityEmoji} ${rarityText}`,
                     value: `Congratulations! You caught a ${result.fish.rarity} fish!`,
                     inline: false
                 });
