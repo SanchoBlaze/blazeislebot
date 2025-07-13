@@ -238,6 +238,7 @@ The fishing system allows players to catch fish and sell them for coins. The sys
 - **Rare**: Golden Carp (50 coins), Crystal Fish (75 coins)
 - **Epic**: Diamond Tuna (150 coins)
 - **Legendary**: Legendary Kraken (500 coins)
+- **Mythic**: Celestial Whale (2,500 coins), Abyssal Serpent (3,000 coins), Ethereal Dolphin (2,750 coins), Void Shark (3,500 coins)
 
 #### Fishing Rods (Cooldown Reduction)
 - **Basic Fishing Rod** (Common) - 1,000 coins - 5% faster (28.5 min cooldown)
@@ -263,7 +264,7 @@ The fishing system allows players to catch fish and sell them for coins. The sys
 #### How Bait Works
 - **Consumable Items**: Bait is used up when applied and provides temporary effects
 - **Success Rates**: Higher rarity bait has lower success rates for balance
-- **Rare Fish Only**: Boost only applies to rare, epic, and legendary fish
+- **Rare Fish Only**: Boost only applies to rare, epic, legendary, and mythic fish
 - **Duration**: Bait effects last for 1 hour
 - **Strategic Choice**: Players must decide between safe, reliable bait or risky, powerful bait
 

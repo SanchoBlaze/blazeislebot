@@ -571,8 +571,8 @@ class Inventory {
                 } else {
                     // 20% item (weighted by rarity)
                     const allItems = this.getAllItems(guildId).filter(i => i.type !== 'mystery' && i.id !== 'scratch_card');
-                    // Rarity weights: common 40, uncommon 30, rare 15, epic 10, legendary 5
-                    const rarityWeights = { common: 40, uncommon: 30, rare: 15, epic: 10, legendary: 5 };
+                    // Rarity weights: common 40, uncommon 30, rare 15, epic 10, legendary 5, mythic 2
+                    const rarityWeights = { common: 40, uncommon: 30, rare: 15, epic: 10, legendary: 5, mythic: 2 };
                     let weightedPool = [];
                     for (const item of allItems) {
                         const weight = rarityWeights[item.rarity] || 1;
@@ -669,7 +669,7 @@ class Inventory {
                         message: (itemName) => `🎁 **Magical Gift!** You receive a ${itemName}!`,
                         action: (itemName) => {
                             const allItems = this.getAllItems(guildId).filter(i => i.type !== 'mystery' && i.id !== 'crop_golden_apple');
-                            const rarityWeights = { common: 30, uncommon: 25, rare: 20, epic: 15, legendary: 10 };
+                            const rarityWeights = { common: 30, uncommon: 25, rare: 20, epic: 15, legendary: 10, mythic: 5 };
                             let weightedPool = [];
                             for (const item of allItems) {
                                 const weight = rarityWeights[item.rarity] || 1;
@@ -795,8 +795,8 @@ class Inventory {
                         message: (itemName) => `💎 **Crystal Gift!** You receive a ${itemName}!`,
                         action: (itemName) => {
                             const allItems = this.getAllItems(guildId).filter(i => i.type !== 'mystery' && i.id !== 'crop_crystal_berry' && i.id !== 'crop_golden_apple');
-                            // Better rarity weights: rare 40, epic 35, legendary 25
-                            const rarityWeights = { rare: 40, epic: 35, legendary: 25 };
+                            // Better rarity weights: rare 40, epic 35, legendary 20, mythic 5
+                            const rarityWeights = { rare: 40, epic: 35, legendary: 20, mythic: 5 };
                             let weightedPool = [];
                             for (const item of allItems) {
                                 const weight = rarityWeights[item.rarity] || 0;
@@ -892,7 +892,7 @@ class Inventory {
     async openRareMysteryBox(userId, guildId, interaction = null, client = null) {
         const allItems = this.getAllItems(guildId).filter(item => 
             item.type !== 'mystery' && 
-            (item.rarity === 'rare' || item.rarity === 'epic' || item.rarity === 'legendary')
+            (item.rarity === 'rare' || item.rarity === 'epic' || item.rarity === 'legendary' || item.rarity === 'mythic')
         );
         
         if (allItems.length === 0) {
@@ -1045,6 +1045,7 @@ class Inventory {
             case 'rare': return 0.6;      // 60% of original price
             case 'epic': return 0.7;      // 70% of original price
             case 'legendary': return 0.8; // 80% of original price
+            case 'mythic': return 0.9;    // 90% of original price
             default: return 0.4;          // Default 40%
         }
     }
