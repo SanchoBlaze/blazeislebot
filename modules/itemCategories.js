@@ -38,6 +38,12 @@ const categoryOptions = [
     emoji: '🌽'
   },
   {
+    label: 'Farm Upgrades',
+    description: 'Farm size upgrades and expansions',
+    value: 'upgrade',
+    emoji: '🏡'
+  },
+  {
     label: 'Fishing Items',
     description: 'Fishing rods, bait, and equipment',
     value: 'fishing',
@@ -70,15 +76,21 @@ const fishOption = {
   emoji: '🐟'
 };
 
-function getDropdownOptions({ includeFish = false } = {}) {
+function getDropdownOptions({ includeFish = false, includeUpgrades = false } = {}) {
+  let opts = [...categoryOptions];
+  
+  // Remove upgrade category if not requested
+  if (!includeUpgrades) {
+    opts = opts.filter(opt => opt.value !== 'upgrade');
+  }
+  
   if (includeFish) {
     // Insert fish after fishing items
-    const idx = categoryOptions.findIndex(opt => opt.value === 'fishing');
-    const opts = [...categoryOptions];
+    const idx = opts.findIndex(opt => opt.value === 'fishing');
     opts.splice(idx + 1, 0, fishOption);
-    return opts;
   }
-  return categoryOptions;
+  
+  return opts;
 }
 
 function filterItemsByCategory(items, category) {
@@ -99,6 +111,9 @@ function filterItemsByCategory(items, category) {
   }
   if (category === 'fish') {
     return items.filter(item => item.type === 'fish');
+  }
+  if (category === 'upgrade') {
+    return items.filter(item => item.type === 'upgrade');
   }
   // All other categories filter by type
   return items.filter(item => item.type === category);

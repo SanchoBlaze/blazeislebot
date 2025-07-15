@@ -327,7 +327,7 @@ module.exports = {
                 new StringSelectMenuBuilder()
                     .setCustomId('shop_filterDropdown')
                     .setPlaceholder('🔍 Filter by item type...')
-                    .addOptions(getDropdownOptions())
+                    .addOptions(getDropdownOptions({ includeUpgrades: true }))
             );
     },
 

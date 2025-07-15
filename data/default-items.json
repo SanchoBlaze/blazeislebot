@@ -1284,5 +1284,31 @@
         "effect_type": "farm_size",
         "effect_value": 16,
         "emoji": "🏡"
+    },
+    {
+        "id": "farm_upgrade_5x5",
+        "name": "5x5 Farm Upgrade",
+        "description": "Unlocks a 5x5 (25 plot) farm. The ultimate farming experience!",
+        "type": "upgrade",
+        "rarity": "legendary",
+        "price": 150000,
+        "max_quantity": 1,
+        "duration_hours": 0,
+        "effect_type": "farm_size",
+        "effect_value": 25,
+        "emoji": "🏡"
+    },
+    {
+        "id": "farm_upgrade_6x6",
+        "name": "6x6 Farm Upgrade",
+        "description": "Unlocks a 6x6 (36 plot) farm. The most expansive farming experience!",
+        "type": "upgrade",
+        "rarity": "mythic",
+        "price": 500000,
+        "max_quantity": 1,
+        "duration_hours": 0,
+        "effect_type": "farm_size",
+        "effect_value": 36,
+        "emoji": "🏡"
     }
 ] 

@@ -1451,7 +1451,14 @@ class Inventory {
 
     // Check if user owns a specific upgrade item
     hasUpgrade(upgradeId, userId, guildId) {
-        return this.getItemCount(userId, guildId, `farm_upgrade_4x4`) > 0;
+        if (upgradeId === 'farm_4x4') {
+            return this.getItemCount(userId, guildId, 'farm_upgrade_4x4') > 0;
+        } else if (upgradeId === 'farm_5x5') {
+            return this.getItemCount(userId, guildId, 'farm_upgrade_5x5') > 0;
+        } else if (upgradeId === 'farm_6x6') {
+            return this.getItemCount(userId, guildId, 'farm_upgrade_6x6') > 0;
+        }
+        return false;
     }
 }
 

@@ -63,7 +63,7 @@ Fertilisers are consumable items that increase crop yield when applied during pl
 
 #### Fertilisers Application Process
 1. **Plant Seed**: Select a seed to plant
-2. **Choose Plot**: Pick an empty plot (1-9)
+2. **Choose Plot**: Pick an empty plot (1-9, 1-16, 1-25, or 1-36 depending on farm size)
 3. **Apply Fertilisers**: Optionally select fertiliser from inventory
 4. **Automatic Application**: Fertilisers is consumed and applied to the plot
 5. **Harvest Results**: Increased yield if fertiliser was successful
@@ -125,6 +125,36 @@ The farming system fully integrates with the economy and inventory systems:
 - **Variant Premium**: Some variants may have different sell prices
 - **Efficient Farming**: Watering cans allow for faster crop cycles and more profit
 
+### 🏡 Farm Upgrades
+Expand your farming operation with farm size upgrades that unlock more plots for increased crop production:
+
+#### Available Farm Upgrades
+| Upgrade | Rarity | Emoji | Plots | Price | Description |
+|---------|--------|-------|-------|-------|-------------|
+| **4x4 Farm Upgrade** | Epic | 🏡 | 16 plots | 50,000 coins | Unlocks a 4x4 (16 plot) farm |
+| **5x5 Farm Upgrade** | Legendary | 🏡 | 25 plots | 150,000 coins | Unlocks a 5x5 (25 plot) farm |
+| **6x6 Farm Upgrade** | Mythic | 🏡 | 36 plots | 500,000 coins | Unlocks a 6x6 (36 plot) farm |
+
+#### How Farm Upgrades Work
+- **Permanent Upgrades**: Once purchased, farm upgrades are permanent and cannot be lost
+- **Progressive Sizing**: Each upgrade provides more plots than the previous tier
+- **Shop Category**: Farm upgrades are available in the "Farm Upgrades" shop category
+- **Sell Protection**: Upgrades cannot be sold back to the shop (protected items)
+- **Visual Scaling**: Farm images automatically scale to show the correct number of plots
+- **Plot Coordinates**: Each upgrade has precisely positioned plot coordinates for optimal layout
+
+#### Farm Size Progression
+- **Default**: 3x3 farm (9 plots) - Available to all users
+- **4x4**: 16 plots - Epic upgrade for serious farmers
+- **5x5**: 25 plots - Legendary upgrade for farming enthusiasts  
+- **6x6**: 36 plots - Mythic upgrade for the ultimate farming experience
+
+#### Upgrade Benefits
+- **Increased Production**: More plots = more crops = higher profits
+- **Efficiency**: Plant multiple crops simultaneously for better time management
+- **Variety**: Grow different crops across more plots for diverse harvests
+- **Investment**: Higher-tier upgrades provide better long-term returns
+
 ## Commands
 
 ### 🌾 Farming Commands
@@ -144,7 +174,7 @@ The `/farm view` command provides a complete interactive farming experience:
 #### 🌱 Planting Process
 1. **Click "🌱 Plant Seed"** - Opens seed and plot selection menus
 2. **Select a Seed** - Choose from seeds in your inventory
-3. **Select a Plot** - Pick an empty plot (1-9) to plant in
+3. **Select a Plot** - Pick an empty plot (1-9, 1-16, 1-25, or 1-36 depending on farm size) to plant in
 4. **Apply Fertilisers** - Optionally select fertiliser from inventory (optional step)
 5. **Automatic Planting** - Seed and fertiliser (if selected) are consumed and crop begins growing
 

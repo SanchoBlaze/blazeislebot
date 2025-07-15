@@ -81,17 +81,35 @@ function getHarvestYield(rarity, fertiliser = null, client = null, guildId = nul
   return baseYield;
 }
 
-// Helper: render farm plots to canvas (support 3x3 and 4x4)
-async function renderFarmPlots(farm, interaction, plotCoords, loadedSharedStages, is4x4) {
+// Helper: render farm plots to canvas (support 3x3, 4x4, 5x5, and 6x6)
+async function renderFarmPlots(farm, interaction, plotCoords, loadedSharedStages, is4x4, is5x5, is6x6) {
     // Load base farm image
-    const basePath = path.join(__dirname, is4x4 ? '../../assets/farming/farm_4x4.png' : '../../assets/farming/farm_3x3.png');
+    let basePath;
+    if (is6x6) {
+        basePath = path.join(__dirname, '../../assets/farming/farm_6x6.png');
+    } else if (is5x5) {
+        basePath = path.join(__dirname, '../../assets/farming/farm_5x5.png');
+    } else if (is4x4) {
+        basePath = path.join(__dirname, '../../assets/farming/farm_4x4.png');
+    } else {
+        basePath = path.join(__dirname, '../../assets/farming/farm_3x3.png');
+    }
     const baseImage = await loadImage(basePath);
     const canvas = createCanvas(baseImage.width, baseImage.height); // Use base image size
     const ctx = canvas.getContext('2d');
     ctx.drawImage(baseImage, 0, 0);
     
     // Set plot size based on farm type
-    const plotSize = is4x4 ? 170 : 225;
+    let plotSize;
+    if (is6x6) {
+        plotSize = 117;
+    } else if (is5x5) {
+        plotSize = 140;
+    } else if (is4x4) {
+        plotSize = 170;
+    } else {
+        plotSize = 225;
+    }
     
     for (let i = 0; i < farm.length; i++) {
         const plot = farm[i];
@@ -169,9 +187,26 @@ async function getSharedStageImages() {
     return await Promise.all(sharedStageImages.map(img => loadImage(path.join(__dirname, '../../assets/farming', img))));
 }
 
-// Helper: get plot coordinates for 3x3 or 4x4
-function getPlotCoords(is4x4) {
-    if (is4x4) {
+// Helper: get plot coordinates for 3x3, 4x4, 5x5, or 6x6
+function getPlotCoords(is4x4, is5x5, is6x6) {
+    if (is6x6) {
+        return [
+            { x: 115, y: 130 }, { x: 245, y: 130 }, { x: 380, y: 130 }, { x: 518, y: 130 }, { x: 654, y: 130 }, { x: 786, y: 130 },
+            { x: 115, y: 266 }, { x: 245, y: 266 }, { x: 380, y: 266 }, { x: 518, y: 266 }, { x: 654, y: 266 }, { x: 786, y: 266 },
+            { x: 115, y: 400 }, { x: 245, y: 400 }, { x: 380, y: 400 }, { x: 518, y: 400 }, { x: 654, y: 400 }, { x: 786, y: 400 },
+            { x: 115, y: 532 }, { x: 245, y: 532 }, { x: 380, y: 532 }, { x: 518, y: 532 }, { x: 654, y: 532 }, { x: 786, y: 532 },
+            { x: 115, y: 666 }, { x: 245, y: 666 }, { x: 380, y: 666 }, { x: 518, y: 666 }, { x: 654, y: 666 }, { x: 786, y: 666 },
+            { x: 115, y: 800 }, { x: 245, y: 800 }, { x: 380, y: 800 }, { x: 518, y: 800 }, { x: 654, y: 800 }, { x: 786, y: 800 }
+        ];
+    } else if (is5x5) {
+        return [
+            { x: 138, y: 152 }, { x: 288, y: 152 }, { x: 437, y: 152 }, { x: 592, y: 152 }, { x: 747, y: 152 },
+            { x: 138, y: 300 }, { x: 288, y: 300 }, { x: 437, y: 300 }, { x: 592, y: 300 }, { x: 747, y: 300 },
+            { x: 138, y: 448 }, { x: 288, y: 448 }, { x: 437, y: 448 }, { x: 592, y: 448 }, { x: 747, y: 448 },
+            { x: 138, y: 595 }, { x: 288, y: 595 }, { x: 437, y: 595 }, { x: 592, y: 595 }, { x: 747, y: 595 },
+            { x: 138, y: 740 }, { x: 288, y: 740 }, { x: 437, y: 740 }, { x: 592, y: 740 }, { x: 747, y: 740 }
+        ];
+    } else if (is4x4) {
         return [
             { x: 127, y: 137 }, { x: 325, y: 137 }, { x: 528, y: 137 }, { x: 723, y: 137 },
             { x: 127, y: 315 }, { x: 325, y: 315 }, { x: 528, y: 315 }, { x: 723, y: 315 },
@@ -232,7 +267,7 @@ module.exports = {
         .setDescription('Farming system commands')
         .addSubcommand(sub =>
             sub.setName('view')
-                .setDescription('View your 3x3 farm plot and plant seeds')
+                .setDescription('View your farm plot and plant seeds')
         )
         .addSubcommand(sub =>
             sub.setName('info')
@@ -258,9 +293,11 @@ module.exports = {
                 // Get real farm data
                 const farm = await interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
                 const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
-                const plotCoords = getPlotCoords(is4x4);
+                const is5x5 = interaction.client.inventory.hasUpgrade('farm_5x5', interaction.user.id, interaction.guild.id);
+                const is6x6 = interaction.client.inventory.hasUpgrade('farm_6x6', interaction.user.id, interaction.guild.id);
+                const plotCoords = getPlotCoords(is4x4, is5x5, is6x6);
                 const loadedSharedStages = await getSharedStageImages();
-                const canvas = await renderFarmPlots(farm, interaction, plotCoords, loadedSharedStages, is4x4);
+                const canvas = await renderFarmPlots(farm, interaction, plotCoords, loadedSharedStages, is4x4, is5x5, is6x6);
                 const buffer = canvas.toBuffer();
                 const attachment = new AttachmentBuilder(buffer, { name: 'farm_preview.png' });
                 const embed = new EmbedBuilder()
@@ -284,7 +321,9 @@ module.exports = {
             // /farm info logic
             const farm = await interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
             const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
-            const plotCoords = getPlotCoords(is4x4);
+            const is5x5 = interaction.client.inventory.hasUpgrade('farm_5x5', interaction.user.id, interaction.guild.id);
+            const is6x6 = interaction.client.inventory.hasUpgrade('farm_6x6', interaction.user.id, interaction.guild.id);
+            const plotCoords = getPlotCoords(is4x4, is5x5, is6x6);
             const now = Date.now();
             let infoLines = [];
             for (let i = 0; i < farm.length; i++) {
@@ -503,9 +542,10 @@ module.exports = {
         if (interaction.customId === 'farm_plant') {
             const farm = await interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
             const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
+            const is5x5 = interaction.client.inventory.hasUpgrade('farm_5x5', interaction.user.id, interaction.guild.id);
             const emptyPlots = interaction.client.farming.getEmptyPlots(farm);
             const plotOptions = emptyPlots
-                .filter(i => typeof i === 'number' && i >= 0 && i < (is4x4 ? 16 : 9))
+                .filter(i => typeof i === 'number' && i >= 0 && i < (is6x6 ? 36 : is5x5 ? 25 : is4x4 ? 16 : 9))
                 .map(i => ({ label: `Plot ${i + 1}`, value: String(i) }));
             if (plotOptions.length === 0) {
                 await interaction.reply({
@@ -687,9 +727,11 @@ module.exports = {
             // Re-render farm after harvest
             const updatedFarm = await interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
             const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
-            const plotCoords = getPlotCoords(is4x4);
+            const is5x5 = interaction.client.inventory.hasUpgrade('farm_5x5', interaction.user.id, interaction.guild.id);
+            const is6x6 = interaction.client.inventory.hasUpgrade('farm_6x6', interaction.user.id, interaction.guild.id);
+            const plotCoords = getPlotCoords(is4x4, is5x5, is6x6);
             const loadedSharedStages = await getSharedStageImages();
-            const canvas = await renderFarmPlots(updatedFarm, interaction, plotCoords, loadedSharedStages, is4x4);
+            const canvas = await renderFarmPlots(updatedFarm, interaction, plotCoords, loadedSharedStages, is4x4, is5x5, is6x6);
             const buffer = canvas.toBuffer();
             const attachment = new AttachmentBuilder(buffer, { name: 'farm_preview.png' });
             // Build harvest message with emojis
@@ -758,9 +800,11 @@ module.exports = {
             // Re-render farm
             const updatedFarm = await interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
             const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
-            const plotCoords = getPlotCoords(is4x4);
+            const is5x5 = interaction.client.inventory.hasUpgrade('farm_5x5', interaction.user.id, interaction.guild.id);
+            const is6x6 = interaction.client.inventory.hasUpgrade('farm_6x6', interaction.user.id, interaction.guild.id);
+            const plotCoords = getPlotCoords(is4x4, is5x5, is6x6);
             const loadedSharedStages = await getSharedStageImages();
-            const canvas = await renderFarmPlots(updatedFarm, interaction, plotCoords, loadedSharedStages, is4x4);
+            const canvas = await renderFarmPlots(updatedFarm, interaction, plotCoords, loadedSharedStages, is4x4, is5x5, is6x6);
             const buffer = canvas.toBuffer();
             const attachment = new AttachmentBuilder(buffer, { name: 'farm_preview.png' });
             const embed = new EmbedBuilder()
@@ -789,9 +833,11 @@ module.exports = {
             // Generate and share a snapshot of the farm to the channel (not ephemeral)
             const updatedFarm = await interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
             const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
-            const plotCoords = getPlotCoords(is4x4);
+            const is5x5 = interaction.client.inventory.hasUpgrade('farm_5x5', interaction.user.id, interaction.guild.id);
+            const is6x6 = interaction.client.inventory.hasUpgrade('farm_6x6', interaction.user.id, interaction.guild.id);
+            const plotCoords = getPlotCoords(is4x4, is5x5, is6x6);
             const loadedSharedStages = await getSharedStageImages();
-            const canvas = await renderFarmPlots(updatedFarm, interaction, plotCoords, loadedSharedStages, is4x4);
+            const canvas = await renderFarmPlots(updatedFarm, interaction, plotCoords, loadedSharedStages, is4x4, is5x5, is6x6);
             const buffer = canvas.toBuffer();
             const attachment = new AttachmentBuilder(buffer, { name: 'farm_snapshot.png' });
             const embed = new EmbedBuilder()
@@ -883,9 +929,11 @@ module.exports = {
                 // Re-render farm after planting
                 const updatedFarm2 = await interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
                 const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
-                const plotCoords = getPlotCoords(is4x4);
+                const is5x5 = interaction.client.inventory.hasUpgrade('farm_5x5', interaction.user.id, interaction.guild.id);
+                const is6x6 = interaction.client.inventory.hasUpgrade('farm_6x6', interaction.user.id, interaction.guild.id);
+                const plotCoords = getPlotCoords(is4x4, is5x5, is6x6);
                 const loadedSharedStages = await getSharedStageImages();
-                const canvas = await renderFarmPlots(updatedFarm2, interaction, plotCoords, loadedSharedStages, is4x4);
+                const canvas = await renderFarmPlots(updatedFarm2, interaction, plotCoords, loadedSharedStages, is4x4, is5x5, is6x6);
                 const buffer = canvas.toBuffer();
                 const attachment = new AttachmentBuilder(buffer, { name: 'farm_preview.png' });
                 const embed = new EmbedBuilder()

@@ -163,10 +163,33 @@ class Farming {
     return !!(await this.client.inventory.getItemCount(user, guild, 'farm_upgrade_4x4'));
   }
 
-  // Get the farm state for a user (array of 9 or 16 plots)
+  // Helper: check if user owns the 5x5 farm upgrade
+  async has5x5Upgrade(user, guild) {
+    if (!this.client || !this.client.inventory) return false;
+    return !!(await this.client.inventory.getItemCount(user, guild, 'farm_upgrade_5x5'));
+  }
+
+  // Helper: check if user owns the 6x6 farm upgrade
+  async has6x6Upgrade(user, guild) {
+    if (!this.client || !this.client.inventory) return false;
+    return !!(await this.client.inventory.getItemCount(user, guild, 'farm_upgrade_6x6'));
+  }
+
+  // Get the farm state for a user (array of 9, 16, 25, or 36 plots)
   async getFarm(user, guild) {
-    const hasUpgrade = await this.has4x4Upgrade(user, guild);
-    const plotCount = hasUpgrade ? 16 : 9;
+    const has6x6Upgrade = await this.has6x6Upgrade(user, guild);
+    const has5x5Upgrade = await this.has5x5Upgrade(user, guild);
+    const has4x4Upgrade = await this.has4x4Upgrade(user, guild);
+    
+    let plotCount = 9; // Default 3x3
+    if (has6x6Upgrade) {
+      plotCount = 36; // 6x6
+    } else if (has5x5Upgrade) {
+      plotCount = 25; // 5x5
+    } else if (has4x4Upgrade) {
+      plotCount = 16; // 4x4
+    }
+    
     const rows = sql.prepare('SELECT * FROM farms WHERE user = ? AND guild = ?').all(user, guild);
     // Fill missing plots with empty
     const farm = Array(plotCount).fill(null).map((_, i) => {
