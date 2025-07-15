@@ -101,7 +101,8 @@
         "bait_magic": "<:bait_magic:1393736293778718800>",
         "bait_epic": "<:bait_epic:1393736266574725316>",
         "bait_legendary": "<:bait_legendary:1393736279098789939>",
-        "bait_mythic": "<:bait_mythic:1393736305694871652>"
+        "bait_mythic": "<:bait_mythic:1393736305694871652>",
+        "farm_upgrade_4x4": "🏡"
     },
     "test_bot": {
         "fishing_rod_basic": "<:fishing_rod_basic:1389632536342429738>",
@@ -205,6 +206,7 @@
         "bait_magic": "<:bait_magic:1393735196909637723>",
         "bait_epic": "<:bait_epic:1393735168006688808>",
         "bait_legendary": "<:bait_legendary:1393735184628580562>",
-        "bait_mythic": "<:bait_mythic:1393735207798046741>"
+        "bait_mythic": "<:bait_mythic:1393735207798046741>",
+        "farm_upgrade_4x4": "🏡"
     }
 } 

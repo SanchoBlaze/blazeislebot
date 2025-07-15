@@ -81,16 +81,19 @@ function getHarvestYield(rarity, fertiliser = null, client = null, guildId = nul
   return baseYield;
 }
 
-// Helper: render farm plots to canvas
-async function renderFarmPlots(farm, interaction, plotCoords, loadedSharedStages) {
+// Helper: render farm plots to canvas (support 3x3 and 4x4)
+async function renderFarmPlots(farm, interaction, plotCoords, loadedSharedStages, is4x4) {
     // Load base farm image
-    const basePath = path.join(__dirname, '../../assets/farming/farm_3x3.png');
+    const basePath = path.join(__dirname, is4x4 ? '../../assets/farming/farm_4x4.png' : '../../assets/farming/farm_3x3.png');
     const baseImage = await loadImage(basePath);
     const canvas = createCanvas(baseImage.width, baseImage.height); // Use base image size
     const ctx = canvas.getContext('2d');
     ctx.drawImage(baseImage, 0, 0);
     
-    for (let i = 0; i < 9; i++) {
+    // Set plot size based on farm type
+    const plotSize = is4x4 ? 170 : 225;
+    
+    for (let i = 0; i < farm.length; i++) {
         const plot = farm[i];
         if (!plot.crop) continue;
         
@@ -101,7 +104,7 @@ async function renderFarmPlots(farm, interaction, plotCoords, loadedSharedStages
         // Special handling for weeds
         if (cropType === 'crop_weeds') {
             const img = await loadImage(getCropImagePath(cropType));
-            ctx.drawImage(img, plotCoords[i].x, plotCoords[i].y, 225, 225);
+            ctx.drawImage(img, plotCoords[i].x, plotCoords[i].y, plotSize, plotSize);
             continue;
         }
         
@@ -140,15 +143,15 @@ async function renderFarmPlots(farm, interaction, plotCoords, loadedSharedStages
         if (fertiliserImg) {
             if (stage === 0) {
                 // Planted: fertiliser on top
-                ctx.drawImage(img, plotCoords[i].x, plotCoords[i].y, 225, 225);
-                ctx.drawImage(fertiliserImg, plotCoords[i].x, plotCoords[i].y, 225, 225);
+                ctx.drawImage(img, plotCoords[i].x, plotCoords[i].y, plotSize, plotSize);
+                ctx.drawImage(fertiliserImg, plotCoords[i].x, plotCoords[i].y, plotSize, plotSize);
             } else {
                 // Other stages: fertiliser below
-                ctx.drawImage(fertiliserImg, plotCoords[i].x, plotCoords[i].y, 225, 225);
-                ctx.drawImage(img, plotCoords[i].x, plotCoords[i].y, 225, 225);
+                ctx.drawImage(fertiliserImg, plotCoords[i].x, plotCoords[i].y, plotSize, plotSize);
+                ctx.drawImage(img, plotCoords[i].x, plotCoords[i].y, plotSize, plotSize);
             }
         } else {
-            ctx.drawImage(img, plotCoords[i].x, plotCoords[i].y, 225, 225);
+            ctx.drawImage(img, plotCoords[i].x, plotCoords[i].y, plotSize, plotSize);
         }
     }
     
@@ -166,13 +169,22 @@ async function getSharedStageImages() {
     return await Promise.all(sharedStageImages.map(img => loadImage(path.join(__dirname, '../../assets/farming', img))));
 }
 
-// Helper: get plot coordinates
-function getPlotCoords() {
-    return [
-        { x: 147, y: 154 }, { x: 400, y: 154 }, { x: 656, y: 154 },
-        { x: 147, y: 400 }, { x: 400, y: 400 }, { x: 656, y: 400 },
-        { x: 147, y: 650 }, { x: 400, y: 650 }, { x: 656, y: 650 }
-    ];
+// Helper: get plot coordinates for 3x3 or 4x4
+function getPlotCoords(is4x4) {
+    if (is4x4) {
+        return [
+            { x: 127, y: 137 }, { x: 325, y: 137 }, { x: 528, y: 137 }, { x: 723, y: 137 },
+            { x: 127, y: 315 }, { x: 325, y: 315 }, { x: 528, y: 315 }, { x: 723, y: 315 },
+            { x: 127, y: 495 }, { x: 325, y: 495 }, { x: 528, y: 495 }, { x: 723, y: 495 },
+            { x: 127, y: 695 }, { x: 325, y: 695 }, { x: 528, y: 695 }, { x: 723, y: 695 }
+        ];
+    } else {
+        return [
+            { x: 147, y: 154 }, { x: 400, y: 154 }, { x: 656, y: 154 },
+            { x: 147, y: 400 }, { x: 400, y: 400 }, { x: 656, y: 400 },
+            { x: 147, y: 650 }, { x: 400, y: 650 }, { x: 656, y: 650 }
+        ];
+    }
 }
 
 // Helper: build farm buttons
@@ -241,13 +253,14 @@ module.exports = {
             });
             try {
                 // Check for weed growth on empty plots
-                interaction.client.farming.checkForWeedGrowth(interaction.user.id, interaction.guild.id);
+                await interaction.client.farming.checkForWeedGrowth(interaction.user.id, interaction.guild.id);
                 
                 // Get real farm data
-                const farm = interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
-                const plotCoords = getPlotCoords();
+                const farm = await interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
+                const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
+                const plotCoords = getPlotCoords(is4x4);
                 const loadedSharedStages = await getSharedStageImages();
-                const canvas = await renderFarmPlots(farm, interaction, plotCoords, loadedSharedStages);
+                const canvas = await renderFarmPlots(farm, interaction, plotCoords, loadedSharedStages, is4x4);
                 const buffer = canvas.toBuffer();
                 const attachment = new AttachmentBuilder(buffer, { name: 'farm_preview.png' });
                 const embed = new EmbedBuilder()
@@ -269,10 +282,12 @@ module.exports = {
             }
         } else if (sub === 'info') {
             // /farm info logic
-            const farm = interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
+            const farm = await interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
+            const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
+            const plotCoords = getPlotCoords(is4x4);
             const now = Date.now();
             let infoLines = [];
-            for (let i = 0; i < 9; i++) {
+            for (let i = 0; i < farm.length; i++) {
                 const plot = farm[i];
                 let line = `**Plot ${i + 1}:** `;
                 if (!plot.crop) {
@@ -486,10 +501,11 @@ module.exports = {
     // Button handler
     async handleButtonInteraction(interaction) {
         if (interaction.customId === 'farm_plant') {
-            const farm = interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
+            const farm = await interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
+            const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
             const emptyPlots = interaction.client.farming.getEmptyPlots(farm);
             const plotOptions = emptyPlots
-                .filter(i => typeof i === 'number' && i >= 0 && i < 9)
+                .filter(i => typeof i === 'number' && i >= 0 && i < (is4x4 ? 16 : 9))
                 .map(i => ({ label: `Plot ${i + 1}`, value: String(i) }));
             if (plotOptions.length === 0) {
                 await interaction.reply({
@@ -567,7 +583,7 @@ module.exports = {
         }
         if (interaction.customId === 'farm_harvest_all') {
             // Harvest all ready crops
-            const farm = interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
+            const farm = await interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
             let harvested = [];
             let totalHarvested = 0;
             for (let i = 0; i < farm.length; i++) {
@@ -669,10 +685,11 @@ module.exports = {
             // Increment farm leaderboard stats
             interaction.client.farming.incrementFarmHarvest(interaction.user.id, interaction.guild.id, totalHarvested);
             // Re-render farm after harvest
-            const updatedFarm = interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
-            const plotCoords = getPlotCoords();
+            const updatedFarm = await interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
+            const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
+            const plotCoords = getPlotCoords(is4x4);
             const loadedSharedStages = await getSharedStageImages();
-            const canvas = await renderFarmPlots(updatedFarm, interaction, plotCoords, loadedSharedStages);
+            const canvas = await renderFarmPlots(updatedFarm, interaction, plotCoords, loadedSharedStages, is4x4);
             const buffer = canvas.toBuffer();
             const attachment = new AttachmentBuilder(buffer, { name: 'farm_preview.png' });
             // Build harvest message with emojis
@@ -736,13 +753,14 @@ module.exports = {
         }
         if (interaction.customId === 'farm_refresh') {
             // Check for weed growth on empty plots
-            interaction.client.farming.checkForWeedGrowth(interaction.user.id, interaction.guild.id);
+            await interaction.client.farming.checkForWeedGrowth(interaction.user.id, interaction.guild.id);
             
             // Re-render farm
-            const updatedFarm = interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
-            const plotCoords = getPlotCoords();
+            const updatedFarm = await interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
+            const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
+            const plotCoords = getPlotCoords(is4x4);
             const loadedSharedStages = await getSharedStageImages();
-            const canvas = await renderFarmPlots(updatedFarm, interaction, plotCoords, loadedSharedStages);
+            const canvas = await renderFarmPlots(updatedFarm, interaction, plotCoords, loadedSharedStages, is4x4);
             const buffer = canvas.toBuffer();
             const attachment = new AttachmentBuilder(buffer, { name: 'farm_preview.png' });
             const embed = new EmbedBuilder()
@@ -766,13 +784,14 @@ module.exports = {
         }
         if (interaction.customId === 'farm_share') {
             // Check for weed growth on empty plots
-            interaction.client.farming.checkForWeedGrowth(interaction.user.id, interaction.guild.id);
+            await interaction.client.farming.checkForWeedGrowth(interaction.user.id, interaction.guild.id);
             
             // Generate and share a snapshot of the farm to the channel (not ephemeral)
-            const updatedFarm = interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
-            const plotCoords = getPlotCoords();
+            const updatedFarm = await interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
+            const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
+            const plotCoords = getPlotCoords(is4x4);
             const loadedSharedStages = await getSharedStageImages();
-            const canvas = await renderFarmPlots(updatedFarm, interaction, plotCoords, loadedSharedStages);
+            const canvas = await renderFarmPlots(updatedFarm, interaction, plotCoords, loadedSharedStages, is4x4);
             const buffer = canvas.toBuffer();
             const attachment = new AttachmentBuilder(buffer, { name: 'farm_snapshot.png' });
             const embed = new EmbedBuilder()
@@ -862,10 +881,11 @@ module.exports = {
 
                 delete interaction.client._farmSelections[interaction.user.id];
                 // Re-render farm after planting
-                const updatedFarm2 = interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
-                const plotCoords = getPlotCoords();
+                const updatedFarm2 = await interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
+                const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
+                const plotCoords = getPlotCoords(is4x4);
                 const loadedSharedStages = await getSharedStageImages();
-                const canvas = await renderFarmPlots(updatedFarm2, interaction, plotCoords, loadedSharedStages);
+                const canvas = await renderFarmPlots(updatedFarm2, interaction, plotCoords, loadedSharedStages, is4x4);
                 const buffer = canvas.toBuffer();
                 const attachment = new AttachmentBuilder(buffer, { name: 'farm_preview.png' });
                 const embed = new EmbedBuilder()

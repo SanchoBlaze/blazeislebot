@@ -1448,6 +1448,11 @@ class Inventory {
 
         return item;
     }
+
+    // Check if user owns a specific upgrade item
+    hasUpgrade(upgradeId, userId, guildId) {
+        return this.getItemCount(userId, guildId, `farm_upgrade_4x4`) > 0;
+    }
 }
 
 module.exports = Inventory;

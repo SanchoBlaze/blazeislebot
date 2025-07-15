@@ -39,9 +39,13 @@ module.exports = {
             }
 
             const allItems = Object.values(uniqueItems);
+            
+            // Filter out farm upgrades (items with type 'upgrade')
+            const sellableItems = allItems.filter(item => item.type !== 'upgrade');
+            
             // Sort by rarity (common < uncommon < rare < epic < legendary < mythic)
             const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6 };
-            allItems.sort((a, b) => {
+            sellableItems.sort((a, b) => {
                 const aRank = rarityOrder[a.rarity] || 99;
                 const bRank = rarityOrder[b.rarity] || 99;
                 if (aRank !== bRank) return aRank - bRank;
@@ -51,7 +55,7 @@ module.exports = {
             });
             
             // Create pages with one item per page
-            const pages = this.createPages(allItems, interaction.client);
+            const pages = this.createPages(sellableItems, interaction.client);
             
             if (pages.length === 0) {
                 return interaction.reply({
@@ -61,7 +65,7 @@ module.exports = {
             }
 
             // Use custom sell paginator
-            await this.sellPaginator(interaction, pages, allItems);
+            await this.sellPaginator(interaction, pages, sellableItems);
             
         } catch (error) {
             console.error('Error in sell command:', error);

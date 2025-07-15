@@ -1271,5 +1271,18 @@
         "effect_type": null,
         "effect_value": null,
         "emoji": "🌿"
+    },
+    {
+        "id": "farm_upgrade_4x4",
+        "name": "4x4 Farm Upgrade",
+        "description": "Unlocks a 4x4 (16 plot) farm. Lets you plant more crops at once!",
+        "type": "upgrade",
+        "rarity": "epic",
+        "price": 50000,
+        "max_quantity": 1,
+        "duration_hours": 0,
+        "effect_type": "farm_size",
+        "effect_value": 16,
+        "emoji": "🏡"
     }
 ] 

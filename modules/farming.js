@@ -157,11 +157,19 @@ class Farming {
     `).all(guild, limit);
   }
 
-  // Get the farm state for a user (array of 9 plots)
-  getFarm(user, guild) {
+  // Helper: check if user owns the 4x4 farm upgrade
+  async has4x4Upgrade(user, guild) {
+    if (!this.client || !this.client.inventory) return false;
+    return !!(await this.client.inventory.getItemCount(user, guild, 'farm_upgrade_4x4'));
+  }
+
+  // Get the farm state for a user (array of 9 or 16 plots)
+  async getFarm(user, guild) {
+    const hasUpgrade = await this.has4x4Upgrade(user, guild);
+    const plotCount = hasUpgrade ? 16 : 9;
     const rows = sql.prepare('SELECT * FROM farms WHERE user = ? AND guild = ?').all(user, guild);
     // Fill missing plots with empty
-    const farm = Array(9).fill(null).map((_, i) => {
+    const farm = Array(plotCount).fill(null).map((_, i) => {
       const row = rows.find(r => r.plot === i);
       return row ? {
         crop: row.crop,
@@ -201,7 +209,7 @@ class Farming {
   }
 
   // Check for weed growth on empty plots (5% chance per empty plot), only once per hour
-  checkForWeedGrowth(user, guild) {
+  async checkForWeedGrowth(user, guild) {
     // Ensure weed_growth_checks table exists
     sql.prepare(`CREATE TABLE IF NOT EXISTS weed_growth_checks (
       user TEXT NOT NULL,
@@ -221,7 +229,7 @@ class Farming {
     sql.prepare('INSERT INTO weed_growth_checks (user, guild, last_check) VALUES (?, ?, ?) ON CONFLICT(user, guild) DO UPDATE SET last_check = ?')
       .run(user, guild, now, now);
 
-    const farm = this.getFarm(user, guild);
+    const farm = await this.getFarm(user, guild);
     const emptyPlots = this.getEmptyPlots(farm);
     const weedChance = 0.05; // 5% chance per empty plot
     for (const plotIndex of emptyPlots) {
