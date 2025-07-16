@@ -167,8 +167,10 @@ The bot features a comprehensive Twitch integration system with real-time monito
 - `/twitch status <username>` - Check a channel's current live status
 
 #### Features
-- **Real-time monitoring**: Checks streams every 1 minutes
-- **Smart notifications**: Only notifies when streams go from offline to live
+- **Real-time monitoring**: Checks streams every 1 minute
+- **Smart notifications**: Only notifies once per stream session when streams go from offline to live
+- **Stream end notifications**: Automatically notifies when streams end
+- **Viewer count updates**: Sends updates when viewer count changes significantly
 - **Rich embeds**: Stream notifications include title, game, viewer count, and thumbnail
 - **Database persistence**: All subscriptions and stream states are stored in SQLite
 - **OAuth2 integration**: Uses proper Twitch API authentication

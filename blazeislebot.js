@@ -416,20 +416,50 @@ function startTwitchChecker() {
             
             for (const username of subscriptions) {
                 const currentStatus = await twitchManager.getStreamStatus(username);
-                const newStatus = await twitchManager.checkStreamStatus(username);
+                const updateResult = await twitchManager.updateStreamStatus(username);
                 
-                // Update status in database
-                await twitchManager.updateStreamStatus(username, newStatus);
-                
-                // Check if stream just went live
-                if (newStatus && (!currentStatus || !currentStatus.is_live)) {
-                    await sendStreamNotification(username, newStatus);
+                // Handle stream going live
+                if (updateResult.isLive && (!currentStatus || !currentStatus.is_live)) {
+                    await sendStreamNotification(username, updateResult.streamData);
+                    await twitchManager.markNotificationSent(username);
+                }
+                // Handle stream going live with different stream ID (new session)
+                else if (updateResult.isLive && currentStatus && currentStatus.is_live && 
+                         currentStatus.stream_id !== updateResult.streamData.id) {
+                    // Stream is live but with a different stream ID (new session)
+                    // First mark the old stream as ended
+                    await sendStreamEndNotification(username);
+                    // Then send notification for new stream
+                    await sendStreamNotification(username, updateResult.streamData);
+                    await twitchManager.markNotificationSent(username);
+                }
+                // Handle stream ending
+                else if (!updateResult.isLive && currentStatus && currentStatus.is_live) {
+                    // Stream just ended - send end notification
+                    await sendStreamEndNotification(username);
+                    await twitchManager.resetNotificationSent(username);
+                }
+                // Handle viewer count updates for live streams
+                else if (updateResult.isLive && currentStatus && currentStatus.is_live && 
+                         updateResult.streamData.viewer_count !== currentStatus.viewer_count) {
+                    
+                    // Check if there are existing notification messages for this stream
+                    const existingMessages = await twitchManager.getNotificationMessages(username, updateResult.streamData.id);
+                    
+                    if (currentStatus.notification_sent || existingMessages.length > 0) {
+                        // Stream is live and viewer count changed - update existing notification
+                        await updateStreamNotification(username, updateResult.streamData);
+                    } else {
+                        // Stream is live but notification hasn't been sent yet - send initial notification
+                        await sendStreamNotification(username, updateResult.streamData);
+                        await twitchManager.markNotificationSent(username);
+                    }
                 }
             }
         } catch (error) {
             console.error('Error in Twitch checker:', error);
         }
-    }, 1 * 60 * 1000); // Check every 5 minutes
+    }, 1 * 60 * 1000); // Check every 1 minute
 }
 
 async function sendStreamNotification(twitchUsername, streamData) {
@@ -459,13 +489,123 @@ async function sendStreamNotification(twitchUsername, streamData) {
                 .setURL(`https://twitch.tv/${twitchUsername}`)
                 .setThumbnail(`https://static-cdn.jtvnw.net/previews-ttv/live_user_${twitchUsername}-320x180.jpg`);
             
-            await channel.send({ 
+            const message = await channel.send({ 
                 content: `🎉 **${twitchUsername}** is now live! <https://twitch.tv/${twitchUsername}>`,
                 embeds: [embed] 
             });
+            
+            // Save the message ID for future updates
+            if (streamData.id) {
+                await twitchManager.saveNotificationMessage(twitchUsername, guild.id, channel.id, message.id, streamData.id);
+            }
         }
     } catch (error) {
         console.error('Error sending stream notification:', error);
+    }
+}
+
+async function sendStreamEndNotification(twitchUsername) {
+    try {
+        const currentStatus = await twitchManager.getStreamStatus(twitchUsername);
+        if (!currentStatus || !currentStatus.stream_id) {
+            return; // No stream ID to work with
+        }
+
+        const notificationMessages = await twitchManager.getNotificationMessages(twitchUsername, currentStatus.stream_id);
+        
+        for (const notificationMsg of notificationMessages) {
+            const guild = client.guilds.cache.get(notificationMsg.guild_id);
+            if (!guild) continue;
+            
+            const channel = guild.channels.cache.get(notificationMsg.channel_id);
+            if (!channel) {
+                console.error(`Streams channel with ID ${notificationMsg.channel_id} not found in guild ${guild.name}`);
+                continue;
+            }
+            
+            try {
+                const message = await channel.messages.fetch(notificationMsg.message_id);
+                
+                const embed = new EmbedBuilder()
+                    .setTitle('⚫ Stream Ended')
+                    .setDescription(`**${twitchUsername}** has ended their stream.`)
+                    .setColor(Colours.GREY)
+                    .setTimestamp()
+                    .setURL(`https://twitch.tv/${twitchUsername}`);
+                
+                await message.edit({ 
+                    content: `📺 **${twitchUsername}** has ended their stream. <https://twitch.tv/${twitchUsername}>`,
+                    embeds: [embed] 
+                });
+            } catch (error) {
+                console.error(`Error editing stream end notification for ${twitchUsername}:`, error);
+                // If message not found, send a new one
+                const embed = new EmbedBuilder()
+                    .setTitle('⚫ Stream Ended')
+                    .setDescription(`**${twitchUsername}** has ended their stream.`)
+                    .setColor(Colours.GREY)
+                    .setTimestamp()
+                    .setURL(`https://twitch.tv/${twitchUsername}`);
+                
+                await channel.send({ 
+                    content: `📺 **${twitchUsername}** has ended their stream.`,
+                    embeds: [embed] 
+                });
+            }
+        }
+        
+        // Clean up notification messages
+        await twitchManager.deleteNotificationMessages(twitchUsername, currentStatus.stream_id);
+    } catch (error) {
+        console.error('Error sending stream end notification:', error);
+    }
+}
+
+async function updateStreamNotification(twitchUsername, streamData) {
+    try {
+        if (!streamData.id) {
+            return; // No stream ID to work with
+        }
+
+        const notificationMessages = await twitchManager.getNotificationMessages(twitchUsername, streamData.id);
+        
+        for (const notificationMsg of notificationMessages) {
+            const guild = client.guilds.cache.get(notificationMsg.guild_id);
+            if (!guild) continue;
+            
+            const channel = guild.channels.cache.get(notificationMsg.channel_id);
+            if (!channel) {
+                console.error(`Streams channel with ID ${notificationMsg.channel_id} not found in guild ${guild.name}`);
+                continue;
+            }
+            
+            try {
+                const message = await channel.messages.fetch(notificationMsg.message_id);
+                
+                const embed = new EmbedBuilder()
+                    .setTitle('🔴 LIVE NOW!')
+                    .setDescription(`**${twitchUsername}** is live on Twitch!`)
+                    .addFields(
+                        { name: 'Title', value: streamData.title || 'No title', inline: true },
+                        { name: 'Game', value: streamData.game_name || 'No game', inline: true },
+                        { name: 'Viewers', value: streamData.viewer_count?.toString() || 'Unknown', inline: true }
+                    )
+                    .setColor(Colours.RED)
+                    .setTimestamp()
+                    .setURL(`https://twitch.tv/${twitchUsername}`)
+                    .setThumbnail(`https://static-cdn.jtvnw.net/previews-ttv/live_user_${twitchUsername}-320x180.jpg`);
+                
+                await message.edit({ 
+                    content: `🎉 **${twitchUsername}** is now live! <https://twitch.tv/${twitchUsername}>`,
+                    embeds: [embed] 
+                });
+            } catch (error) {
+                console.error(`Error editing stream notification for ${twitchUsername}:`, error);
+                // If message not found, the notification will be recreated on next live check
+            }
+        }
+    } catch (error) {
+        console.error('Error updating stream notification:', error);
     }
 }
 

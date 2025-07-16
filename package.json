@@ -27,7 +27,7 @@
   "bugs": {
     "url": "https://github.com/SanchoBlaze/blazeislebot/issues"
   },
-  "homepage": "https://github.com/SanchoBlaze/blazeislebot#readme",
+  "homepage": "https://blazeisle.com/bot",
   "engines": {
     "node": ">=22.16.0"
   },
