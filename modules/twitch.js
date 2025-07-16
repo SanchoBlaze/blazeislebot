@@ -39,10 +39,44 @@ class TwitchManager {
                     game_name TEXT,
                     viewer_count INTEGER,
                     started_at TEXT,
-                    last_checked TEXT
+                    last_checked TEXT,
+                    notification_sent BOOLEAN DEFAULT FALSE,
+                    stream_id TEXT
                 );
             `).run();
             sql.prepare('CREATE INDEX idx_stream_status_username ON stream_status (twitch_username);').run();
+        }
+
+        // Create notification messages table
+        const notificationMessagesTable = sql.prepare('SELECT count(*) FROM sqlite_master WHERE type=\'table\' AND name = \'notification_messages\';').get();
+        if (!notificationMessagesTable['count(*)']) {
+            sql.prepare(`
+                CREATE TABLE notification_messages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    twitch_username TEXT NOT NULL,
+                    guild_id TEXT NOT NULL,
+                    channel_id TEXT NOT NULL,
+                    message_id TEXT NOT NULL,
+                    stream_id TEXT NOT NULL,
+                    created_at TEXT,
+                    UNIQUE(twitch_username, guild_id, stream_id)
+                );
+            `).run();
+            sql.prepare('CREATE INDEX idx_notification_messages_username ON notification_messages (twitch_username);').run();
+            sql.prepare('CREATE INDEX idx_notification_messages_stream ON notification_messages (stream_id);').run();
+        }
+
+        // Add new columns if they don't exist (for existing databases)
+        try {
+            sql.prepare('ALTER TABLE stream_status ADD COLUMN notification_sent BOOLEAN DEFAULT FALSE;').run();
+        } catch (e) {
+            // Column already exists
+        }
+        
+        try {
+            sql.prepare('ALTER TABLE stream_status ADD COLUMN stream_id TEXT;').run();
+        } catch (e) {
+            // Column already exists
         }
 
         sql.pragma('synchronous = 1');
@@ -153,8 +187,7 @@ class TwitchManager {
         try {
             const accessToken = await this.getAccessToken();
             if (!accessToken) {
-                console.warn('No Twitch access token available');
-                return false;
+                return { isLive: false, streamData: null };
             }
 
             const clientId = config.get('Twitch.client_id');
@@ -176,30 +209,59 @@ class TwitchManager {
             }
 
             const data = await response.json();
+            const nowISOString = new Date().toISOString();
             
             if (data.data && data.data.length > 0) {
                 const stream = data.data[0];
-                const nowISOString = new Date().toISOString();
-                const stmt = sql.prepare(`
-                    INSERT OR REPLACE INTO stream_status 
-                    (twitch_username, is_live, stream_title, game_name, viewer_count, started_at, last_checked)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                `);
                 
-                const isLive = stream.data.length > 0 ? 1 : 0; // Convert boolean to integer
-                const title = stream.data[0].title ? String(stream.data[0].title) : null;
-                const game = stream.data[0].game_name ? String(stream.data[0].game_name) : null;
-                const viewers = stream.data[0].viewer_count ? Number(stream.data[0].viewer_count) : null;
-                const startedAt = stream.data[0].started_at ? String(stream.data[0].started_at) : null;
+                // Check if we already have a record for this stream
+                const existingStatus = await this.getStreamStatus(twitchUsername);
+                
+                if (existingStatus && existingStatus.stream_id === stream.id) {
+                    // Update existing record, preserving notification_sent flag
+                    const stmt = sql.prepare(`
+                        UPDATE stream_status 
+                        SET is_live = 1, stream_title = ?, game_name = ?, viewer_count = ?, last_checked = ?
+                        WHERE twitch_username = ? AND stream_id = ?
+                    `);
+                    
+                    const title = stream.title ? String(stream.title) : null;
+                    const game = stream.game_name ? String(stream.game_name) : null;
+                    const viewers = stream.viewer_count ? Number(stream.viewer_count) : null;
 
-                stmt.run(twitchUsername.toLowerCase(), isLive, title, game, viewers, startedAt, nowISOString);
-                return true;
+                    stmt.run(title, game, viewers, nowISOString, twitchUsername.toLowerCase(), stream.id);
+                } else {
+                    // Insert new record (new stream session)
+                    const stmt = sql.prepare(`
+                        INSERT OR REPLACE INTO stream_status 
+                        (twitch_username, is_live, stream_title, game_name, viewer_count, started_at, last_checked, stream_id, notification_sent)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+                    `);
+                    
+                    const isLive = 1; // Stream is live
+                    const title = stream.title ? String(stream.title) : null;
+                    const game = stream.game_name ? String(stream.game_name) : null;
+                    const viewers = stream.viewer_count ? Number(stream.viewer_count) : null;
+                    const startedAt = stream.started_at ? String(stream.started_at) : null;
+                    const streamId = stream.id ? String(stream.id) : null;
+
+                    stmt.run(twitchUsername.toLowerCase(), isLive, title, game, viewers, startedAt, nowISOString, streamId);
+                }
+                
+                return { isLive: true, streamData: stream };
+            } else {
+                // Stream is offline - update status but keep notification_sent flag
+                const stmt = sql.prepare(`
+                    UPDATE stream_status 
+                    SET is_live = 0, last_checked = ?
+                    WHERE twitch_username = ?
+                `);
+                stmt.run(nowISOString, twitchUsername.toLowerCase());
+                return { isLive: false, streamData: null };
             }
-            
-            return false; // Stream is offline
         } catch (error) {
             console.error('Error updating stream status:', error);
-            return false;
+            return { isLive: false, streamData: null };
         }
     }
 
@@ -216,6 +278,78 @@ class TwitchManager {
         }
     }
 
+    async markNotificationSent(twitchUsername) {
+        try {
+            const stmt = sql.prepare(`
+                UPDATE stream_status 
+                SET notification_sent = 1
+                WHERE twitch_username = ?
+            `);
+            stmt.run(twitchUsername.toLowerCase());
+            return true;
+        } catch (error) {
+            console.error('Error marking notification sent:', error);
+            return false;
+        }
+    }
+
+    async resetNotificationSent(twitchUsername) {
+        try {
+            const stmt = sql.prepare(`
+                UPDATE stream_status 
+                SET notification_sent = 0
+                WHERE twitch_username = ?
+            `);
+            stmt.run(twitchUsername.toLowerCase());
+            return true;
+        } catch (error) {
+            console.error('Error resetting notification sent:', error);
+            return false;
+        }
+    }
+
+    async saveNotificationMessage(twitchUsername, guildId, channelId, messageId, streamId) {
+        try {
+            const stmt = sql.prepare(`
+                INSERT OR REPLACE INTO notification_messages 
+                (twitch_username, guild_id, channel_id, message_id, stream_id, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            `);
+            stmt.run(twitchUsername.toLowerCase(), guildId, channelId, messageId, streamId, new Date().toISOString());
+            return true;
+        } catch (error) {
+            console.error('Error saving notification message:', error);
+            return false;
+        }
+    }
+
+    async getNotificationMessages(twitchUsername, streamId) {
+        try {
+            const stmt = sql.prepare(`
+                SELECT * FROM notification_messages 
+                WHERE twitch_username = ? AND stream_id = ?
+            `);
+            return stmt.all(twitchUsername.toLowerCase(), streamId);
+        } catch (error) {
+            console.error('Error getting notification messages:', error);
+            return [];
+        }
+    }
+
+    async deleteNotificationMessages(twitchUsername, streamId) {
+        try {
+            const stmt = sql.prepare(`
+                DELETE FROM notification_messages 
+                WHERE twitch_username = ? AND stream_id = ?
+            `);
+            stmt.run(twitchUsername.toLowerCase(), streamId);
+            return true;
+        } catch (error) {
+            console.error('Error deleting notification messages:', error);
+            return false;
+        }
+    }
+
     async getSubscriptionsForUser(twitchUsername) {
         try {
             const stmt = sql.prepare(`
@@ -229,50 +363,7 @@ class TwitchManager {
         }
     }
 
-    async checkStreamStatus(twitchUsername) {
-        try {
-            const accessToken = await this.getAccessToken();
-            if (!accessToken) {
-                console.warn('No Twitch access token available');
-                return null;
-            }
 
-            const clientId = config.get('Twitch.client_id');
-            const response = await fetch(`https://api.twitch.tv/helix/streams?user_login=${twitchUsername}`, {
-                headers: {
-                    'Client-ID': clientId,
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
-
-            if (!response.ok) {
-                if (response.status === 401) {
-                    // Token expired, clear it and try again
-                    this.accessToken = null;
-                    this.tokenExpiry = null;
-                    return await this.checkStreamStatus(twitchUsername);
-                }
-                throw new Error(`Twitch API error: ${response.status}`);
-            }
-
-            const data = await response.json();
-            
-            if (data.data && data.data.length > 0) {
-                const stream = data.data[0];
-                return {
-                    title: stream.title,
-                    game_name: stream.game_name,
-                    viewer_count: stream.viewer_count,
-                    started_at: stream.started_at
-                };
-            }
-            
-            return null; // Stream is offline
-        } catch (error) {
-            console.error('Error checking stream status:', error);
-            return null;
-        }
-    }
 }
 
 module.exports = TwitchManager; 

@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, StringSelectMenuBuilder } = require('discord.js');
+const { getDropdownOptions, filterItemsByCategory } = require('../../modules/itemCategories');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -12,7 +13,7 @@ module.exports = {
         try {
             // Get user's inventory and filter for usable items
             const inventory = interaction.client.inventory.getUserInventory(userId, guildId)
-                .filter(item => item.effect_type && item.quantity > 0 && (!item.expires_at || new Date(item.expires_at) > new Date()));
+                .filter(item => item.effect_type && item.quantity > 0);
 
             if (!inventory || inventory.length === 0) {
                 return interaction.reply({
@@ -21,24 +22,27 @@ module.exports = {
                 });
             }
 
-            // Deduplicate items by id and sum quantities
+            // Deduplicate items by id and variant, sum quantities
             const uniqueItems = {};
             for (const item of inventory) {
-                if (!uniqueItems[item.id]) {
-                    uniqueItems[item.id] = { ...item };
+                const key = item.variant ? `${item.id}_${item.variant}` : item.id;
+                if (!uniqueItems[key]) {
+                    uniqueItems[key] = { ...item };
                 } else {
-                    uniqueItems[item.id].quantity += item.quantity;
+                    uniqueItems[key].quantity += item.quantity;
                 }
             }
 
             const allItems = Object.values(uniqueItems);
-            // Sort by rarity (common < uncommon < rare < epic < legendary)
-            const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5 };
+            // Sort by rarity (common < uncommon < rare < epic < legendary < mythic)
+            const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6 };
             allItems.sort((a, b) => {
                 const aRank = rarityOrder[a.rarity] || 99;
                 const bRank = rarityOrder[b.rarity] || 99;
                 if (aRank !== bRank) return aRank - bRank;
-                return a.name.localeCompare(b.name);
+                const aDisplayName = interaction.client.inventory.getDisplayName(a, a.variant);
+                const bDisplayName = interaction.client.inventory.getDisplayName(b, b.variant);
+                return aDisplayName.localeCompare(bDisplayName);
             });
 
             // Create pages with one item per page
@@ -67,13 +71,14 @@ module.exports = {
             const item = items[i];
             const pageNumber = i + 1;
             const totalPages = items.length;
-            const emoji = client.inventory.getItemEmoji(item);
+            const displayName = client.inventory.getDisplayName(item, item.variant);
+            const displayEmoji = client.inventory.getDisplayEmoji(item, item.variant);
             const rarityName = item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1);
-            const emojiUrl = client.inventory.getEmojiUrl(emoji, client);
+            const emojiUrl = client.inventory.getEmojiUrl(displayEmoji, client);
 
             const embed = new EmbedBuilder()
                 .setColor(client.inventory.getRarityColour(item.rarity))
-                .setTitle(`🎯 ${item.name}`)
+                .setTitle(`🎯 ${displayName}`)
                 .setDescription(item.description)
                 .setThumbnail(emojiUrl)
                 .addFields(
@@ -124,32 +129,7 @@ module.exports = {
                 new StringSelectMenuBuilder()
                     .setCustomId('use_filterDropdown')
                     .setPlaceholder('🔍 Filter by item type...')
-                    .addOptions([
-                        {
-                            label: 'All Usable Items',
-                            description: 'Show all usable items in your inventory',
-                            value: 'all',
-                            emoji: '📦'
-                        },
-                        {
-                            label: 'Consumables',
-                            description: 'Show only consumable items',
-                            value: 'consumable',
-                            emoji: '⚡'
-                        },
-                        {
-                            label: 'Boosts',
-                            description: 'Show only boost items',
-                            value: 'boost',
-                            emoji: '🚀'
-                        },
-                        {
-                            label: 'Mystery Boxes',
-                            description: 'Show only mystery boxes',
-                            value: 'mystery',
-                            emoji: '🎁'
-                        }
-                    ])
+                    .addOptions(getDropdownOptions())
             );
     },
 
@@ -222,7 +202,7 @@ module.exports = {
         const userId = interaction.user.id;
         const guildId = interaction.guild.id;
         const inventory = interaction.client.inventory.getUserInventory(userId, guildId)
-            .filter(item => item.effect_type && item.quantity > 0 && (!item.expires_at || new Date(item.expires_at) > new Date()));
+            .filter(item => item.effect_type && item.quantity > 0);
         const uniqueItems = {};
         for (const item of inventory) {
             if (!uniqueItems[item.id]) {
@@ -233,7 +213,7 @@ module.exports = {
         }
         const allItems = Object.values(uniqueItems);
         allItems.sort((a, b) => {
-            const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5 };
+            const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6 };
             const aRank = rarityOrder[a.rarity] || 99;
             const bRank = rarityOrder[b.rarity] || 99;
             if (aRank !== bRank) return aRank - bRank;
@@ -258,7 +238,11 @@ module.exports = {
             const filterType = interaction.values[0];
             let filteredItems = allItems;
             if (filterType !== 'all') {
-                filteredItems = allItems.filter(item => item.type === filterType);
+                if (filterType === 'fishing') {
+                    filteredItems = filterItemsByCategory(allItems, filterType);
+                } else {
+                    filteredItems = allItems.filter(item => item.type === filterType);
+                }
             }
             if (filteredItems.length === 0) {
                 const noItemsEmbed = new EmbedBuilder()
@@ -321,13 +305,13 @@ module.exports = {
                     });
                     await interaction.followUp({
                         embeds: [successEmbed],
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                     return true;
                 } catch (error) {
                     await interaction.followUp({
                         content: error.message || 'There was an error using the item!',
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                     return true;
                 }

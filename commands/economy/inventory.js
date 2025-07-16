@@ -28,13 +28,21 @@ module.exports = {
                 return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             }
 
-            // Deduplicate items by id and sum quantities
+            // Deduplicate items by id and variant, sum quantities
             const uniqueItems = {};
             for (const item of inventory) {
-                if (!uniqueItems[item.id]) {
-                    uniqueItems[item.id] = { ...item };
+                const key = item.variant ? `${item.id}_${item.variant}` : item.id;
+                if (!uniqueItems[key]) {
+                    uniqueItems[key] = { ...item, variant: item.variant };
                 } else {
-                    uniqueItems[item.id].quantity += item.quantity;
+                    uniqueItems[key].quantity += item.quantity;
+                }
+            }
+            // Attach variants array from full item definition (config JSON)
+            for (const key in uniqueItems) {
+                const fullItem = interaction.client.inventory.getItemFromConfig(uniqueItems[key].id);
+                if (fullItem && fullItem.variants) {
+                    uniqueItems[key].variants = fullItem.variants;
                 }
             }
             // Group deduplicated items by rarity
@@ -47,7 +55,7 @@ module.exports = {
             }
 
             let description = '';
-            const rarities = ['legendary', 'epic', 'rare', 'uncommon', 'common'];
+            const rarities = ['mythic', 'legendary', 'epic', 'rare', 'uncommon', 'common'];
             
             for (const rarity of rarities) {
                 if (itemsByRarity[rarity] && itemsByRarity[rarity].length > 0) {
@@ -57,11 +65,11 @@ module.exports = {
                     
                     for (const item of itemsByRarity[rarity]) {
                         const quantityText = item.quantity > 1 ? ` (x${item.quantity})` : '';
-                        const expiryText = item.expires_at ? ` ⏰` : '';
                         const sellPercentage = interaction.client.inventory.getSellPricePercentage(item.rarity, item.type);
                         const sellPrice = Math.floor(item.price * sellPercentage);
-                        const emoji = interaction.client.inventory.getItemEmoji(item);
-                        description += `• **${emoji} ${item.name}**${quantityText}${expiryText}\n`;
+                        const displayName = interaction.client.inventory.getDisplayName(item, item.variant);
+                        const displayEmoji = interaction.client.inventory.getDisplayEmoji(item, item.variant);
+                        description += `• **${displayEmoji} ${displayName}**${quantityText}\n`;
                         description += `  └ ${item.description}\n`;
                         description += `  └ 💰 Buy: ${interaction.client.economy.formatCurrency(item.price)} | 💵 Sell: ${interaction.client.economy.formatCurrency(sellPrice)} (${Math.round(sellPercentage * 100)}%)\n\n`;
                     }

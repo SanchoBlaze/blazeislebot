@@ -15,7 +15,7 @@ The Blaze Isle Bot now includes a comprehensive economy system that allows users
 ### 🎯 Earning Methods
 1. **Daily Rewards**: 100 coins every 24 hours (`/daily`)
 2. **Work**: 10-50 coins every hour (`/work`)
-3. **Fishing**: Catch fish to sell (prices vary by rarity, 30-minute cooldown)
+3. **Fishing**: Catch fish to sell (prices vary by rarity, dynamic cooldown based on rod)
 4. **Level Up Rewards**: Earn coins when leveling up (`/level` command or chat activity)
    - **Levels 1-5**: 50 coins per level
    - **Levels 6-10**: 100 coins per level
@@ -66,7 +66,16 @@ The Blaze Isle Bot now includes a comprehensive economy system that allows users
 
 ### 🛒 Shop System
 
-The shop offers various items that users can purchase with their coins:
+The shop offers various items that users can purchase with their coins. The shop features an interactive paginator interface with filtering options and bulk purchase capabilities:
+
+#### Shop Features
+- **Interactive Paginator**: Navigate through items with arrow buttons
+- **Item Filtering**: Filter items by type (seeds, fishing rods, consumables, etc.)
+- **Single Purchase**: Buy one item at a time with the "Buy" button
+- **Bulk Purchase**: Buy multiple items at once with the "Buy Quantity" modal
+- **Real-time Balance**: See your current balance and net worth
+- **Quantity Limits**: Respects item maximum quantities
+- **Affordability Check**: Buttons are disabled if you can't afford items
 
 ### Item Types
 - **Consumable Items**: XP boosts, work multipliers, daily doublers, coin multipliers
@@ -130,7 +139,7 @@ The shop offers various items that users can purchase with their coins:
 - `/balance` - Check your wallet and bank balance
 - `/daily` - Collect your daily reward (cooldown: 24 hours)
 - `/work` - Work to earn coins (cooldown: 1 hour)
-- `/fish` - Go fishing to catch fish (cooldown: 30 minutes)
+- `/fish` - Go fishing to catch fish (dynamic cooldown based on rod)
 - `/deposit <amount>` - Move coins from wallet to bank
 - `/withdraw <amount>` - Move coins from bank to wallet
 - `/transfer <user> <amount>` - Send coins to another user
@@ -139,10 +148,14 @@ The shop offers various items that users can purchase with their coins:
 - `/help-economy` - Get help with economy commands
 
 ### 🛒 Shop & Inventory Commands
-- `/shop` - Browse and buy items from the shop
-- `/inventory [user]` - View your or another user's inventory
+- `/shop` - Browse and buy items from the shop (with bulk purchase options via "Buy Quantity" modal)
+- `/inventory [user]` - View your or another user's inventory (shows crop variants and watering cans, deduplicated by item and variant)
 - `/use <item>` - Use an item from your inventory
-- `/sell` - Sell items back to the shop (rarity-based pricing)
+- `/sell` - Sell items back to the shop (rarity-based pricing, supports crop variants and confirmation messages)
+
+### 🌾 Farming Commands
+- `/farm view` - Interactive farming interface with buttons for planting, harvesting, and farm management
+- `/leaderboard farm` - View top users by crops harvested
 
 ### Admin Commands
 
@@ -168,16 +181,55 @@ The shop offers various items that users can purchase with their coins:
 | **Rare** | 🔵 | Blue | Powerful items, high cost |
 | **Epic** | 🟣 | Purple | Very powerful items, very high cost |
 | **Legendary** | 🟡 | Gold | Extremely powerful items, extremely high cost |
+| **Mythic** | 🌈 | Magenta | Ultimate items, extremely high cost |
+
+### 🌾 Farming System
+
+The farming system allows players to plant, grow, and harvest crops for profit. The system features crop variants, watering cans for growth acceleration, and full integration with the economy and inventory systems.
+
+#### Farming Mechanics
+- **Planting**: Plant seeds to grow crops using the interactive `/farm` interface
+- **Worm Discovery**: 15% chance to find worms when planting seeds, rewarding you with 1-3 Basic Bait
+- **Growth Times**: Each crop has a base growth time (26-58 minutes) that can be reduced with watering cans
+- **Harvesting**: Collect fully grown crops using the interactive `/farm` interface
+- **Crop Variants**: Many crops have multiple variants (e.g., red, yellow, green peppers)
+- **Watering Cans**: Permanent items that reduce crop growth times (similar to fishing rods for cooldown reduction)
+- **Fertilisers**: Consumable items that increase crop yield with rarity-based success rates
+
+#### Watering Cans
+- **Wood** (Common) - 500 coins - 0.95x growth (5% faster)
+- **Copper** (Uncommon) - 2,000 coins - 0.9x growth (10% faster)
+- **Silver** (Rare) - 8,000 coins - 0.85x growth (15% faster)
+- **Gold** (Epic) - 25,000 coins - 0.8x growth (20% faster)
+- **Diamond** (Legendary) - 75,000 coins - 0.7x growth (30% faster)
+- **Mythic** (Mythic) - 200,000 coins - 0.6x growth (40% faster)
+
+#### Fertilisers
+- **Basic** (Common) - 100 coins - 5% yield boost (80% success on common crops)
+- **Premium** (Uncommon) - 300 coins - 10% yield boost (60% success on uncommon crops)
+- **Organic** (Rare) - 800 coins - 20% yield boost (40% success on rare crops)
+- **Magical** (Epic) - 2,000 coins - 30% yield boost (25% success on epic crops)
+- **Legendary** (Legendary) - 5,000 coins - 40% yield boost (15% success on legendary crops)
+- **Mythic** (Mythic) - 15,000 coins - 50% yield boost (5% success on mythic crops)
+
+#### Crop Variants
+- **Unique Items**: Each variant is treated as a separate item in inventory
+- **Visual Distinction**: Different emojis and names for each variant
+- **Database Storage**: Variants are stored with a `variant` field
+- **Sell System**: Crops can be sold with rarity-based pricing
+- **Weeds crop**: Weeds can grow on empty plots (5% chance per hour per plot) and are managed as a harvestable crop with their own emoji.
+- **Emoji config requirement**: Whenever you add a new item to data/default-items.json, you must also add a corresponding entry to config/emoji-configs.json with the correct emoji (Unicode or custom).
 
 ### 🎣 Fishing System
 
-The fishing system allows players to catch fish and sell them for coins. Fish have different rarities and sell prices, and fishing rods can improve your chances of catching rare fish.
+The fishing system allows players to catch fish and sell them for coins. The system features fishing rods for cooldown reduction and bait for rarity boosts, mirroring the farming system design.
 
 #### Fishing Mechanics
-- **Cooldown**: 30 minutes between fishing sessions
+- **Dynamic Cooldown**: 18-30 minutes between fishing sessions (based on your best fishing rod)
 - **Fish Rarities**: Common, Uncommon, Rare, Epic, Legendary
 - **Sell Prices**: Fish can be sold back to the shop for coins
-- **Fishing Rods**: Permanent items that boost rare fish catch rates
+- **Fishing Rods**: Permanent items that reduce fishing cooldown
+- **Bait**: Consumable items that boost rare fish catch rates with success rates
 - **Admin Control**: Server admins can add custom fish using `/economy-admin add-item`
 
 #### Default Fish Types
@@ -186,19 +238,35 @@ The fishing system allows players to catch fish and sell them for coins. Fish ha
 - **Rare**: Golden Carp (50 coins), Crystal Fish (75 coins)
 - **Epic**: Diamond Tuna (150 coins)
 - **Legendary**: Legendary Kraken (500 coins)
+- **Mythic**: Celestial Whale (2,500 coins), Abyssal Serpent (3,000 coins), Ethereal Dolphin (2,750 coins), Void Shark (3,500 coins)
 
-#### Fishing Rods
-- **Basic Fishing Rod** (Common) - 1,000 coins - 1.2x rare fish boost
-- **Steel Fishing Rod** (Uncommon) - 5,000 coins - 1.5x rare fish boost
-- **Golden Fishing Rod** (Rare) - 15,000 coins - 2.0x rare fish boost
-- **Crystal Fishing Rod** (Epic) - 50,000 coins - 3.0x rare fish boost
-- **Legendary Fishing Rod** (Legendary) - 100,000 coins - 5.0x rare fish boost
+#### Fishing Rods (Cooldown Reduction)
+- **Basic Fishing Rod** (Common) - 1,000 coins - 5% faster (28.5 min cooldown)
+- **Steel Fishing Rod** (Uncommon) - 5,000 coins - 10% faster (27 min cooldown)
+- **Golden Fishing Rod** (Rare) - 15,000 coins - 15% faster (25.5 min cooldown)
+- **Crystal Fishing Rod** (Epic) - 50,000 coins - 20% faster (24 min cooldown)
+- **Legendary Fishing Rod** (Legendary) - 100,000 coins - 30% faster (21 min cooldown)
+- **Mythic Fishing Rod** (Mythic) - 250,000 coins - 40% faster (18 min cooldown)
+
+#### Bait (Rarity Boost)
+- **Basic Bait** (Common) - 100 coins - 1.2x rare fish boost, 80% success rate
+- **Premium Bait** (Uncommon) - 300 coins - 1.5x rare fish boost, 60% success rate
+- **Magic Bait** (Rare) - 800 coins - 2.0x rare fish boost, 40% success rate
+- **Epic Bait** (Epic) - 2,000 coins - 3.0x rare fish boost, 25% success rate
+- **Legendary Bait** (Legendary) - 5,000 coins - 5.0x rare fish boost, 15% success rate
+- **Mythic Bait** (Mythic) - 10,000 coins - 7.0x rare fish boost, 10% success rate
 
 #### How Fishing Rods Work
 - **Permanent Items**: Fishing rods don't expire or need to be used
-- **Best Rod Active**: Only the best fishing rod in your inventory provides the boost
-- **Rare Fish Only**: Boost only applies to rare, epic, and legendary fish
-- **Progressive Investment**: Higher-tier rods cost more but provide better boosts
+- **Best Rod Active**: Only the best fishing rod in your inventory provides cooldown reduction
+- **Progressive Investment**: Higher-tier rods cost more but provide better cooldown reduction
+
+#### How Bait Works
+- **Consumable Items**: Bait is used up when applied and provides temporary effects
+- **Success Rates**: Higher rarity bait has lower success rates for balance
+- **Rare Fish Only**: Boost only applies to rare, epic, legendary, and mythic fish
+- **Duration**: Bait effects last for 1 hour
+- **Strategic Choice**: Players must decide between safe, reliable bait or risky, powerful bait
 
 ### 📦 Available Items
 
@@ -206,7 +274,8 @@ The shop offers various items that users can purchase with their coins:
 
 #### 🎣 Fishing Items
 - **Fish**: Various fish types with different rarities and sell prices
-- **Fishing Rods**: Permanent items that boost rare fish catch rates
+- **Fishing Rods**: Permanent items that reduce fishing cooldown
+- **Bait**: Consumable items that boost rare fish catch rates with success rates
 
 #### ⚡ Consumable Items
 - **XP Boost (1 Hour)** (Common) - 500 coins - 2x XP for 1 hour
@@ -287,9 +356,8 @@ CREATE TABLE inventory (
     guild TEXT NOT NULL,
     item_id TEXT NOT NULL,
     quantity INTEGER DEFAULT 1,
-    acquired_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    expires_at TEXT,
-    UNIQUE(user, guild, item_id)
+    variant TEXT,
+    UNIQUE(user, guild, item_id, variant)
 );
 ```
 
@@ -318,6 +386,7 @@ CREATE TABLE items (
 
 - **Daily Reward**: 24 hours
 - **Work**: 1 hour
+- **Fishing**: 18-30 minutes (based on best fishing rod)
 - **Transfer**: No cooldown (limited by balance)
 - **Deposit/Withdraw**: No cooldown (limited by available funds)
 - **Item Usage**: Varies by item type
@@ -329,7 +398,7 @@ The system is designed to maintain a healthy economy:
 
 - **Daily Reward**: 100 coins (4,200 coins per week)
 - **Work**: 10-50 coins per hour (70-350 coins per week)
-- **Fishing**: Variable based on fish caught (5-500 coins per fish, 30-minute cooldown)
+- **Fishing**: Variable based on fish caught (5-500 coins per fish, 18-30 minute cooldown based on rod)
 - **Total Weekly Potential**: ~4,270-4,550+ coins for active users (fishing adds additional income)
 
 ## Item Strategy Guide
@@ -343,9 +412,10 @@ The system is designed to maintain a healthy economy:
 ### 💎 For Active Users
 1. **Use work multipliers** - Maximize work efficiency
 2. **Fish regularly** - Steady additional income
-3. **Buy fishing rods** - Improve rare fish chances
-4. **Buy mystery boxes** - Gamble for rare items
-5. **Invest in daily doublers** - Double your income
+3. **Buy fishing rods** - Reduce fishing cooldown for more frequent fishing
+4. **Buy bait** - Boost rare fish chances with strategic risk vs reward
+5. **Buy mystery boxes** - Gamble for rare items
+6. **Invest in daily doublers** - Double your income
 
 ### 🏆 For Wealthy Users
 1. **Collect rare items** - Show off your status

@@ -11,6 +11,24 @@ A feature-rich Discord bot with modular architecture, economy system, loyalty tr
 - **Advanced Twitch stream notifications** with real-time monitoring
 - **Advanced loyalty/XP system** with scaled leveling and multi-level progression
 - **💰 Comprehensive economy system** with wallet/bank, daily rewards, work, transfers, and shop
+- **🌾 Advanced farming system** with crop variants, watering cans, fertilisers, growth acceleration, and farm size upgrades (3x3 to 6x6)
+- **Mythic rarity support**: Mythic items (🌈, magenta) are now available in the shop and inventory, with full support in all rarity tables and admin commands.
+- **Crop variants**: Crops like peppers, tomatoes, and carrots have multiple variants (e.g., red/yellow/green), tracked in the database with a `variant` field and displayed with the correct emoji and name in inventory, harvest, and sell commands.
+- **Watering cans**: All types (wood, copper, silver, gold, diamond, mythic) are available, each with increasing rarity and growth acceleration effect. Only the best can in your inventory is used for crop growth.
+- **Fertilisers**: Six types of fertilisers (basic, premium, organic, magical, legendary, mythic) that increase crop yield with rarity-based success rates. Higher rarity crops have lower success rates, making fertilisers more effective on common crops.
+- **Accurate staged growth system**: Crop growth times are now based on a staged system (e.g., common crops take 26 minutes, legendary 58 minutes, with each stage having a specific duration).
+- **/farm info command**: Shows detailed information about each plot, including what is planted, stage, and time left to fully grow.
+- **Farm size upgrades**: Purchase 4x4 (16 plots), 5x5 (25 plots), or 6x6 (36 plots) farm upgrades for increased production capacity.
+- **Sell confirmation**: When selling items (including via "Sell Quantity"), you now receive a confirmation message.
+- **Buy Quantity**: The shop now features a "Buy Quantity" modal for bulk purchases, similar to the sell quantity functionality.
+- **Command structure**: Farming commands are `/farm view` (interactive UI) and `/leaderboard farm` (top farmers). Removed references to `/farm plant` and `/farm harvest`.
+- **Documentation**: See `FARMING_README.md` and `ECONOMY_README.md` for full details on farming, inventory, and item mechanics.
+- **🎣 Advanced fishing system** with fishing rods (cooldown reduction) and bait (rarity boosts), mirroring the farming system design with permanent tools and consumable boosts.
+- **Fishing rods**: Six tiers (Basic to Mythic) that reduce fishing cooldown by 5% to 40%, allowing more frequent fishing sessions.
+- **Bait system**: Six types of bait (Basic to Mythic) that provide temporary rare fish boost multipliers (1.2x to 7.0x) with decreasing success rates for balance.
+- **Dynamic cooldown**: Fishing cooldown varies from 18-30 minutes based on your best fishing rod.
+- **Success rate mechanics**: Higher rarity bait has lower success rates (80% to 10%), creating strategic risk vs reward decisions.
+- **Consistent design**: Fishing system mirrors farming with permanent tools (rods/cans) and consumable boosts (bait/fertiliser).
 - **Engaging games**: Connect4, TicTacToe, RPS, RPSLS with XP rewards for winners
 - **Animal commands**: Cute pictures with small XP rewards (cat, dog, fox, bunny, duck)
 - **Social commands**: Hug and comfort other users for XP and community building
@@ -22,6 +40,8 @@ A feature-rich Discord bot with modular architecture, economy system, loyalty tr
 - **Scratch Card item**: A consumable with gambling logic—win coins or a random item, with the reward's emoji shown as the embed thumbnail.
 - **Profit margin logic for item pricing**: All shop items are priced so users always make a profit when using or selling them.
 - **Admin command stability**: All admin commands now handle Discord interactions robustly, preventing double reply errors.
+- **Weeds crop and mechanic**: Weeds can now grow on empty plots (5% chance per hour per plot). Weeds are a harvestable crop with their own emoji and are managed like other crops.
+- **Emoji config requirement**: Whenever you add a new item to data/default-items.json, you must also add a corresponding entry to config/emoji-configs.json with the correct emoji (Unicode or custom).
 
 ## Getting Started
 
@@ -147,8 +167,10 @@ The bot features a comprehensive Twitch integration system with real-time monito
 - `/twitch status <username>` - Check a channel's current live status
 
 #### Features
-- **Real-time monitoring**: Checks streams every 1 minutes
-- **Smart notifications**: Only notifies when streams go from offline to live
+- **Real-time monitoring**: Checks streams every 1 minute
+- **Smart notifications**: Only notifies once per stream session when streams go from offline to live
+- **Stream end notifications**: Automatically notifies when streams end
+- **Viewer count updates**: Sends updates when viewer count changes significantly
 - **Rich embeds**: Stream notifications include title, game, viewer count, and thumbnail
 - **Database persistence**: All subscriptions and stream states are stored in SQLite
 - **OAuth2 integration**: Uses proper Twitch API authentication
@@ -203,7 +225,7 @@ The bot features a complete virtual economy system that encourages community eng
 #### Earning Methods
 - **Daily rewards**: 100 coins every 24 hours (`/daily`)
 - **Work system**: 10-50 coins every hour (`/work`)
-- **Fishing system**: Catch fish to sell (prices vary by rarity, 30-minute cooldown)
+- **Fishing system**: Catch fish to sell (prices vary by rarity, dynamic cooldown based on rod)
 - **Admin rewards**: Server administrators can give coins
 
 #### Banking Features
@@ -216,7 +238,7 @@ The bot features a complete virtual economy system that encourages community eng
 - **`/balance [user]`**: Check wallet, bank, and net worth
 - **`/daily`**: Claim daily reward (100 coins)
 - **`/work`**: Work for coins (10-50 coins, 1 hour cooldown)
-- **`/fish`**: Go fishing to catch fish (30-minute cooldown)
+- **`/fish`**: Go fishing to catch fish (dynamic cooldown based on rod)
 - **`/deposit <amount>`**: Move coins to bank
 - **`/withdraw <amount>`**: Move coins from bank
 - **`/transfer <user> <amount>`**: Send coins to another user
@@ -239,7 +261,8 @@ The bot features a complete virtual economy system that encourages community eng
 - **Inventory management**: Store and manage your items
 - **Item rarity system**: Common, Uncommon, Rare, Epic, Legendary
 - **Consumable items**: XP boosts, work multipliers, daily doublers
-- **Fishing rods**: Permanent items that boost rare fish catch rates
+- **Fishing rods**: Permanent items that reduce fishing cooldown (5% to 40% faster)
+- **Bait**: Consumable items that boost rare fish catch rates with success rates
 - **Fish items**: Catchable fish with different rarities and sell prices
 - **Mystery boxes**: Random item rewards
 - **Item effects**: Temporary boosts and permanent rewards
