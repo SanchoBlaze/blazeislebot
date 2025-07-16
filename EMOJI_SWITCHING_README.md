@@ -64,9 +64,62 @@ After changing the configuration, restart your bot and run `/economy-admin popul
 
 ## Adding New Items with Custom Emojis
 
-1. Add the item to `data/default-items.json` with a placeholder emoji (like `"🪝"`)
-2. Add the custom emoji ID to `config/emoji-configs.json` using the item's ID as the key
-3. The system will automatically use the custom emoji when available
+Whenever you add a new item to data/default-items.json (for example, a new crop like weeds), you must also add a corresponding entry to config/emoji-configs.json with the correct emoji (Unicode or custom).
+
+**Example: Adding Weeds**
+
+In `data/default-items.json`:
+```json
+{
+    "id": "crop_weeds",
+    "name": "Weeds",
+    "emoji": "🌿"
+}
+```
+
+In `config/emoji-configs.json`:
+```json
+{
+    "test_bot": {
+        "crop_weeds": "<:crop_weeds:1393646290717511832>"
+    },
+    "production_bot": {
+        "crop_weeds": "<:crop_weeds:1393646290717511832>"
+    }
+}
+```
+
+### Farming Items
+
+For farming items like watering cans and crop variants, follow the same process:
+
+**Watering Cans:**
+```json
+{
+    "test_bot": {
+        "watering_can_wood": "<:watering_can_wood:YOUR_EMOJI_ID>",
+        "watering_can_copper": "<:watering_can_copper:YOUR_EMOJI_ID>",
+        "watering_can_silver": "<:watering_can_silver:YOUR_EMOJI_ID>",
+        "watering_can_gold": "<:watering_can_gold:YOUR_EMOJI_ID>",
+        "watering_can_diamond": "<:watering_can_diamond:YOUR_EMOJI_ID>",
+        "watering_can_mythic": "<:watering_can_mythic:YOUR_EMOJI_ID>"
+    }
+}
+```
+
+**Crop Variants:**
+```json
+{
+    "test_bot": {
+        "tomato_red": "<:tomato_red:YOUR_EMOJI_ID>",
+        "tomato_yellow": "<:tomato_yellow:YOUR_EMOJI_ID>",
+        "tomato_green": "<:tomato_green:YOUR_EMOJI_ID>",
+        "pepper_red": "<:pepper_red:YOUR_EMOJI_ID>",
+        "pepper_yellow": "<:pepper_yellow:YOUR_EMOJI_ID>",
+        "pepper_green": "<:pepper_green:YOUR_EMOJI_ID>"
+    }
+}
+```
 
 ## Example
 

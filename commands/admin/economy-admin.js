@@ -78,7 +78,8 @@ module.exports = {
                             { name: 'Uncommon', value: 'uncommon' },
                             { name: 'Rare', value: 'rare' },
                             { name: 'Epic', value: 'epic' },
-                            { name: 'Legendary', value: 'legendary' }
+                            { name: 'Legendary', value: 'legendary' },
+                            { name: 'Mythic', value: 'mythic' }
                         ))
                 .addIntegerOption(option =>
                     option.setName('price')
@@ -513,10 +514,10 @@ module.exports = {
                     const embed = new EmbedBuilder()
                         .setColor(0x00FF00)
                         .setTitle('✅ Default Items Added')
-                        .setDescription('Successfully populated the shop with default items!')
+                        .setDescription('Successfully populated the shop with complete default items (including variants)!')
                         .addFields(
                             { name: '📦 Items Added', value: `${defaultItemCount} default items`, inline: true },
-                            { name: '🎯 Types', value: 'XP Boosts, Work Multipliers, Mystery Boxes, Coin Multipliers', inline: true }
+                            { name: '🎯 Types', value: 'XP Boosts, Work Multipliers, Mystery Boxes, Coin Multipliers, Crops with Variants', inline: true }
                         )
                         .setFooter({ text: `Populated by ${interaction.user.tag}` })
                         .setTimestamp();
