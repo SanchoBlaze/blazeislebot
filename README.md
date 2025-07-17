@@ -224,7 +224,7 @@ The bot features a complete virtual economy system that encourages community eng
 
 #### Earning Methods
 - **Daily rewards**: 100 coins every 24 hours (`/daily`)
-- **Work system**: 10-50 coins every hour (`/work`)
+- **Work mini-game**: Interactive 5-level emoji grid challenge with scaling difficulty (`/work`)
 - **Fishing system**: Catch fish to sell (prices vary by rarity, dynamic cooldown based on rod)
 - **Admin rewards**: Server administrators can give coins
 
@@ -237,7 +237,7 @@ The bot features a complete virtual economy system that encourages community eng
 #### Economy Commands
 - **`/balance [user]`**: Check wallet, bank, and net worth
 - **`/daily`**: Claim daily reward (100 coins)
-- **`/work`**: Work for coins (10-50 coins, 1 hour cooldown)
+- **`/work`**: Play the interactive work mini-game (1 hour cooldown)
 - **`/fish`**: Go fishing to catch fish (dynamic cooldown based on rod)
 - **`/deposit <amount>`**: Move coins to bank
 - **`/withdraw <amount>`**: Move coins from bank
@@ -256,6 +256,30 @@ The bot features a complete virtual economy system that encourages community eng
 - **`/economy-admin set <user> <amount>`**: Set user's balance
 - **`/economy-admin stats`**: View server economy statistics
 
+#### Work Mini-Game System
+The work system features an engaging 5-level mini-game that scales in difficulty:
+
+##### Level Progression
+- **Level 1**: 3×3 grid, 1 odd one, 10 seconds (30-60 base coins)
+- **Level 2**: 4×4 grid, 2 odd ones, 8 seconds (45-75 base coins)
+- **Level 3**: 4×4 grid, 3 odd ones, 6 seconds (60-90 base coins)
+- **Level 4**: 5×5 grid, 4 odd ones, 5 seconds (75-105 base coins)
+- **Level 5**: 5×5 grid, 5 odd ones, 4 seconds (90-120 base coins)
+
+##### Game Features
+- **Visual feedback**: Clicked odd buttons turn green to show progress
+- **Scaling difficulty**: Grid size, time limits, and odd count increase per level
+- **Progressive rewards**: Each level completed adds to the final multiplier
+- **Balanced economy**: Perfect runs reward ~1,440-2,880 coins max
+- **Work multipliers**: Active work boost items multiply final rewards
+- **Debug logging**: Comprehensive logging for troubleshooting
+
+##### Gameplay
+- Find and click all odd emojis in the grid before time runs out
+- Each level uses different emojis to avoid repetition
+- Failing any level ends the game and awards coins based on last completed level
+- All multipliers (work boost, coin boost) are applied to final rewards
+
 #### Shop System
 - **Interactive buttons**: Click to purchase items
 - **Inventory management**: Store and manage your items
@@ -272,8 +296,9 @@ The bot features a complete virtual economy system that encourages community eng
 #### Economy Balance
 The system is designed to maintain a healthy economy:
 - **Daily Reward**: 100 coins (4,200 coins per week)
-- **Work**: 10-50 coins per hour (70-350 coins per week)
-- **Total Weekly Potential**: ~4,200-4,550 coins for active users
+- **Work Mini-Game**: Variable rewards based on performance (30-2,880 coins per run, 1 hour cooldown)
+- **Fishing**: Variable based on fish caught (5-500 coins per fish, 18-30 minute cooldown based on rod)
+- **Total Weekly Potential**: ~4,270-7,000+ coins for active users (work and fishing add significant income)
 
 📖 **[View detailed economy documentation →](ECONOMY_README.md)**
 

@@ -297,7 +297,7 @@ class Economy {
     }
 
     // Work reward
-    async work(userId, guildId) {
+    async work(userId, guildId, options = {}) {
         const user = this.getUser(userId, guildId);
         const now = new Date();
         const lastWork = user.last_work ? new Date(user.last_work) : null;
@@ -310,10 +310,14 @@ class Economy {
             throw new Error(`Work available in ${minutes}m ${seconds}s`);
         }
 
-        // Random work reward between 10-50 coins
-        let amount = Math.floor(Math.random() * 41) + 10;
-
-        // Apply work multiplier if user has active effect
+        // Use amountOverride if provided, else randomize
+        let amount;
+        if (options && typeof options.amountOverride === 'number') {
+            amount = Math.floor(options.amountOverride);
+        } else {
+            amount = Math.floor(Math.random() * 41) + 10;
+        }
+        // Always apply work multiplier if user has active effect
         if (this.client && this.client.inventory) {
             const workMultiplier = this.client.inventory.getWorkMultiplier(userId, guildId);
             if (workMultiplier > 1) {
@@ -322,7 +326,12 @@ class Economy {
                 console.log(`[work] User ${userId} has work multiplier ${workMultiplier}x: ${originalAmount} -> ${amount} coins`);
             }
         }
-
+        // Debug logging before updating balance
+        const userBeforeWork = this.getUser(userId, guildId);
+        console.log(`[WORK BACKEND DEBUG] About to add amount: ${amount} to user: ${userId} (balance before: ${userBeforeWork.balance})`);
+        if (amount <= 0) {
+            console.warn(`[WORK BACKEND WARNING] Attempted to add non-positive amount: ${amount} for user: ${userId}`);
+        }
         // Update last work time and add money
         const nowISOString = new Date().toISOString();
         sql.prepare(`
@@ -332,8 +341,14 @@ class Economy {
         `).run(nowISOString, nowISOString, userId, guildId);
         const updatedUser = this.getUser(userId, guildId);
         console.log(`[work] User: ${userId}, Guild: ${guildId}, last_work after:`, updatedUser.last_work);
+        try {
+            await this.updateBalance(userId, guildId, amount, 'balance');
+        } catch (err) {
+            console.error(`[WORK BACKEND ERROR] updateBalance failed for user: ${userId}, amount: ${amount}`, err);
+        }
+        const userAfterWork = this.getUser(userId, guildId);
+        console.log(`[WORK BACKEND DEBUG] User: ${userId} balance after work: ${userAfterWork.balance}`);
 
-        await this.updateBalance(userId, guildId, amount, 'balance');
         this.logTransaction(userId, guildId, 'work', amount, 'Work reward');
         
         return { user: updatedUser, amount };

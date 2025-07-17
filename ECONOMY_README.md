@@ -14,7 +14,7 @@ The Blaze Isle Bot now includes a comprehensive economy system that allows users
 
 ### 🎯 Earning Methods
 1. **Daily Rewards**: 100 coins every 24 hours (`/daily`)
-2. **Work**: 10-50 coins every hour (`/work`)
+2. **Work Mini-Game**: Interactive 5-level emoji grid challenge with scaling difficulty (`/work`)
 3. **Fishing**: Catch fish to sell (prices vary by rarity, dynamic cooldown based on rod)
 4. **Level Up Rewards**: Earn coins when leveling up (`/level` command or chat activity)
    - **Levels 1-5**: 50 coins per level
@@ -24,6 +24,38 @@ The Blaze Isle Bot now includes a comprehensive economy system that allows users
    - **Levels 31-50**: 500 coins per level
    - **Levels 51+**: 750 coins per level
 5. **Admin Rewards**: Server administrators can give coins
+
+### 💼 Work Mini-Game System
+
+The work system features an engaging 5-level mini-game that scales in difficulty and rewards:
+
+#### Level Progression
+- **Level 1**: 3×3 grid, 1 odd one, 10 seconds (30-60 base coins)
+- **Level 2**: 4×4 grid, 2 odd ones, 8 seconds (45-75 base coins)
+- **Level 3**: 4×4 grid, 3 odd ones, 6 seconds (60-90 base coins)
+- **Level 4**: 5×5 grid, 4 odd ones, 5 seconds (75-105 base coins)
+- **Level 5**: 5×5 grid, 5 odd ones, 4 seconds (90-120 base coins)
+
+#### Game Features
+- **Visual feedback**: Clicked odd buttons turn green to show progress
+- **Scaling difficulty**: Grid size, time limits, and odd count increase per level
+- **Progressive rewards**: Each level completed adds to the final multiplier
+- **Balanced economy**: Perfect runs reward ~1,440-2,880 coins max
+- **Work multipliers**: Active work boost items multiply final rewards
+- **Debug logging**: Comprehensive logging for troubleshooting
+
+#### Gameplay Mechanics
+- Find and click all odd emojis in the grid before time runs out
+- Each level uses different emojis to avoid repetition
+- Failing any level ends the game and awards coins based on last completed level
+- All multipliers (work boost, coin boost) are applied to final rewards
+- 1-hour cooldown between work sessions
+
+#### Reward Calculation
+- Base reward: Random amount within the level's range (e.g., 30-60 for level 1)
+- Level multiplier: Each completed level adds its multiplier (1x, 2x, 4x, 8x, 16x)
+- Final amount: Base reward × total multiplier
+- Additional multipliers: Work boost and coin boost items apply to final amount
 
 ### 🏦 Banking System
 - **Deposit**: Move coins from wallet to bank (`/deposit`)
@@ -138,7 +170,7 @@ The shop offers various items that users can purchase with their coins. The shop
 ### 💰 Economy Commands
 - `/balance` - Check your wallet and bank balance
 - `/daily` - Collect your daily reward (cooldown: 24 hours)
-- `/work` - Work to earn coins (cooldown: 1 hour)
+- `/work` - Play the interactive work mini-game (cooldown: 1 hour)
 - `/fish` - Go fishing to catch fish (dynamic cooldown based on rod)
 - `/deposit <amount>` - Move coins from wallet to bank
 - `/withdraw <amount>` - Move coins from bank to wallet
