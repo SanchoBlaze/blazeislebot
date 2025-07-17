@@ -302,12 +302,18 @@ class Economy {
         const now = new Date();
         const lastWork = user.last_work ? new Date(user.last_work) : null;
         console.log(`[work] User: ${userId}, Guild: ${guildId}, last_work before:`, user.last_work);
+        
         // Check if user can work (1 hour cooldown)
-        if (lastWork && (now - lastWork) < 60 * 60 * 1000) {
-            const timeLeft = 60 * 60 * 1000 - (now - lastWork);
-            const minutes = Math.floor(timeLeft / (60 * 1000));
-            const seconds = Math.floor((timeLeft % (60 * 1000)) / 1000);
-            throw new Error(`Work available in ${minutes}m ${seconds}s`);
+        // For dryRun: check cooldown but don't update timestamp
+        // For amountOverride: skip cooldown check (already verified)
+        // For normal calls: check cooldown and update timestamp
+        if (!options.amountOverride) {
+            if (lastWork && (now - lastWork) < 60 * 60 * 1000) {
+                const timeLeft = 60 * 60 * 1000 - (now - lastWork);
+                const minutes = Math.floor(timeLeft / (60 * 1000));
+                const seconds = Math.floor((timeLeft % (60 * 1000)) / 1000);
+                throw new Error(`Work available in ${minutes}m ${seconds}s`);
+            }
         }
 
         // Use amountOverride if provided, else randomize
@@ -332,26 +338,31 @@ class Economy {
         if (amount <= 0) {
             console.warn(`[WORK BACKEND WARNING] Attempted to add non-positive amount: ${amount} for user: ${userId}`);
         }
-        // Update last work time and add money
-        const nowISOString = new Date().toISOString();
-        sql.prepare(`
-            UPDATE economy 
-            SET last_work = ?, updated_at = ?
-            WHERE user = ? AND guild = ?
-        `).run(nowISOString, nowISOString, userId, guildId);
-        const updatedUser = this.getUser(userId, guildId);
-        console.log(`[work] User: ${userId}, Guild: ${guildId}, last_work after:`, updatedUser.last_work);
-        try {
-            await this.updateBalance(userId, guildId, amount, 'balance');
-        } catch (err) {
-            console.error(`[WORK BACKEND ERROR] updateBalance failed for user: ${userId}, amount: ${amount}`, err);
-        }
-        const userAfterWork = this.getUser(userId, guildId);
-        console.log(`[WORK BACKEND DEBUG] User: ${userId} balance after work: ${userAfterWork.balance}`);
+        // Update last work time and add money (skip if dryRun)
+        if (!options.dryRun) {
+            const nowISOString = new Date().toISOString();
+            sql.prepare(`
+                UPDATE economy 
+                SET last_work = ?, updated_at = ?
+                WHERE user = ? AND guild = ?
+            `).run(nowISOString, nowISOString, userId, guildId);
+            const updatedUser = this.getUser(userId, guildId);
+            console.log(`[work] User: ${userId}, Guild: ${guildId}, last_work after:`, updatedUser.last_work);
+            try {
+                await this.updateBalance(userId, guildId, amount, 'balance');
+            } catch (err) {
+                console.error(`[WORK BACKEND ERROR] updateBalance failed for user: ${userId}, amount: ${amount}`, err);
+            }
+            const userAfterWork = this.getUser(userId, guildId);
+            console.log(`[WORK BACKEND DEBUG] User: ${userId} balance after work: ${userAfterWork.balance}`);
 
-        this.logTransaction(userId, guildId, 'work', amount, 'Work reward');
-        
-        return { user: updatedUser, amount };
+            this.logTransaction(userId, guildId, 'work', amount, 'Work reward');
+            
+            return { user: updatedUser, amount };
+        } else {
+            // For dryRun, just return the current user without updating anything
+            return { user: this.getUser(userId, guildId), amount: 0 };
+        }
     }
 
     // Fishing reward

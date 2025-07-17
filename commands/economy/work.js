@@ -151,7 +151,9 @@ module.exports = {
             
             collector.on('collect', async i => {
                 await i.deferUpdate(); // Defer immediately for fastest response
+                
                 if (i.customId.endsWith('_odd') && !foundOddIndices.has(i.customId)) {
+                    // Correct emoji clicked
                     foundOdds++;
                     foundOddIndices.add(i.customId);
                     
@@ -168,6 +170,22 @@ module.exports = {
                     if (foundOdds === oddCount) {
                         collector.stop('all_found');
                     }
+                } else if (i.customId.endsWith('_main')) {
+                    // Wrong emoji clicked - end the level immediately
+                    console.log(`[WORK DEBUG] Level ${levelIdx + 1} failed - wrong emoji clicked`);
+                    
+                    // Change the clicked wrong button to red
+                    const buttonIndex = parseInt(i.customId.split('_')[3]);
+                    const rowIndex = Math.floor(buttonIndex / gridSize);
+                    const colIndex = buttonIndex % gridSize;
+                    const clickedButton = rows[rowIndex].components[colIndex];
+                    clickedButton.setStyle(ButtonStyle.Danger);
+                    
+                    // Update the message to show the wrong choice
+                    await interaction.editReply({ embeds: [promptEmbed], components: rows });
+                    
+                    // End the level immediately
+                    collector.stop('wrong_choice');
                 }
             });
             return new Promise(resolve => {
@@ -183,8 +201,13 @@ module.exports = {
                             await interaction.editReply({ embeds: [promptEmbed.setColor(0x00FF00).setTitle('🏆 All Levels Complete!').setDescription(`Found all ${foundOdds} odd ones!`)] });
                         }
                         resolve(true);
+                    } else if (reason === 'wrong_choice') {
+                        // Wrong emoji clicked - level failed
+                        console.log(`[WORK DEBUG] Level ${levelIdx + 1} failed - wrong emoji clicked`);
+                        await interaction.editReply({ embeds: [promptEmbed.setColor(0xFF0000).setTitle('❌ Wrong Choice!').setDescription(`You clicked the wrong emoji! You need to find the odd ones out.`).setFooter({ text: 'You can work again in 1 hour.' })] });
+                        resolve(false);
                     } else {
-                        // Timeout or failure
+                        // Timeout or other failure
                         console.log(`[WORK DEBUG] Level ${levelIdx + 1} failed - time ran out or incomplete`);
                         await interaction.editReply({ embeds: [promptEmbed.setColor(0xFFA500).setTitle('❌ Time Up!').setDescription(`You found ${foundOdds}/${oddCount} odd ones. You need to find all of them!`).setFooter({ text: 'You can work again in 1 hour.' })] });
                         resolve(false);
