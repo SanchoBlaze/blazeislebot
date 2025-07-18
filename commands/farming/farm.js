@@ -543,6 +543,7 @@ module.exports = {
             const farm = await interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
             const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
             const is5x5 = interaction.client.inventory.hasUpgrade('farm_5x5', interaction.user.id, interaction.guild.id);
+            const is6x6 = interaction.client.inventory.hasUpgrade('farm_6x6', interaction.user.id, interaction.guild.id);
             const emptyPlots = interaction.client.farming.getEmptyPlots(farm);
             const plotOptions = emptyPlots
                 .filter(i => typeof i === 'number' && i >= 0 && i < (is6x6 ? 36 : is5x5 ? 25 : is4x4 ? 16 : 9))
