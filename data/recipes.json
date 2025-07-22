@@ -1,0 +1,522 @@
+[
+  {
+    "name": "Grilled Salmon",
+    "result": "food_grilled_salmon",
+    "ingredients": [
+      { "item": "fish_large_salmon", "quantity": 1 },
+      { "item": "crop_lemon", "quantity": 1 }
+    ],
+    "type": "buff",
+    "buff": {
+      "effect_type": "fishing_boost",
+      "effect_value": 3.0,
+      "duration_hours": 3
+    },
+    "emoji": "🍣"
+  },
+  {
+    "name": "Vegetable Stew",
+    "result": "food_vegetable_stew",
+    "ingredients": [
+      { "item": "crop_carrot", "quantity": 2 },
+      { "item": "crop_potato", "quantity": 2 },
+      { "item": "crop_onion", "quantity": 1 }
+    ],
+    "type": "sellable",
+    "sell_value": 60,
+    "emoji": "🥣"
+  },
+  {
+    "name": "Fish Pie",
+    "result": "food_fish_pie",
+    "ingredients": [
+      { "item": "fish_common_carp", "quantity": 1 },
+      { "item": "crop_potato", "quantity": 1 },
+      { "item": "crop_wheat", "quantity": 1 }
+    ],
+    "type": "sellable",
+    "sell_value": 55,
+    "emoji": "🥧"
+  },
+  {
+    "name": "Berry Tart",
+    "result": "food_berry_tart",
+    "ingredients": [
+      { "item": "crop_strawberry", "quantity": 1 },
+      { "item": "crop_blueberry", "quantity": 1 },
+      { "item": "crop_wheat", "quantity": 1 }
+    ],
+    "type": "buff",
+    "buff": {
+      "effect_type": "luck_boost",
+      "effect_value": 2.0,
+      "duration_hours": 2
+    },
+    "emoji": "🥧"
+  },
+  {
+    "name": "Hearty Soup",
+    "result": "food_hearty_soup",
+    "ingredients": [
+      { "item": "crop_carrot", "quantity": 1 },
+      { "item": "crop_potato", "quantity": 1 },
+      { "item": "fish_medium_trout", "quantity": 1 },
+      { "item": "crop_onion", "quantity": 1 }
+    ],
+    "type": "buff",
+    "buff": {
+      "effect_type": "health_boost",
+      "effect_value": 1.5,
+      "duration_hours": 6
+    },
+    "emoji": "🍲"
+  },
+  {
+    "name": "Fried Carp",
+    "result": "food_fried_carp",
+    "ingredients": [
+      { "item": "fish_common_carp", "quantity": 1 },
+      { "item": "crop_wheat", "quantity": 1 }
+    ],
+    "type": "sellable",
+    "sell_value": 45,
+    "emoji": "🍤"
+  },
+  {
+    "name": "Spicy Fish Curry",
+    "result": "food_spicy_fish_curry",
+    "ingredients": [
+      { "item": "fish_large_salmon", "quantity": 1 },
+      { "item": "crop_pepper", "quantity": 1 },
+      { "item": "crop_rice", "quantity": 1 },
+      { "item": "crop_onion", "quantity": 1 }
+    ],
+    "type": "buff",
+    "buff": {
+      "effect_type": "work_multiplier",
+      "effect_value": 4.0,
+      "duration_hours": 3
+    },
+    "emoji": "🍛"
+  },
+  {
+    "name": "Simple Salad",
+    "result": "food_simple_salad",
+    "ingredients": [
+      { "item": "crop_lettuce", "quantity": 1 },
+      { "item": "crop_tomato", "quantity": 1 },
+      { "item": "crop_carrot", "quantity": 1 }
+    ],
+    "type": "sellable",
+    "sell_value": 45,
+    "emoji": "🥗"
+  },
+  {
+    "name": "Lucky Fruit Salad",
+    "result": "food_lucky_fruit_salad",
+    "ingredients": [
+      { "item": "crop_strawberry", "quantity": 1 },
+      { "item": "crop_blueberry", "quantity": 1 },
+      { "item": "crop_pineapple", "quantity": 1 },
+      { "item": "crop_orange", "quantity": 1 }
+    ],
+    "type": "buff",
+    "buff": {
+      "effect_type": "luck_boost",
+      "effect_value": 3.0,
+      "duration_hours": 4
+    },
+    "emoji": "🍓"
+  },
+  {
+    "name": "Energy Smoothie",
+    "result": "food_energy_smoothie",
+    "ingredients": [
+      { "item": "crop_strawberry", "quantity": 2 },
+      { "item": "crop_blueberry", "quantity": 1 },
+      { "item": "crop_apple", "quantity": 1 }
+    ],
+    "type": "buff",
+    "buff": {
+      "effect_type": "work_multiplier",
+      "effect_value": 2.5,
+      "duration_hours": 2
+    },
+    "emoji": "🥤"
+  },
+  {
+    "name": "Fisherman's Feast",
+    "result": "food_fishermans_feast",
+    "ingredients": [
+      { "item": "fish_large_salmon", "quantity": 1 },
+      { "item": "fish_medium_trout", "quantity": 1 },
+      { "item": "crop_potato", "quantity": 2 },
+      { "item": "crop_carrot", "quantity": 1 }
+    ],
+    "type": "buff",
+    "buff": {
+      "effect_type": "fishing_boost",
+      "effect_value": 4.0,
+      "duration_hours": 5
+    },
+    "emoji": "🐟"
+  },
+  {
+    "name": "Golden Apple Pie",
+    "result": "food_golden_apple_pie",
+    "ingredients": [
+      { "item": "crop_golden_apple", "quantity": 1 },
+      { "item": "crop_wheat", "quantity": 2 },
+      { "item": "crop_strawberry", "quantity": 1 }
+    ],
+    "type": "buff",
+    "buff": {
+      "effect_type": "luck_boost",
+      "effect_value": 5.0,
+      "duration_hours": 8
+    },
+    "emoji": "🍎"
+  },
+  {
+    "name": "Dragon Fruit Smoothie",
+    "result": "food_dragon_fruit_smoothie",
+    "ingredients": [
+      { "item": "crop_dragonfruit", "quantity": 1 },
+      { "item": "crop_strawberry", "quantity": 1 },
+      { "item": "crop_blueberry", "quantity": 1 }
+    ],
+    "type": "buff",
+    "buff": {
+      "effect_type": "work_multiplier",
+      "effect_value": 3.0,
+      "duration_hours": 4
+    },
+    "emoji": "🐉"
+  },
+  {
+    "name": "Mystic Mushroom Soup",
+    "result": "food_mystic_mushroom_soup",
+    "ingredients": [
+      { "item": "crop_mushroom", "quantity": 2 },
+      { "item": "crop_crystal_berry", "quantity": 1 },
+      { "item": "crop_onion", "quantity": 1 },
+      { "item": "crop_carrot", "quantity": 1 }
+    ],
+    "type": "buff",
+    "buff": {
+      "effect_type": "health_boost",
+      "effect_value": 2.0,
+      "duration_hours": 12
+    },
+    "emoji": "🍄"
+  },
+  {
+    "name": "Crystal Berry Jam",
+    "result": "food_crystal_berry_jam",
+    "ingredients": [
+      { "item": "crop_crystal_berry", "quantity": 1 },
+      { "item": "crop_strawberry", "quantity": 2 },
+      { "item": "crop_wheat", "quantity": 1 }
+    ],
+    "type": "buff",
+    "buff": {
+      "effect_type": "luck_boost",
+      "effect_value": 4.0,
+      "duration_hours": 6
+    },
+    "emoji": "💎"
+  },
+  {
+    "name": "Premium Fish Stew",
+    "result": "food_premium_fish_stew",
+    "ingredients": [
+      { "item": "fish_diamond_tuna", "quantity": 1 },
+      { "item": "crop_potato", "quantity": 2 },
+      { "item": "crop_carrot", "quantity": 2 },
+      { "item": "crop_onion", "quantity": 1 }
+    ],
+    "type": "buff",
+    "buff": {
+      "effect_type": "fishing_boost",
+      "effect_value": 5.0,
+      "duration_hours": 8
+    },
+    "emoji": "🐠"
+  },
+  {
+    "name": "Garden Pizza",
+    "result": "food_garden_pizza",
+    "ingredients": [
+      { "item": "crop_wheat", "quantity": 2 },
+      { "item": "crop_tomato", "quantity": 2 },
+      { "item": "crop_pepper", "quantity": 1 },
+      { "item": "crop_onion", "quantity": 1 }
+    ],
+    "type": "sellable",
+    "sell_value": 120,
+    "emoji": "🍕"
+  },
+  {
+    "name": "Berry Pancakes",
+    "result": "food_berry_pancakes",
+    "ingredients": [
+      { "item": "crop_wheat", "quantity": 2 },
+      { "item": "crop_strawberry", "quantity": 1 },
+      { "item": "crop_blueberry", "quantity": 1 }
+    ],
+    "type": "sellable",
+    "sell_value": 95,
+    "emoji": "🥞"
+  },
+  {
+    "name": "Fish Tacos",
+    "result": "food_fish_tacos",
+    "ingredients": [
+      { "item": "fish_common_carp", "quantity": 1 },
+      { "item": "crop_wheat", "quantity": 1 },
+      { "item": "crop_tomato", "quantity": 1 },
+      { "item": "crop_lettuce", "quantity": 1 }
+    ],
+    "type": "sellable",
+    "sell_value": 65,
+    "emoji": "🌮"
+  },
+  {
+    "name": "Veggie Burger",
+    "result": "food_veggie_burger",
+    "ingredients": [
+      { "item": "crop_wheat", "quantity": 2 },
+      { "item": "crop_tomato", "quantity": 1 },
+      { "item": "crop_lettuce", "quantity": 1 },
+      { "item": "crop_onion", "quantity": 1 }
+    ],
+    "type": "sellable",
+    "sell_value": 75,
+    "emoji": "🍔"
+  },
+  {
+    "name": "Fruit Cake",
+    "result": "food_fruit_cake",
+    "ingredients": [
+      { "item": "crop_wheat", "quantity": 2 },
+      { "item": "crop_strawberry", "quantity": 1 },
+      { "item": "crop_blueberry", "quantity": 1 },
+      { "item": "crop_pineapple", "quantity": 1 }
+    ],
+    "type": "sellable",
+    "sell_value": 175,
+    "emoji": "🎂"
+  },
+  {
+    "name": "Rice Bowl",
+    "result": "food_rice_bowl",
+    "ingredients": [
+      { "item": "crop_rice", "quantity": 2 },
+      { "item": "crop_carrot", "quantity": 1 },
+      { "item": "crop_pepper", "quantity": 1 }
+    ],
+    "type": "sellable",
+    "sell_value": 65,
+    "emoji": "🍚"
+  },
+  {
+    "name": "Corn Chowder",
+    "result": "food_corn_chowder",
+    "ingredients": [
+      { "item": "crop_corn", "quantity": 2 },
+      { "item": "crop_potato", "quantity": 1 },
+      { "item": "crop_onion", "quantity": 1 }
+    ],
+    "type": "sellable",
+    "sell_value": 55,
+    "emoji": "🥣"
+  },
+  {
+    "name": "Tomato Soup",
+    "result": "food_tomato_soup",
+    "ingredients": [
+      { "item": "crop_tomato", "quantity": 3 },
+      { "item": "crop_onion", "quantity": 1 },
+      { "item": "crop_wheat", "quantity": 1 }
+    ],
+    "type": "sellable",
+    "sell_value": 70,
+    "emoji": "🍅"
+  },
+  {
+    "name": "Carrot Cake",
+    "result": "food_carrot_cake",
+    "ingredients": [
+      { "item": "crop_carrot", "quantity": 2 },
+      { "item": "crop_wheat", "quantity": 2 },
+      { "item": "crop_strawberry", "quantity": 1 }
+    ],
+    "type": "sellable",
+    "sell_value": 85,
+    "emoji": "🥕"
+  },
+  {
+    "name": "Grape Juice",
+    "result": "food_grape_juice",
+    "ingredients": [
+      { "item": "crop_grapes", "quantity": 3 },
+      { "item": "crop_strawberry", "quantity": 1 }
+    ],
+    "type": "buff",
+    "buff": {
+      "effect_type": "fishing_boost",
+      "effect_value": 2.0,
+      "duration_hours": 3
+    },
+    "emoji": "🍇"
+  },
+  {
+    "name": "Apple Pie",
+    "result": "food_apple_pie",
+    "ingredients": [
+      { "item": "crop_apple", "quantity": 2 },
+      { "item": "crop_wheat", "quantity": 2 },
+      { "item": "crop_strawberry", "quantity": 1 }
+    ],
+    "type": "sellable",
+    "sell_value": 105,
+    "emoji": "🍎"
+  },
+  {
+    "name": "Orange Juice",
+    "result": "food_orange_juice",
+    "ingredients": [
+      { "item": "crop_orange", "quantity": 2 },
+      { "item": "crop_strawberry", "quantity": 1 }
+    ],
+    "type": "sellable",
+    "sell_value": 95,
+    "emoji": "🍊"
+  },
+  {
+    "name": "Mushroom Risotto",
+    "result": "food_mushroom_risotto",
+    "ingredients": [
+      { "item": "crop_mushroom", "quantity": 2 },
+      { "item": "crop_rice", "quantity": 2 },
+      { "item": "crop_onion", "quantity": 1 }
+    ],
+    "type": "sellable",
+    "sell_value": 80,
+    "emoji": "🍄"
+  },
+  {
+    "name": "Fresh Lemonade",
+    "result": "food_fresh_lemonade",
+    "ingredients": [
+      { "item": "crop_lemon", "quantity": 2 },
+      { "item": "crop_strawberry", "quantity": 1 }
+    ],
+    "type": "sellable",
+    "sell_value": 75,
+    "emoji": "🍋"
+  },
+  {
+    "name": "Grape Jam",
+    "result": "food_grape_jam",
+    "ingredients": [
+      { "item": "crop_grapes", "quantity": 2 },
+      { "item": "crop_wheat", "quantity": 1 }
+    ],
+    "type": "sellable",
+    "sell_value": 120,
+    "emoji": "🍇"
+  },
+  {
+    "name": "Dragon Fruit Salad",
+    "result": "food_dragon_fruit_salad",
+    "ingredients": [
+      { "item": "crop_dragonfruit", "quantity": 1 },
+      { "item": "crop_strawberry", "quantity": 1 },
+      { "item": "crop_blueberry", "quantity": 1 }
+    ],
+    "type": "sellable",
+    "sell_value": 150,
+    "emoji": "🐉"
+  },
+  {
+    "name": "Golden Apple Cider",
+    "result": "food_golden_apple_cider",
+    "ingredients": [
+      { "item": "crop_golden_apple", "quantity": 1 },
+      { "item": "crop_wheat", "quantity": 2 }
+    ],
+    "type": "sellable",
+    "sell_value": 300,
+    "emoji": "🍎"
+  },
+  {
+    "name": "Crystal Berry Preserves",
+    "result": "food_crystal_berry_preserves",
+    "ingredients": [
+      { "item": "crop_crystal_berry", "quantity": 1 },
+      { "item": "crop_wheat", "quantity": 2 }
+    ],
+    "type": "sellable",
+    "sell_value": 400,
+    "emoji": "💎"
+  },
+  {
+    "name": "Elixir of the Ancients",
+    "result": "food_elixir_ancients",
+    "ingredients": [
+      { "item": "crop_celestial_lotus", "quantity": 1 },
+      { "item": "crop_starlight_grape", "quantity": 1 },
+      { "item": "crop_wheat", "quantity": 2 }
+    ],
+    "type": "buff",
+    "buff": {
+      "effect_type": "luck_boost",
+      "effect_value": 7.0,
+      "duration_hours": 8
+    },
+    "emoji": "🧪"
+  },
+  {
+    "name": "Eclipse Pepper Stew",
+    "result": "food_eclipse_pepper_stew",
+    "ingredients": [
+      { "item": "crop_eclipse_pepper", "quantity": 1 },
+      { "item": "crop_potato", "quantity": 2 },
+      { "item": "crop_onion", "quantity": 1 }
+    ],
+    "type": "buff",
+    "buff": {
+      "effect_type": "work_multiplier",
+      "effect_value": 6.0,
+      "duration_hours": 6
+    },
+    "emoji": "🌑🍲"
+  },
+  {
+    "name": "Starlight Wine",
+    "result": "food_starlight_wine",
+    "ingredients": [
+      { "item": "crop_starlight_grape", "quantity": 2 },
+      { "item": "crop_wheat", "quantity": 1 }
+    ],
+    "type": "buff",
+    "buff": {
+      "effect_type": "fishing_boost",
+      "effect_value": 7.0,
+      "duration_hours": 4
+    },
+    "emoji": "🍷✨"
+  },
+  {
+    "name": "Starlight Tart",
+    "result": "food_starlight_tart",
+    "ingredients": [
+      { "item": "crop_starlight_grape", "quantity": 2 },
+      { "item": "crop_wheat", "quantity": 2 }
+    ],
+    "type": "sellable",
+    "sell_value": 12500,
+    "emoji": "✨🥧"
+  }
+] 

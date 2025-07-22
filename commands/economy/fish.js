@@ -141,6 +141,16 @@ module.exports = {
                     inline: false
                 });
             }
+            
+            // Add luck boost info if user has active luck boost
+            const luckBoost = interaction.client.inventory.getLuckBoost(userId, guildId);
+            if (luckBoost > 1) {
+                embed.addFields({
+                    name: '🍀 Luck Boost Active!',
+                    value: `Your fishing catch rates are improved by ${Math.round((luckBoost - 1) * 30)}%!`,
+                    inline: false
+                });
+            }
 
             // Add special message for rare catches
             if (result.fish.rarity === 'rare' || result.fish.rarity === 'epic' || result.fish.rarity === 'legendary' || result.fish.rarity === 'mythic') {

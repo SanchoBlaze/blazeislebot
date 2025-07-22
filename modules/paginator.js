@@ -1,9 +1,8 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, MessageFlags } = require('discord.js');
 
-const paginator = async (interaction, pages) => {
-
+const paginator = async (interaction, pages, ephemeral = false) => {
     if (pages.length === 1) {
-        return interaction.reply({ embeds: [pages[0]] });
+        return interaction.reply({ embeds: [pages[0]], flags: ephemeral ? MessageFlags.Ephemeral : undefined });
     }
 
     let page = 0;
@@ -21,7 +20,7 @@ const paginator = async (interaction, pages) => {
                 .setDisabled(page === pages.length - 1)
         );
 
-    await interaction.reply({ embeds: [pages[page]], components: [getButtons()]});
+    await interaction.reply({ embeds: [pages[page]], components: [getButtons()], flags: ephemeral ? MessageFlags.Ephemeral : undefined });
     const message = await interaction.fetchReply();
     
     const collector = message.createMessageComponentCollector({

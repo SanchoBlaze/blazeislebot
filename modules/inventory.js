@@ -498,14 +498,16 @@ class Inventory {
         if (!inventoryItem) throw new Error('Item not in inventory');
 
         // Check for existing effects of the same type
-        if (item.effect_type && ['xp_multiplier', 'work_multiplier', 'daily_multiplier', 'coin_multiplier'].includes(item.effect_type)) {
+        if (item.effect_type && ['xp_multiplier', 'work_multiplier', 'daily_multiplier', 'coin_multiplier', 'health_boost', 'luck_boost'].includes(item.effect_type)) {
             const existingEffect = this.getActiveEffect(userId, guildId, item.effect_type);
             if (existingEffect) {
                 const effectTypeName = {
                     'xp_multiplier': 'XP boost',
                     'work_multiplier': 'work boost',
                     'daily_multiplier': 'daily multiplier',
-                    'coin_multiplier': 'coin multiplier'
+                    'coin_multiplier': 'coin multiplier',
+                    'health_boost': 'health boost',
+                    'luck_boost': 'luck boost'
                 }[item.effect_type];
                 
                 throw new Error(`You already have an active ${effectTypeName}! Wait for it to expire before using another.`);
@@ -545,6 +547,18 @@ class Inventory {
                 result.effect = { type: 'fishing_boost', value: item.effect_value, duration: item.duration_hours };
                 result.message = `🎣 Fishing bait activated! You'll get ${item.effect_value}x rare fish boost for ${item.duration_hours} hour(s).`;
                 break;
+
+            case 'health_boost':
+                this.addActiveEffect(userId, guildId, 'health_boost', item.effect_value, item.duration_hours);
+                result.effect = { type: 'health_boost', value: item.effect_value, duration: item.duration_hours };
+                result.message = `❤️ Health boost activated! Your work mini-game time limits are increased by ${item.effect_value}x for ${item.duration_hours} hour(s).`;
+                break;
+
+            case 'luck_boost':
+                this.addActiveEffect(userId, guildId, 'luck_boost', item.effect_value, item.duration_hours);
+                result.effect = { type: 'luck_boost', value: item.effect_value, duration: item.duration_hours };
+                result.message = `🍀 Luck boost activated! All RNG elements are improved by ${item.effect_value}x for ${item.duration_hours} hour(s).`;
+                break;
                 
             case 'random_item':
                 result = await this.openMysteryBox(userId, guildId);
@@ -555,36 +569,81 @@ class Inventory {
                 break;
 
             case 'scratch_card': {
-                // 50% nothing, 30% coins, 20% item (weighted by rarity)
+                // Apply luck boost to improve scratch card outcomes
+                const luckBoost = this.getLuckBoost(userId, guildId);
+                let nothingChance = 0.5;
+                let coinsChance = 0.3;
+                let itemChance = 0.2;
+                
+                if (luckBoost > 1) {
+                    // With luck boost, shift probability towards better outcomes
+                    const luckImprovement = (luckBoost - 1) * 0.4; // 40% of the boost value
+                    nothingChance = Math.max(0.2, nothingChance - luckImprovement);
+                    coinsChance = Math.min(0.5, coinsChance + luckImprovement * 0.6);
+                    itemChance = Math.min(0.4, itemChance + luckImprovement * 0.4);
+                }
+                
                 const roll = Math.random();
-                if (roll < 0.5) {
+                if (roll < nothingChance) {
                     result.message = '😢 You scratched and found nothing. Better luck next time!';
-                } else if (roll < 0.8) {
-                    // 30% coins
-                    const coins = Math.floor(Math.random() * 901) + 100;
+                } else if (roll < nothingChance + coinsChance) {
+                    // Coins (improved range with luck boost)
+                    let minCoins = 100;
+                    let maxCoins = 1000;
+                    if (luckBoost > 1) {
+                        const coinIncrease = Math.floor((maxCoins - minCoins) * (luckBoost - 1) * 0.5);
+                        minCoins = Math.max(100, minCoins + coinIncrease);
+                        maxCoins = Math.min(2000, maxCoins + coinIncrease);
+                    }
+                    const coins = Math.floor(Math.random() * (maxCoins - minCoins + 1)) + minCoins;
                     if (this.client && this.client.economy) {
                         this.client.economy.updateBalance(userId, guildId, coins, 'balance');
                         this.client.economy.logTransaction(userId, guildId, 'scratch_card_win', coins, 'Scratch Card Win');
                     }
                     result.effect = { type: 'coins', amount: coins };
-                    result.message = `🎉 You scratched and won **${coins} coins**!`;
+                    result.message = `🎉 You scratched and won **${coins} coins**!${luckBoost > 1 ? ' 🍀 Luck was on your side!' : ''}`;
                 } else {
-                    // 20% item (weighted by rarity)
+                    // Item (improved rarity with luck boost)
                     const allItems = this.getAllItems(guildId).filter(i => i.type !== 'mystery' && i.id !== 'scratch_card');
-                    // Rarity weights: common 40, uncommon 30, rare 15, epic 10, legendary 5, mythic 2
-                    const rarityWeights = { common: 40, uncommon: 30, rare: 15, epic: 10, legendary: 5, mythic: 2 };
-                    let weightedPool = [];
-                    for (const item of allItems) {
-                        const weight = rarityWeights[item.rarity] || 1;
-                        for (let i = 0; i < weight; i++) {
-                            weightedPool.push(item);
+                    let selectedItem = allItems[Math.floor(Math.random() * allItems.length)];
+                    
+                    if (luckBoost > 1) {
+                        // With luck boost, improve the rarity distribution of items
+                        const baseWeights = { common: 40, uncommon: 30, rare: 15, epic: 10, legendary: 5, mythic: 2 };
+                        const weightedItems = [];
+                        
+                        for (const item of allItems) {
+                            const baseWeight = baseWeights[item.rarity] || 1;
+                            // Luck boost reduces common item weight and increases rare item weight
+                            let finalWeight = baseWeight;
+                            if (item.rarity === 'common') {
+                                finalWeight = Math.floor(baseWeight * (2 - luckBoost)); // Reduce common items
+                            } else if (item.rarity === 'uncommon') {
+                                finalWeight = Math.floor(baseWeight * (1 + (luckBoost - 1) * 0.2)); // Slight increase
+                            } else if (item.rarity === 'rare') {
+                                finalWeight = Math.floor(baseWeight * (1 + (luckBoost - 1) * 0.5)); // Moderate increase
+                            } else if (item.rarity === 'epic') {
+                                finalWeight = Math.floor(baseWeight * (1 + (luckBoost - 1) * 0.8)); // Good increase
+                            } else if (item.rarity === 'legendary') {
+                                finalWeight = Math.floor(baseWeight * (1 + (luckBoost - 1) * 1.2)); // Strong increase
+                            } else if (item.rarity === 'mythic') {
+                                finalWeight = Math.floor(baseWeight * (1 + (luckBoost - 1) * 1.5)); // Best increase
+                            }
+                            
+                            for (let i = 0; i < Math.max(1, finalWeight); i++) {
+                                weightedItems.push(item);
+                            }
+                        }
+                        
+                        if (weightedItems.length > 0) {
+                            selectedItem = weightedItems[Math.floor(Math.random() * weightedItems.length)];
                         }
                     }
-                    if (weightedPool.length > 0) {
-                        const randomItem = weightedPool[Math.floor(Math.random() * weightedPool.length)];
-                        this.addItem(userId, guildId, randomItem.id, 1);
-                        result.effect = { type: 'item', item: randomItem };
-                        result.message = `🎁 You scratched and won a **${randomItem.name}**!`;
+                    
+                    if (selectedItem) {
+                        this.addItem(userId, guildId, selectedItem.id, 1);
+                        result.effect = { type: 'item', item: selectedItem };
+                        result.message = `🎁 You scratched and won a **${selectedItem.name}**!${luckBoost > 1 ? ' 🍀 Luck was on your side!' : ''}`;
                     } else {
                         result.message = 'You scratched, but there was nothing to win this time.';
                     }
@@ -870,14 +929,50 @@ class Inventory {
     // Open mystery box
     async openMysteryBox(userId, guildId, interaction = null, client = null) {
         const allItems = this.getAllItems(guildId).filter(item => item.type !== 'mystery');
-        const randomItem = allItems[Math.floor(Math.random() * allItems.length)];
         
-        if (randomItem) {
-            this.addItem(userId, guildId, randomItem.id, 1, interaction, client);
+        // Apply luck boost to improve item rarity chances
+        let selectedItem = allItems[Math.floor(Math.random() * allItems.length)];
+        const luckBoost = this.getLuckBoost(userId, guildId);
+        
+        if (luckBoost > 1) {
+            // With luck boost, improve the rarity distribution of items
+            const baseWeights = { common: 40, uncommon: 30, rare: 15, epic: 10, legendary: 5, mythic: 2 };
+            const weightedItems = [];
+            
+            for (const item of allItems) {
+                const baseWeight = baseWeights[item.rarity] || 1;
+                // Luck boost reduces common item weight and increases rare item weight
+                let finalWeight = baseWeight;
+                if (item.rarity === 'common') {
+                    finalWeight = Math.floor(baseWeight * (2 - luckBoost)); // Reduce common items
+                } else if (item.rarity === 'uncommon') {
+                    finalWeight = Math.floor(baseWeight * (1 + (luckBoost - 1) * 0.2)); // Slight increase
+                } else if (item.rarity === 'rare') {
+                    finalWeight = Math.floor(baseWeight * (1 + (luckBoost - 1) * 0.5)); // Moderate increase
+                } else if (item.rarity === 'epic') {
+                    finalWeight = Math.floor(baseWeight * (1 + (luckBoost - 1) * 0.8)); // Good increase
+                } else if (item.rarity === 'legendary') {
+                    finalWeight = Math.floor(baseWeight * (1 + (luckBoost - 1) * 1.2)); // Strong increase
+                } else if (item.rarity === 'mythic') {
+                    finalWeight = Math.floor(baseWeight * (1 + (luckBoost - 1) * 1.5)); // Best increase
+                }
+                
+                for (let i = 0; i < Math.max(1, finalWeight); i++) {
+                    weightedItems.push(item);
+                }
+            }
+            
+            if (weightedItems.length > 0) {
+                selectedItem = weightedItems[Math.floor(Math.random() * weightedItems.length)];
+            }
+        }
+        
+        if (selectedItem) {
+            this.addItem(userId, guildId, selectedItem.id, 1, interaction, client);
             return {
                 success: true,
-                message: `🎉 You found **${randomItem.name}** in the mystery box!`,
-                effect: { type: 'item_received', item: randomItem }
+                message: `🎉 You found **${selectedItem.name}** in the mystery box!${luckBoost > 1 ? ' 🍀 Luck was on your side!' : ''}`,
+                effect: { type: 'item_received', item: selectedItem }
             };
         }
         
@@ -1238,6 +1333,38 @@ class Inventory {
     getFishingCooldown(userId, guildId) {
         const bestRod = this.getBestFishingRod(userId, guildId);
         return bestRod ? bestRod.effect_value : 1;
+    }
+
+    // Get health boost multiplier for a user (from active effects)
+    getHealthBoost(userId, guildId) {
+        const effect = this.getActiveEffect(userId, guildId, 'health_boost');
+        if (!effect) return 1;
+        if (effect.expires_at && new Date(effect.expires_at) < new Date()) return 1;
+        return effect.effect_value;
+    }
+
+    // Check if user has health boost
+    hasHealthBoost(userId, guildId) {
+        const effect = this.getActiveEffect(userId, guildId, 'health_boost');
+        if (!effect) return false;
+        if (effect.expires_at && new Date(effect.expires_at) < new Date()) return false;
+        return true;
+    }
+
+    // Get luck boost multiplier for a user (from active effects)
+    getLuckBoost(userId, guildId) {
+        const effect = this.getActiveEffect(userId, guildId, 'luck_boost');
+        if (!effect) return 1;
+        if (effect.expires_at && new Date(effect.expires_at) < new Date()) return 1;
+        return effect.effect_value;
+    }
+
+    // Check if user has luck boost
+    hasLuckBoost(userId, guildId) {
+        const effect = this.getActiveEffect(userId, guildId, 'luck_boost');
+        if (!effect) return false;
+        if (effect.expires_at && new Date(effect.expires_at) < new Date()) return false;
+        return true;
     }
 
     // Get bait boost multiplier for a user (from active effects)
