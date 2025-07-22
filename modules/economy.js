@@ -280,6 +280,16 @@ class Economy {
                 finalAmount = Math.floor(amount * dailyMultiplier);
                 console.log(`[daily] User ${userId} has daily multiplier ${dailyMultiplier}x: ${amount} -> ${finalAmount} coins`);
             }
+            
+            // Apply luck boost to daily reward
+            const luckBoost = this.client.inventory.getLuckBoost(userId, guildId);
+            if (luckBoost > 1) {
+                const originalAmount = finalAmount;
+                // Luck boost adds a random bonus (10-50% of base amount)
+                const luckBonus = Math.floor(finalAmount * (Math.random() * 0.4 + 0.1) * (luckBoost - 1));
+                finalAmount += luckBonus;
+                console.log(`[daily] User ${userId} has luck boost ${luckBoost}x: ${originalAmount} + ${luckBonus} = ${finalAmount} coins`);
+            }
         }
 
         // Update last daily time and add money
@@ -330,6 +340,16 @@ class Economy {
                 const originalAmount = amount;
                 amount = Math.floor(amount * workMultiplier);
                 console.log(`[work] User ${userId} has work multiplier ${workMultiplier}x: ${originalAmount} -> ${amount} coins`);
+            }
+            
+            // Apply luck boost to final work amount
+            const luckBoost = this.client.inventory.getLuckBoost(userId, guildId);
+            if (luckBoost > 1) {
+                const originalAmount = amount;
+                // Luck boost adds a random bonus (10-50% of final amount)
+                const luckBonus = Math.floor(amount * (Math.random() * 0.4 + 0.1) * (luckBoost - 1));
+                amount += luckBonus;
+                console.log(`[work] User ${userId} has luck boost ${luckBoost}x: ${originalAmount} + ${luckBonus} = ${amount} coins`);
             }
         }
         // Debug logging before updating balance
@@ -447,6 +467,16 @@ class Economy {
                 // Check if bait effect is active and succeeds
                 if (baitBoost > 1 && Math.random() < baitSuccessRates[item.rarity]) {
                     finalChance = baseChance * baitBoost;
+                }
+            }
+            
+            // Apply luck boost to all fish catch rates
+            if (this.client && this.client.inventory) {
+                const luckBoost = this.client.inventory.getLuckBoost(userId, guildId);
+                if (luckBoost > 1) {
+                    // Luck boost increases catch rates by a smaller amount than bait
+                    const luckIncrease = (luckBoost - 1) * 0.3; // 30% of the boost value
+                    finalChance = Math.floor(finalChance * (1 + luckIncrease));
                 }
             }
             return {

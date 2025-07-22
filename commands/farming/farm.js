@@ -2,40 +2,7 @@ const { SlashCommandBuilder, AttachmentBuilder, EmbedBuilder, MessageFlags, Acti
 const { createCanvas, loadImage } = require('canvas');
 const path = require('path');
 const fs = require('fs');
-
-// Helper: get growth times for rarity
-function getGrowthTimesForRarity(rarity) {
-    const base = [5, 6, 7, 8];
-    const rarityOrder = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
-    const rarityIndex = rarityOrder.indexOf(rarity);
-    const extra = rarityIndex > 0 ? rarityIndex * 2 : 0;
-    return base.map(min => min + extra);
-}
-
-// Helper: get crop image path
-function getCropImagePath(cropType) {
-    if (cropType === 'crop_weeds') {
-        return path.join(__dirname, '../../assets/farming/farm_weeds_225.png');
-    } else {
-        return path.join(__dirname, `../../assets/farming/farm_${cropType}_225.png`);
-    }
-}
-// Helper: calculate current stage
-function getCurrentStage(plantedAt, originalStage, growthTimes) {
-    if (!plantedAt || !growthTimes) return 0;
-    const now = Date.now();
-    let elapsed = now - plantedAt;
-    let stage = 0;
-    for (let i = 0; i < growthTimes.length; i++) {
-        if (elapsed >= growthTimes[i] * 60 * 1000) {
-            stage++;
-            elapsed -= growthTimes[i] * 60 * 1000;
-        } else {
-            break;
-        }
-    }
-    return Math.max(stage, originalStage);
-}
+const farmingHelpers = require('../../modules/farmingHelpers');
 
 // Harvest yield table
 const harvestYields = {
@@ -121,19 +88,19 @@ async function renderFarmPlots(farm, interaction, plotCoords, loadedSharedStages
         
         // Special handling for weeds
         if (cropType === 'crop_weeds') {
-            const img = await loadImage(getCropImagePath(cropType));
+            const img = await loadImage(farmingHelpers.getCropImagePath(cropType));
             ctx.drawImage(img, plotCoords[i].x, plotCoords[i].y, plotSize, plotSize);
             continue;
         }
         
         // Apply watering can boost
-        let growthTimes = getGrowthTimesForRarity(rarity);
+        let growthTimes = farmingHelpers.getGrowthTimesForRarity(rarity);
         const wateringBoost = interaction.client.inventory.getWateringBoost(interaction.user.id, interaction.guild.id);
         if (wateringBoost && wateringBoost !== 1) {
             growthTimes = growthTimes.map(t => t * wateringBoost);
         }
         
-        const stage = getCurrentStage(plot.planted_at, plot.stage || 0, growthTimes);
+        const stage = farmingHelpers.getCurrentStage(plot.planted_at, plot.stage || 0, growthTimes);
         
         // If stage advanced, update DB
         if (stage > (plot.stage || 0)) {
@@ -144,7 +111,7 @@ async function renderFarmPlots(farm, interaction, plotCoords, loadedSharedStages
         if (stage < 4) {
             img = loadedSharedStages[stage];
         } else {
-            const cropStageImagePath = getCropImagePath(cropType);
+            const cropStageImagePath = farmingHelpers.getCropImagePath(cropType);
             img = await loadImage(cropStageImagePath);
         }
         
@@ -261,6 +228,10 @@ function buildFarmButtons(emptyPlots, readyToHarvest) {
     return [buttonRow];
 }
 
+const activeSeedCollectors = {};
+const activePlotCollectors = {};
+const activeFertCollectors = {};
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('farm')
@@ -295,9 +266,9 @@ module.exports = {
                 const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
                 const is5x5 = interaction.client.inventory.hasUpgrade('farm_5x5', interaction.user.id, interaction.guild.id);
                 const is6x6 = interaction.client.inventory.hasUpgrade('farm_6x6', interaction.user.id, interaction.guild.id);
-                const plotCoords = getPlotCoords(is4x4, is5x5, is6x6);
-                const loadedSharedStages = await getSharedStageImages();
-                const canvas = await renderFarmPlots(farm, interaction, plotCoords, loadedSharedStages, is4x4, is5x5, is6x6);
+                const plotCoords = farmingHelpers.getPlotCoords(is4x4, is5x5, is6x6);
+                const loadedSharedStages = await farmingHelpers.getSharedStageImages();
+                const canvas = await farmingHelpers.renderFarmPlots(farm, interaction, plotCoords, loadedSharedStages, is4x4, is5x5, is6x6);
                 const buffer = canvas.toBuffer();
                 const attachment = new AttachmentBuilder(buffer, { name: 'farm_preview.png' });
                 const embed = new EmbedBuilder()
@@ -323,7 +294,7 @@ module.exports = {
             const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
             const is5x5 = interaction.client.inventory.hasUpgrade('farm_5x5', interaction.user.id, interaction.guild.id);
             const is6x6 = interaction.client.inventory.hasUpgrade('farm_6x6', interaction.user.id, interaction.guild.id);
-            const plotCoords = getPlotCoords(is4x4, is5x5, is6x6);
+            const plotCoords = farmingHelpers.getPlotCoords(is4x4, is5x5, is6x6);
             const now = Date.now();
             let infoLines = [];
             for (let i = 0; i < farm.length; i++) {
@@ -340,12 +311,12 @@ module.exports = {
                     if (cropType === 'crop_weeds') {
                         line += `🌿 Weeds | Fully grown!`;
                     } else {
-                        let growthTimes = getGrowthTimesForRarity(rarity);
+                        let growthTimes = farmingHelpers.getGrowthTimesForRarity(rarity);
                         const wateringBoost = interaction.client.inventory.getWateringBoost(interaction.user.id, interaction.guild.id);
                         if (wateringBoost && wateringBoost !== 1) {
                             growthTimes = growthTimes.map(t => t * wateringBoost);
                         }
-                        const stage = getCurrentStage(plot.planted_at, plot.stage || 0, growthTimes);
+                        const stage = farmingHelpers.getCurrentStage(plot.planted_at, plot.stage || 0, growthTimes);
                         const totalStages = growthTimes.length + 1;
                         
                         // Calculate time left to next stage and to fully grown
@@ -586,39 +557,311 @@ module.exports = {
                     seenFertIds.add(fertiliser.id);
                 }
             });
-            // Build all three dropdowns with unique custom_ids
+            // Step 1: Seed selection (single select, paginated if >25)
+            const maxOptions = 25;
+            let seedPage = 0;
+            function getSeedPageOptions(page) {
+                const start = page * maxOptions;
+                const end = start + maxOptions;
+                return seedOptions.slice(start, end);
+            }
+            let currentSeedOptions = getSeedPageOptions(seedPage);
             const seedMenu = new StringSelectMenuBuilder()
                 .setCustomId('farm_plant_seed')
                 .setPlaceholder('Select a seed to plant')
-                .addOptions(seedOptions)
+                .addOptions(currentSeedOptions)
                 .setMinValues(1)
                 .setMaxValues(1);
-            const plotMenu = new StringSelectMenuBuilder()
-                .setCustomId('farm_plant_plot')
-                .setPlaceholder('Select a plot')
-                .addOptions(plotOptions)
-                .setMinValues(1)
-                .setMaxValues(1);
-            const fertiliserMenu = new StringSelectMenuBuilder()
-                .setCustomId('farm_plant_fertiliser')
-                .setPlaceholder('Select fertiliser') // Remove 'optional'
-                .addOptions(fertiliserOptions)
-                .setMinValues(1)
-                .setMaxValues(1);
-            const selectRows = [
+            const prevSeedButton = new ButtonBuilder()
+                .setCustomId('farm_plant_seed_prev')
+                .setLabel('Previous Seeds')
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(seedPage === 0);
+            const nextSeedButton = new ButtonBuilder()
+                .setCustomId('farm_plant_seed_next')
+                .setLabel('Next Seeds')
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(seedOptions.length <= maxOptions || (seedPage + 1) * maxOptions >= seedOptions.length);
+            const seedRows = [
                 new ActionRowBuilder().addComponents(seedMenu),
-                new ActionRowBuilder().addComponents(plotMenu),
-                new ActionRowBuilder().addComponents(fertiliserMenu)
+                new ActionRowBuilder().addComponents(prevSeedButton, nextSeedButton)
             ];
-            // Store a temporary selection state for the user
-            if (!interaction.client._farmSelections) interaction.client._farmSelections = {};
-            interaction.client._farmSelections[interaction.user.id] = {};
             await interaction.update({
-                content: 'Select a seed, plot, and fertiliser (optional) to plant:',
-                components: selectRows,
+                content: 'Select a seed to plant:',
+                components: seedRows,
                 embeds: [],
                 files: [],
-                attachments: []
+                attachments: [],
+                flags: MessageFlags.Ephemeral
+            });
+            const seedFilter = i => i.user.id === interaction.user.id && (
+                i.customId === 'farm_plant_seed' ||
+                i.customId === 'farm_plant_seed_prev' ||
+                i.customId === 'farm_plant_seed_next'
+            );
+            if (activeSeedCollectors[interaction.user.id]) {
+                activeSeedCollectors[interaction.user.id].stop();
+                delete activeSeedCollectors[interaction.user.id];
+            }
+            const seedCollector = interaction.channel.createMessageComponentCollector({ filter: seedFilter, time: 300000 });
+            activeSeedCollectors[interaction.user.id] = seedCollector;
+            seedCollector.on('end', () => {
+                delete activeSeedCollectors[interaction.user.id];
+            });
+            let selectedSeed = null;
+            seedCollector.on('collect', async i => {
+                if (i.customId === 'farm_plant_seed_prev') {
+                    seedPage = Math.max(0, seedPage - 1);
+                    currentSeedOptions = getSeedPageOptions(seedPage);
+                    const updatedSeedMenu = new StringSelectMenuBuilder()
+                        .setCustomId('farm_plant_seed')
+                        .setPlaceholder('Select a seed to plant')
+                        .addOptions(currentSeedOptions)
+                        .setMinValues(1)
+                        .setMaxValues(1);
+                    prevSeedButton.setDisabled(seedPage === 0);
+                    nextSeedButton.setDisabled(seedOptions.length <= maxOptions || (seedPage + 1) * maxOptions >= seedOptions.length);
+                    seedRows[0] = new ActionRowBuilder().addComponents(updatedSeedMenu);
+                    seedRows[1] = new ActionRowBuilder().addComponents(prevSeedButton, nextSeedButton);
+                    await i.update({
+                        content: 'Select a seed to plant:',
+                        components: seedRows
+                    });
+                    return;
+                }
+                if (i.customId === 'farm_plant_seed_next') {
+                    const maxSeedPage = Math.floor((seedOptions.length - 1) / maxOptions);
+                    seedPage = Math.min(maxSeedPage, seedPage + 1);
+                    currentSeedOptions = getSeedPageOptions(seedPage);
+                    const updatedSeedMenu = new StringSelectMenuBuilder()
+                        .setCustomId('farm_plant_seed')
+                        .setPlaceholder('Select a seed to plant')
+                        .addOptions(currentSeedOptions)
+                        .setMinValues(1)
+                        .setMaxValues(1);
+                    prevSeedButton.setDisabled(seedPage === 0);
+                    nextSeedButton.setDisabled(seedOptions.length <= maxOptions || (seedPage + 1) * maxOptions >= seedOptions.length);
+                    seedRows[0] = new ActionRowBuilder().addComponents(updatedSeedMenu);
+                    seedRows[1] = new ActionRowBuilder().addComponents(prevSeedButton, nextSeedButton);
+                    await i.update({
+                        content: 'Select a seed to plant:',
+                        components: seedRows
+                    });
+                    return;
+                }
+                if (i.customId === 'farm_plant_seed') {
+                    selectedSeed = i.values[0];
+                    seedCollector.stop();
+                    // Step 2: Plot selection (multi-select, max = number of seeds of selected type)
+                    const seedId = selectedSeed.replace('seeds_', '');
+                    const seedItem = seeds.find(s => `seeds_${s.id}` === selectedSeed);
+                    const maxPlots = Math.min(seedItem ? seedItem.quantity : 1, 25);
+                    const emptyPlots = interaction.client.farming.getEmptyPlots(farm);
+                    const plotOptions = emptyPlots.map(i => ({
+                        label: `Plot ${i + 1}`,
+                        value: String(i)
+                    })).slice(0, 25); // Only show up to 25 plots at once
+                    const plotMenu = new StringSelectMenuBuilder()
+                        .setCustomId('farm_plant_plot_multi')
+                        .setPlaceholder('Select plots to plant')
+                        .addOptions(plotOptions)
+                        .setMinValues(1)
+                        .setMaxValues(maxPlots);
+                    try {
+                        await i.update({
+                            content: `Select up to ${maxPlots} plots to plant your ${seedItem ? seedItem.name : seedId} seeds:`,
+                            components: [new ActionRowBuilder().addComponents(plotMenu)],
+                            flags: MessageFlags.Ephemeral
+                        });
+                    } catch (err) {
+                        if (err.code === 10062 || err.code === 40060) {
+                            console.warn('Attempted to update an expired or already-responded interaction (plot select step).');
+                        } else {
+                            throw err;
+                        }
+                    }
+                    // Step 3: Plot selection collector
+                    const plotFilter = i2 => i2.user.id === interaction.user.id && i2.customId === 'farm_plant_plot_multi';
+                    if (activePlotCollectors[interaction.user.id]) {
+                        activePlotCollectors[interaction.user.id].stop();
+                        delete activePlotCollectors[interaction.user.id];
+                    }
+                    const plotCollector = interaction.channel.createMessageComponentCollector({ filter: plotFilter, time: 300000 });
+                    activePlotCollectors[interaction.user.id] = plotCollector;
+                    plotCollector.on('end', () => {
+                        delete activePlotCollectors[interaction.user.id];
+                    });
+                    plotCollector.on('collect', async i2 => {
+                        const selectedPlots = i2.values.map(Number);
+                        plotCollector.stop();
+                        // Step 4: Fertiliser selection (single select, paginated if >25)
+                        let fertPage = 0;
+                        function getFertPageOptions(page) {
+                            const start = page * maxOptions;
+                            const end = start + maxOptions;
+                            return fertiliserOptions.slice(start, end);
+                        }
+                        let currentFertOptions = getFertPageOptions(fertPage);
+                        const fertMenu = new StringSelectMenuBuilder()
+                            .setCustomId('farm_plant_fertiliser')
+                            .setPlaceholder('Select fertiliser (optional)')
+                            .addOptions(currentFertOptions)
+                            .setMinValues(1)
+                            .setMaxValues(1);
+                        const prevFertButton = new ButtonBuilder()
+                            .setCustomId('farm_plant_fert_prev')
+                            .setLabel('Previous Fertilisers')
+                            .setStyle(ButtonStyle.Secondary)
+                            .setDisabled(fertPage === 0);
+                        const nextFertButton = new ButtonBuilder()
+                            .setCustomId('farm_plant_fert_next')
+                            .setLabel('Next Fertilisers')
+                            .setStyle(ButtonStyle.Secondary)
+                            .setDisabled(fertiliserOptions.length <= maxOptions || (fertPage + 1) * maxOptions >= fertiliserOptions.length);
+                        const fertRows = [
+                            new ActionRowBuilder().addComponents(fertMenu),
+                            new ActionRowBuilder().addComponents(prevFertButton, nextFertButton)
+                        ];
+                        try {
+                            await i2.update({
+                                content: 'Select a fertiliser (optional):',
+                                components: fertRows,
+                                flags: MessageFlags.Ephemeral
+                            });
+                        } catch (err) {
+                            if (err.code === 10062 || err.code === 40060) {
+                                console.warn('Attempted to update an expired or already-responded interaction (fertiliser select step).');
+                            } else {
+                                throw err;
+                            }
+                        }
+                        // Step 5: Fertiliser selection collector
+                        const fertFilter = i3 => i3.user.id === interaction.user.id && (
+                            i3.customId === 'farm_plant_fertiliser' ||
+                            i3.customId === 'farm_plant_fert_prev' ||
+                            i3.customId === 'farm_plant_fert_next'
+                        );
+                        if (activeFertCollectors[interaction.user.id]) {
+                            activeFertCollectors[interaction.user.id].stop();
+                            delete activeFertCollectors[interaction.user.id];
+                        }
+                        const fertCollector = interaction.channel.createMessageComponentCollector({ filter: fertFilter, time: 300000 });
+                        activeFertCollectors[interaction.user.id] = fertCollector;
+                        fertCollector.on('end', () => {
+                            delete activeFertCollectors[interaction.user.id];
+                        });
+                        let selectedFert = null;
+                        fertCollector.on('collect', async i3 => {
+                            if (i3.customId === 'farm_plant_fert_prev') {
+                                fertPage = Math.max(0, fertPage - 1);
+                                currentFertOptions = getFertPageOptions(fertPage);
+                                const updatedFertMenu = new StringSelectMenuBuilder()
+                                    .setCustomId('farm_plant_fertiliser')
+                                    .setPlaceholder('Select fertiliser (optional)')
+                                    .addOptions(currentFertOptions)
+                                    .setMinValues(1)
+                                    .setMaxValues(1);
+                                prevFertButton.setDisabled(fertPage === 0);
+                                nextFertButton.setDisabled(fertiliserOptions.length <= maxOptions || (fertPage + 1) * maxOptions >= fertiliserOptions.length);
+                                fertRows[0] = new ActionRowBuilder().addComponents(updatedFertMenu);
+                                fertRows[1] = new ActionRowBuilder().addComponents(prevFertButton, nextFertButton);
+                                await i3.update({
+                                    content: 'Select a fertiliser (optional):',
+                                    components: fertRows
+                                });
+                                return;
+                            }
+                            if (i3.customId === 'farm_plant_fert_next') {
+                                const maxFertPage = Math.floor((fertiliserOptions.length - 1) / maxOptions);
+                                fertPage = Math.min(maxFertPage, fertPage + 1);
+                                currentFertOptions = getFertPageOptions(fertPage);
+                                const updatedFertMenu = new StringSelectMenuBuilder()
+                                    .setCustomId('farm_plant_fertiliser')
+                                    .setPlaceholder('Select fertiliser (optional)')
+                                    .addOptions(currentFertOptions)
+                                    .setMinValues(1)
+                                    .setMaxValues(1);
+                                prevFertButton.setDisabled(fertPage === 0);
+                                nextFertButton.setDisabled(fertiliserOptions.length <= maxOptions || (fertPage + 1) * maxOptions >= fertiliserOptions.length);
+                                fertRows[0] = new ActionRowBuilder().addComponents(updatedFertMenu);
+                                fertRows[1] = new ActionRowBuilder().addComponents(prevFertButton, nextFertButton);
+                                await i3.update({
+                                    content: 'Select a fertiliser (optional):',
+                                    components: fertRows
+                                });
+                                return;
+                            }
+                            if (i3.customId === 'farm_plant_fertiliser') {
+                                selectedFert = i3.values[0] !== 'none' ? i3.values[0] : null;
+                                fertCollector.stop();
+                                // Step 6: Confirm and plant
+                                // Remove seeds and plant in all selected plots
+                                for (const plotIndex of selectedPlots) {
+                                    await interaction.client.inventory.removeItem(interaction.user.id, interaction.guild.id, seedId, 1);
+                                    await interaction.client.farming.plantSeed(interaction.user.id, interaction.guild.id, plotIndex, seedId, selectedFert);
+                                }
+                                const updatedFarm2 = await interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
+                                const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
+                                const is5x5 = interaction.client.inventory.hasUpgrade('farm_5x5', interaction.user.id, interaction.guild.id);
+                                const is6x6 = interaction.client.inventory.hasUpgrade('farm_6x6', interaction.user.id, interaction.guild.id);
+                                const plotCoords = farmingHelpers.getPlotCoords(is4x4, is5x5, is6x6);
+                                const loadedSharedStages = await farmingHelpers.getSharedStageImages();
+                                const canvas = await farmingHelpers.renderFarmPlots(updatedFarm2, interaction, plotCoords, loadedSharedStages, is4x4, is5x5, is6x6);
+                                const buffer = canvas.toBuffer();
+                                const attachment = new AttachmentBuilder(buffer, { name: 'farm_preview.png' });
+                                const embed = new EmbedBuilder()
+                                    .setColor(0x00FF00)
+                                    .setTitle('🌾 Your Farm')
+                                    .setDescription(`Planted ${seedItem ? seedItem.name : seedId} in plots: ${selectedPlots.map(p => p + 1).join(', ')}${selectedFert ? ' with fertiliser' : ''}!`)
+                                    .setImage('attachment://farm_preview.png')
+                                    .setFooter({ text: 'Your farm has been updated.' })
+                                    .setTimestamp();
+                                const emptyPlots = interaction.client.farming.getEmptyPlots(updatedFarm2);
+                                const readyToHarvest = updatedFarm2.some(plot => plot.crop && (plot.stage || 0) >= 4);
+                                const components = buildFarmButtons(emptyPlots, readyToHarvest);
+                                await i3.update({
+                                    content: '',
+                                    embeds: [embed],
+                                    files: [attachment],
+                                    components,
+                                    flags: MessageFlags.Ephemeral
+                                });
+                                let wormFound = false;
+                                let wormAmount = 0;
+                                const luckBoost = interaction.client.inventory.getLuckBoost(interaction.user.id, interaction.guild.id);
+                                const wormChance = 0.15 * luckBoost; // Base 15% chance, boosted by luck
+                                if (Math.random() < wormChance) {
+                                    wormFound = true;
+                                    wormAmount = Math.floor(Math.random() * 3) + 1; // 1-3 basic bait
+                                    await interaction.client.inventory.addItem(interaction.user.id, interaction.guild.id, 'bait_basic', wormAmount);
+                                }
+                                if (wormFound) {
+                                    const wormEmbed = new EmbedBuilder()
+                                        .setColor(0x8B4513)
+                                        .setTitle('🪱 You Found a Worm!')
+                                        .setDescription(`While digging in the soil, you discovered a wriggly worm! You've added **${wormAmount} Basic Bait** to your inventory.`)
+                                        .setThumbnail('attachment://worm_thumbnail.png')
+                                        .setFooter({ text: 'Worms are great for fishing!' })
+                                        .setTimestamp();
+                                    if (luckBoost > 1) {
+                                        wormEmbed.addFields({
+                                            name: '🍀 Luck Boost Active!',
+                                            value: `Your worm discovery chance was boosted by ${Math.round((luckBoost - 1) * 100)}%!`,
+                                            inline: false
+                                        });
+                                    }
+                                    const wormPath = path.join(__dirname, '../../assets/farming/farm_worm_225.png');
+                                    const wormAttachment = new AttachmentBuilder(wormPath, { name: 'worm_thumbnail.png' });
+                                    await i3.followUp({
+                                        embeds: [wormEmbed],
+                                        files: [wormAttachment],
+                                        flags: MessageFlags.Ephemeral
+                                    });
+                                }
+                            }
+                        });
+                    });
+                }
             });
             return true;
         }
@@ -730,9 +973,9 @@ module.exports = {
             const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
             const is5x5 = interaction.client.inventory.hasUpgrade('farm_5x5', interaction.user.id, interaction.guild.id);
             const is6x6 = interaction.client.inventory.hasUpgrade('farm_6x6', interaction.user.id, interaction.guild.id);
-            const plotCoords = getPlotCoords(is4x4, is5x5, is6x6);
-            const loadedSharedStages = await getSharedStageImages();
-            const canvas = await renderFarmPlots(updatedFarm, interaction, plotCoords, loadedSharedStages, is4x4, is5x5, is6x6);
+            const plotCoords = farmingHelpers.getPlotCoords(is4x4, is5x5, is6x6);
+            const loadedSharedStages = await farmingHelpers.getSharedStageImages();
+            const canvas = await farmingHelpers.renderFarmPlots(updatedFarm, interaction, plotCoords, loadedSharedStages, is4x4, is5x5, is6x6);
             const buffer = canvas.toBuffer();
             const attachment = new AttachmentBuilder(buffer, { name: 'farm_preview.png' });
             // Build harvest message with emojis
@@ -803,9 +1046,9 @@ module.exports = {
             const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
             const is5x5 = interaction.client.inventory.hasUpgrade('farm_5x5', interaction.user.id, interaction.guild.id);
             const is6x6 = interaction.client.inventory.hasUpgrade('farm_6x6', interaction.user.id, interaction.guild.id);
-            const plotCoords = getPlotCoords(is4x4, is5x5, is6x6);
-            const loadedSharedStages = await getSharedStageImages();
-            const canvas = await renderFarmPlots(updatedFarm, interaction, plotCoords, loadedSharedStages, is4x4, is5x5, is6x6);
+            const plotCoords = farmingHelpers.getPlotCoords(is4x4, is5x5, is6x6);
+            const loadedSharedStages = await farmingHelpers.getSharedStageImages();
+            const canvas = await farmingHelpers.renderFarmPlots(updatedFarm, interaction, plotCoords, loadedSharedStages, is4x4, is5x5, is6x6);
             const buffer = canvas.toBuffer();
             const attachment = new AttachmentBuilder(buffer, { name: 'farm_preview.png' });
             const embed = new EmbedBuilder()
@@ -836,9 +1079,9 @@ module.exports = {
             const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
             const is5x5 = interaction.client.inventory.hasUpgrade('farm_5x5', interaction.user.id, interaction.guild.id);
             const is6x6 = interaction.client.inventory.hasUpgrade('farm_6x6', interaction.user.id, interaction.guild.id);
-            const plotCoords = getPlotCoords(is4x4, is5x5, is6x6);
-            const loadedSharedStages = await getSharedStageImages();
-            const canvas = await renderFarmPlots(updatedFarm, interaction, plotCoords, loadedSharedStages, is4x4, is5x5, is6x6);
+            const plotCoords = farmingHelpers.getPlotCoords(is4x4, is5x5, is6x6);
+            const loadedSharedStages = await farmingHelpers.getSharedStageImages();
+            const canvas = await farmingHelpers.renderFarmPlots(updatedFarm, interaction, plotCoords, loadedSharedStages, is4x4, is5x5, is6x6);
             const buffer = canvas.toBuffer();
             const attachment = new AttachmentBuilder(buffer, { name: 'farm_snapshot.png' });
             const embed = new EmbedBuilder()
@@ -862,122 +1105,7 @@ module.exports = {
     async handleSelect(interaction) {
         try {
             console.log('[farm] handleSelect triggered:', interaction.customId);
-            // Handle seed selection
-            if (interaction.customId === 'farm_plant_seed') {
-                console.log('[farm] farm_plant_seed handler called');
-                if (!interaction.client._farmSelections) interaction.client._farmSelections = {};
-                if (!interaction.client._farmSelections[interaction.user.id]) interaction.client._farmSelections[interaction.user.id] = {};
-                interaction.client._farmSelections[interaction.user.id].seed = interaction.values[0];
-                await interaction.deferUpdate();
-                return true;
-            }
-            // Handle plot selection
-            if (interaction.customId === 'farm_plant_plot') {
-                console.log('[farm] farm_plant_plot handler called');
-                if (!interaction.client._farmSelections) interaction.client._farmSelections = {};
-                if (!interaction.client._farmSelections[interaction.user.id]) interaction.client._farmSelections[interaction.user.id] = {};
-                interaction.client._farmSelections[interaction.user.id].plot = interaction.values[0];
-                await interaction.deferUpdate();
-                return true;
-            }
-            // Handle fertiliser selection and finalise planting
-            if (interaction.customId === 'farm_plant_fertiliser') {
-                console.log('[farm] farm_plant_fertiliser handler called');
-                if (!interaction.client._farmSelections) interaction.client._farmSelections = {};
-                if (!interaction.client._farmSelections[interaction.user.id]) interaction.client._farmSelections[interaction.user.id] = {};
-                interaction.client._farmSelections[interaction.user.id].fertiliser = interaction.values[0];
-                const selection = interaction.client._farmSelections[interaction.user.id];
-                if (!selection.seed || !selection.plot) {
-                    await interaction.reply({ content: 'Please select both a seed and a plot before planting.', flags: MessageFlags.Ephemeral });
-                    return true;
-                }
-                const seedId = selection.seed.replace('seeds_', '');
-                const plotIndex = parseInt(selection.plot, 10);
-                let fertiliserId = null;
-                if (selection.fertiliser && selection.fertiliser !== 'none') {
-                    fertiliserId = selection.fertiliser;
-                }
-                // Remove seed from inventory
-                await interaction.client.inventory.removeItem(interaction.user.id, interaction.guild.id, seedId, 1);
-                // Remove fertiliser from inventory if selected
-                if (fertiliserId) {
-                    await interaction.client.inventory.removeItem(interaction.user.id, interaction.guild.id, fertiliserId, 1);
-                }
-                // Plant the seed with fertiliser
-                await interaction.client.farming.plantSeed(interaction.user.id, interaction.guild.id, plotIndex, seedId, fertiliserId);
-                // Increment farming stats
-                interaction.client.farming.incrementSeedsPlanted(interaction.user.id, interaction.guild.id, 1);
-                if (interaction.client.farming.incrementFarmItemStat) {
-                    interaction.client.farming.incrementFarmItemStat(interaction.user.id, interaction.guild.id, 'seed', seedId, 1);
-                }
-                if (fertiliserId) {
-                    interaction.client.farming.incrementFertilisersUsed(interaction.user.id, interaction.guild.id, 1);
-                    if (interaction.client.farming.incrementFarmItemStat) {
-                        interaction.client.farming.incrementFarmItemStat(interaction.user.id, interaction.guild.id, 'fertiliser', fertiliserId, 1);
-                    }
-                }
-
-                // Check for random worm chance (15% chance)
-                let wormFound = false;
-                let wormAmount = 0;
-                if (Math.random() < 0.15) {
-                    wormFound = true;
-                    wormAmount = Math.floor(Math.random() * 3) + 1; // 1-3 basic bait
-                    await interaction.client.inventory.addItem(interaction.user.id, interaction.guild.id, 'bait_basic', wormAmount);
-                }
-
-                delete interaction.client._farmSelections[interaction.user.id];
-                // Re-render farm after planting
-                const updatedFarm2 = await interaction.client.farming.getFarm(interaction.user.id, interaction.guild.id);
-                const is4x4 = interaction.client.inventory.hasUpgrade('farm_4x4', interaction.user.id, interaction.guild.id);
-                const is5x5 = interaction.client.inventory.hasUpgrade('farm_5x5', interaction.user.id, interaction.guild.id);
-                const is6x6 = interaction.client.inventory.hasUpgrade('farm_6x6', interaction.user.id, interaction.guild.id);
-                const plotCoords = getPlotCoords(is4x4, is5x5, is6x6);
-                const loadedSharedStages = await getSharedStageImages();
-                const canvas = await renderFarmPlots(updatedFarm2, interaction, plotCoords, loadedSharedStages, is4x4, is5x5, is6x6);
-                const buffer = canvas.toBuffer();
-                const attachment = new AttachmentBuilder(buffer, { name: 'farm_preview.png' });
-                const embed = new EmbedBuilder()
-                    .setColor(0x00FF00)
-                    .setTitle('🌾 Your Farm')
-                    .setDescription(`Planted ${seedId.replace('_', ' ')} in Plot ${plotIndex + 1}!${fertiliserId ? ' Used fertiliser!' : ''}`)
-                    .setImage('attachment://farm_preview.png')
-                    .setFooter({ text: 'Your farm has been updated.' })
-                    .setTimestamp();
-                // Rebuild components (plant/harvest/refresh/share buttons)
-                const emptyPlots = interaction.client.farming.getEmptyPlots(updatedFarm2);
-                const readyToHarvest = updatedFarm2.some(plot => plot.crop && (plot.stage || 0) >= 4);
-                const components = buildFarmButtons(emptyPlots, readyToHarvest);
-                await interaction.update({
-                    content: '',
-                    embeds: [embed],
-                    files: [attachment],
-                    components,
-                    flags: MessageFlags.Ephemeral
-                });
-
-                // Send worm message if found
-                if (wormFound) {
-                    const wormEmbed = new EmbedBuilder()
-                        .setColor(0x8B4513) // Brown color for worms
-                        .setTitle('🪱 You Found a Worm!')
-                        .setDescription(`While digging in the soil, you discovered a wriggly worm! You've added **${wormAmount} Basic Bait** to your inventory.`)
-                        .setThumbnail('attachment://worm_thumbnail.png')
-                        .setFooter({ text: 'Worms are great for fishing!' })
-                        .setTimestamp();
-
-                    // Create worm thumbnail attachment
-                    const wormPath = path.join(__dirname, '../../assets/farming/farm_worm_225.png');
-                    const wormAttachment = new AttachmentBuilder(wormPath, { name: 'worm_thumbnail.png' });
-
-                    await interaction.followUp({
-                        embeds: [wormEmbed],
-                        files: [wormAttachment],
-                        flags: MessageFlags.Ephemeral
-                    });
-                }
-                return true;
-            }
+           
         } catch (err) {
             console.error('[farm] Error in handleSelect:', err);
             if (!interaction.replied && !interaction.deferred) {
