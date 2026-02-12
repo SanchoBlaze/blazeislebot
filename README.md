@@ -29,7 +29,7 @@ A feature-rich Discord bot with modular architecture, economy system, loyalty tr
 - **Dynamic cooldown**: Fishing cooldown varies from 18-30 minutes based on your best fishing rod.
 - **Success rate mechanics**: Higher rarity bait has lower success rates (80% to 10%), creating strategic risk vs reward decisions.
 - **Consistent design**: Fishing system mirrors farming with permanent tools (rods/cans) and consumable boosts (bait/fertiliser).
-- **Engaging games**: Connect4, TicTacToe, RPS, RPSLS with XP rewards for winners
+- **Engaging games**: Connect4, TicTacToe, Nine Men's Morris, RPS, RPSLS with XP rewards for winners
 - **Animal commands**: Cute pictures with small XP rewards (cat, dog, fox, bunny, duck)
 - **Social commands**: Hug and comfort other users for XP and community building
 - **Utility commands**: 8ball, dadjoke, gif, server info, avatar, and help

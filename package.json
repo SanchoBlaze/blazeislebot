@@ -1,6 +1,6 @@
 {
   "name": "blazeislebot",
-  "version": "5.1.2",
+  "version": "5.2.0",
   "description": "A bot for the Blaze Isle Discord server.",
   "main": "blazeislebot.js",
   "scripts": {
