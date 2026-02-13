@@ -65,7 +65,8 @@ module.exports = {
                     { name: '🛡️ Mod Role', value: 'Role for moderators', inline: true },
                     { name: '👋 Welcome Channel', value: 'Channel for welcome messages', inline: true },
                     { name: '🎉 Loyalty Channel', value: 'Channel for level-up notifications', inline: true },
-                    { name: '💸 Economy Channel', value: 'Channel for economy notifications', inline: true }
+                    { name: '💸 Economy Channel', value: 'Channel for economy notifications', inline: true },
+                    { name: '📢 Announcement Channel', value: 'Channel for bot announcements', inline: true }
                 )
                 .setFooter({ text: 'Click a button below to set the corresponding value' });
 
@@ -119,7 +120,12 @@ module.exports = {
                         .setCustomId('config_set_economy_channel_id')
                         .setLabel('Economy Channel')
                         .setStyle(ButtonStyle.Secondary)
-                        .setEmoji('💸')
+                        .setEmoji('💸'),
+                    new ButtonBuilder()
+                        .setCustomId('config_set_announcement_channel_id')
+                        .setLabel('Announcement Channel')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setEmoji('📢')
                 );
 
             await interaction.reply({ 

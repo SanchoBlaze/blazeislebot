@@ -21,7 +21,8 @@ class GuildSettings {
                     mod_role_id TEXT,
                     welcome_channel_id TEXT,
                     loyalty_channel_id TEXT,
-                    economy_channel_id TEXT
+                    economy_channel_id TEXT,
+                    announcement_channel_id TEXT
                 )
             `).run();
             this.db.pragma('synchronous = 1');
@@ -34,7 +35,8 @@ class GuildSettings {
                 const hasWelcomeChannel = columnCheck.some(col => col.name === 'welcome_channel_id');
                 const hasLoyaltyChannel = columnCheck.some(col => col.name === 'loyalty_channel_id');
                 const hasEconomyChannel = columnCheck.some(col => col.name === 'economy_channel_id');
-                
+                const hasAnnouncementChannel = columnCheck.some(col => col.name === 'announcement_channel_id');
+
                 if (!hasWelcomeChannel) {
                     this.db.prepare('ALTER TABLE guild_settings ADD COLUMN welcome_channel_id TEXT').run();
                     console.log('Added welcome_channel_id column to guild_settings table.');
@@ -48,6 +50,11 @@ class GuildSettings {
                 if (!hasEconomyChannel) {
                     this.db.prepare('ALTER TABLE guild_settings ADD COLUMN economy_channel_id TEXT').run();
                     console.log('Added economy_channel_id column to guild_settings table.');
+                }
+
+                if (!hasAnnouncementChannel) {
+                    this.db.prepare('ALTER TABLE guild_settings ADD COLUMN announcement_channel_id TEXT').run();
+                    console.log('Added announcement_channel_id column to guild_settings table.');
                 }
             } catch (error) {
                 console.error('Error checking/adding columns:', error);
@@ -68,7 +75,7 @@ class GuildSettings {
         // Ensure the guild exists
         this.get(guildId);
         
-        const validKeys = ['rules_channel_id', 'rules_message_id', 'members_role_id', 'streams_channel_id', 'mod_role_id', 'welcome_channel_id', 'loyalty_channel_id', 'economy_channel_id'];
+        const validKeys = ['rules_channel_id', 'rules_message_id', 'members_role_id', 'streams_channel_id', 'mod_role_id', 'welcome_channel_id', 'loyalty_channel_id', 'economy_channel_id', 'announcement_channel_id'];
         if (!validKeys.includes(key)) {
             throw new Error(`Invalid setting key: ${key}`);
         }
