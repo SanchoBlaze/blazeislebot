@@ -22,7 +22,9 @@ class GuildSettings {
                     welcome_channel_id TEXT,
                     loyalty_channel_id TEXT,
                     economy_channel_id TEXT,
-                    announcement_channel_id TEXT
+                    announcement_channel_id TEXT,
+                    last_announcement_version TEXT,
+                    whatpulse_team_slug TEXT
                 )
             `).run();
             this.db.pragma('synchronous = 1');
@@ -56,6 +58,18 @@ class GuildSettings {
                     this.db.prepare('ALTER TABLE guild_settings ADD COLUMN announcement_channel_id TEXT').run();
                     console.log('Added announcement_channel_id column to guild_settings table.');
                 }
+
+                const hasLastAnnouncementVersion = columnCheck.some(col => col.name === 'last_announcement_version');
+                if (!hasLastAnnouncementVersion) {
+                    this.db.prepare('ALTER TABLE guild_settings ADD COLUMN last_announcement_version TEXT').run();
+                    console.log('Added last_announcement_version column to guild_settings table.');
+                }
+
+                const hasWhatpulseTeamSlug = columnCheck.some(col => col.name === 'whatpulse_team_slug');
+                if (!hasWhatpulseTeamSlug) {
+                    this.db.prepare('ALTER TABLE guild_settings ADD COLUMN whatpulse_team_slug TEXT').run();
+                    console.log('Added whatpulse_team_slug column to guild_settings table.');
+                }
             } catch (error) {
                 console.error('Error checking/adding columns:', error);
             }
@@ -75,13 +89,18 @@ class GuildSettings {
         // Ensure the guild exists
         this.get(guildId);
         
-        const validKeys = ['rules_channel_id', 'rules_message_id', 'members_role_id', 'streams_channel_id', 'mod_role_id', 'welcome_channel_id', 'loyalty_channel_id', 'economy_channel_id', 'announcement_channel_id'];
+        const validKeys = ['rules_channel_id', 'rules_message_id', 'members_role_id', 'streams_channel_id', 'mod_role_id', 'welcome_channel_id', 'loyalty_channel_id', 'economy_channel_id', 'announcement_channel_id', 'whatpulse_team_slug'];
         if (!validKeys.includes(key)) {
             throw new Error(`Invalid setting key: ${key}`);
         }
 
         this.db.prepare(`UPDATE guild_settings SET ${key} = ? WHERE guild_id = ?`).run(value, guildId);
         return this.get(guildId);
+    }
+
+    setLastAnnouncementVersion(guildId, version) {
+        this.get(guildId);
+        this.db.prepare('UPDATE guild_settings SET last_announcement_version = ? WHERE guild_id = ?').run(version, guildId);
     }
 
     // Check if required settings are configured for a specific feature

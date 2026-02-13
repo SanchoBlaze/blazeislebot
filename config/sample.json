@@ -10,5 +10,8 @@
     },
     "Giphy": {
         "key": "YOUR_GIPHY_API_KEY"
+    },
+    "WhatPulse": {
+        "apiKey": "YOUR_WHATPULSE_API_KEY"
     }
 }

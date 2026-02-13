@@ -33,6 +33,8 @@ A feature-rich Discord bot with modular architecture, economy system, loyalty tr
 - **Animal commands**: Cute pictures with small XP rewards (cat, dog, fox, bunny, duck)
 - **Social commands**: Hug and comfort other users for XP and community building
 - **Utility commands**: 8ball, dadjoke, gif, server info, avatar, and help
+- **WhatPulse integration**: `/whatpulse` shows your server's WhatPulse team stats (keys, clicks, ranks, download/upload, etc.). Admins set the team slug per server via `/config set`; requires a WhatPulse API key in config.
+- **Announcement channel**: Optional channel for bot version announcements; when a new version is deployed, the bot posts release notes with the bot avatar as the embed thumbnail.
 - **Role-based permissions** for moderation commands
 - Modular command structure for easy extension
 - **Interactive paginator UI** for `/shop`, `/sell`, and `/use` commands: One item per page, navigation arrows, filter dropdown, action button, and emoji thumbnails for a modern, user-friendly experience.

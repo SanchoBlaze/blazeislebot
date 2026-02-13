@@ -54,12 +54,41 @@ for (const folder of commandFolders) {
 }
 
 
-client.once('ready', () => {
+// Update this when releasing a new version (used for announcement channel)
+const RELEASE_NOTES = '⌨️ **New Command: /whatpulse**\nCheck out your WhatPulse team stats right from Discord! Admin\'s set your team in the bot config and use `/whatpulse` to pull up your team\'s stats at any time.\n\n📢 **New Config: Announcement Channel**\nYou can now configure which channel the bot posts update notices to. No more manual announcements — Blaze Isle handles it for you.\n\n— Blaze Isle Bot 🏝️🔥';
+
+client.once('ready', async () => {
     console.log('Blaze Isle Bot Online!');
-    
+
+    // Announce new version to guilds that have announcement_channel_id set
+    const pkg = require('./package.json');
+    const version = pkg.version;
+    for (const [guildId, guild] of client.guilds.cache) {
+        const settings = client.settings.get(guildId);
+        if (!settings.announcement_channel_id) continue;
+        if (settings.last_announcement_version === version) continue;
+
+        try {
+            const channel = await guild.channels.fetch(settings.announcement_channel_id).catch(() => null);
+            if (!channel?.isTextBased?.()) continue;
+
+            const embed = new EmbedBuilder()
+                .setTitle(`🔥 **Blaze Isle Bot v${version} — Now Live!** 🔥`)
+                .setDescription('A new version of the bot is now running.')
+                .addFields({ name: 'What\'s new', value: RELEASE_NOTES || 'Bug fixes and improvements.' })
+                .setColor(Colours.BLUE)
+                .setThumbnail(client.user.displayAvatarURL({ dynamic: true, size: 256 }))
+                .setTimestamp();
+            await channel.send({ embeds: [embed] });
+            client.settings.setLastAnnouncementVersion(guildId, version);
+        } catch (err) {
+            console.error(`Failed to send announcement to guild ${guild.name} (${guildId}):`, err.message);
+        }
+    }
+
     // Start Twitch stream checking
     startTwitchChecker();
-    
+
     // Start periodic cleanup of expired effects and items
     startCleanupScheduler();
 });

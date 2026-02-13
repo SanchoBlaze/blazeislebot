@@ -66,7 +66,8 @@ module.exports = {
                     { name: '👋 Welcome Channel', value: 'Channel for welcome messages', inline: true },
                     { name: '🎉 Loyalty Channel', value: 'Channel for level-up notifications', inline: true },
                     { name: '💸 Economy Channel', value: 'Channel for economy notifications', inline: true },
-                    { name: '📢 Announcement Channel', value: 'Channel for bot announcements', inline: true }
+                    { name: '📢 Announcement Channel', value: 'Channel for bot announcements', inline: true },
+                    { name: '📊 WhatPulse Team', value: 'WhatPulse team slug (e.g. blaze-isle)', inline: true }
                 )
                 .setFooter({ text: 'Click a button below to set the corresponding value' });
 
@@ -125,7 +126,12 @@ module.exports = {
                         .setCustomId('config_set_announcement_channel_id')
                         .setLabel('Announcement Channel')
                         .setStyle(ButtonStyle.Secondary)
-                        .setEmoji('📢')
+                        .setEmoji('📢'),
+                    new ButtonBuilder()
+                        .setCustomId('config_set_whatpulse_team_slug')
+                        .setLabel('WhatPulse Team')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setEmoji('📊')
                 );
 
             await interaction.reply({ 
@@ -170,6 +176,17 @@ module.exports = {
                 .setStyle(TextInputStyle.Short)
                 .setPlaceholder('123456789012345678')
                 .setRequired(true);
+        } else if (setting === 'whatpulse_team_slug') {
+            textInput = new TextInputBuilder()
+                .setCustomId('config_value')
+                .setLabel('Team slug or ID')
+                .setStyle(TextInputStyle.Short)
+                .setPlaceholder('e.g. blaze-isle')
+                .setRequired(true);
+        }
+
+        if (!textInput) {
+            return false;
         }
 
         const actionRow = new ActionRowBuilder().addComponents(textInput);
@@ -253,6 +270,9 @@ module.exports = {
                 if (!/^\d+$/.test(value)) {
                     throw new Error('Invalid message ID format');
                 }
+            } else if (setting === 'whatpulse_team_slug') {
+                processedValue = value.trim();
+                displayValue = processedValue || 'Not Set';
             }
 
             // Update the setting in the database
