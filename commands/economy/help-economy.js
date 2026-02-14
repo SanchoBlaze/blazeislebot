@@ -69,7 +69,8 @@ const categories = [
       { name: '/economy-admin add-item', value: 'Add new item to shop', inline: false },
       { name: '/economy-admin remove-item', value: 'Remove item from shop', inline: false },
       { name: '/economy-admin list-items', value: 'List all shop items', inline: false },
-      { name: '/economy-admin populate-defaults', value: 'Add default items to shop', inline: false },
+      { name: '/economy-admin populate-defaults', value: 'Add default items to shop (new guilds)', inline: false },
+      { name: '/economy-admin update-defaults', value: 'Refresh default items from data', inline: false },
     ],
     description: 'Admin-only commands for managing the economy.'
   },

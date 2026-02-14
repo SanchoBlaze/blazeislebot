@@ -54,7 +54,7 @@ To switch between your test bot and production bot, simply change the `"live"` s
 
 ### 3. Restart Your Bot
 
-After changing the configuration, restart your bot and run `/economy-admin populate-defaults` to apply the new emoji configuration.
+After changing the configuration, restart your bot and run `/economy-admin update-defaults` (or `/economy-admin populate-defaults` for a new guild) to apply the new emoji configuration.
 
 ## How to Get Discord Emoji IDs
 

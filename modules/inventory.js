@@ -177,7 +177,8 @@ class Inventory {
 
     // Populate default items for a specific guild (including variants)
     populateDefaultItems(guildId) {
-        // Load default items from JSON file
+        // Load fresh from disk (bypass require cache so update-defaults picks up JSON changes)
+        delete require.cache[require.resolve('../data/default-items.json')];
         const defaultItems = require('../data/default-items.json');
         
         // Determine which emoji set to use based on environment
@@ -198,14 +199,28 @@ class Inventory {
         }
     }
 
+    // Parse types/variants from DB row (stored as JSON strings)
+    _parseItemRow(row) {
+        if (!row) return row;
+        if (typeof row.types === 'string') {
+            try { row.types = JSON.parse(row.types); } catch (e) { row.types = null; }
+        }
+        if (typeof row.variants === 'string') {
+            try { row.variants = JSON.parse(row.variants); } catch (e) { row.variants = null; }
+        }
+        return row;
+    }
+
     // Get item definition
     getItem(itemId, guildId) {
-        return sql.prepare('SELECT * FROM items WHERE id = ? AND guild = ?').get(itemId, guildId);
+        const row = sql.prepare('SELECT * FROM items WHERE id = ? AND guild = ?').get(itemId, guildId);
+        return this._parseItemRow(row);
     }
 
     // Get all items for a guild
     getAllItems(guildId) {
-        return sql.prepare('SELECT * FROM items WHERE guild = ? ORDER BY price ASC').all(guildId);
+        const rows = sql.prepare('SELECT * FROM items WHERE guild = ? ORDER BY price ASC').all(guildId);
+        return rows.map(row => this._parseItemRow(row));
     }
 
     // Get items by type for a guild (supports items with a 'types' array)
@@ -917,8 +932,8 @@ class Inventory {
                 result.message = `Used ${item.name}.`;
         }
 
-        // Remove item if it's consumable
-        const isConsumable = (item.type === 'consumable') || (item.types && Array.isArray(item.types) && item.types.includes('consumable'));
+        // Remove item if it's consumable (including food with effects)
+        const isConsumable = (item.type === 'consumable') || (item.type === 'food') || (item.types && Array.isArray(item.types) && (item.types.includes('consumable') || item.types.includes('food')));
         if (isConsumable || item.type === 'mystery') {
             this.removeItem(userId, guildId, itemId, 1);
         }
@@ -1335,6 +1350,22 @@ class Inventory {
         return bestRod ? bestRod.effect_value : 1;
     }
 
+    // Get user's best cooking tool (for cooldown reduction and recipe unlock tier)
+    getBestCookingTool(userId, guildId) {
+        const userInventory = this.getUserInventory(userId, guildId);
+        const cookingTools = userInventory.filter(item => item.type === 'cooking_tool');
+        if (cookingTools.length === 0) return null;
+        return cookingTools.reduce((best, current) =>
+            current.effect_value < best.effect_value ? current : best
+        );
+    }
+
+    // Get cooking cooldown multiplier for a user (lower = faster)
+    getCookingCooldown(userId, guildId) {
+        const bestTool = this.getBestCookingTool(userId, guildId);
+        return bestTool ? bestTool.effect_value : 1;
+    }
+
     // Get health boost multiplier for a user (from active effects)
     getHealthBoost(userId, guildId) {
         const effect = this.getActiveEffect(userId, guildId, 'health_boost');
@@ -1521,7 +1552,7 @@ class Inventory {
         return { success: true, removed: totalRemoved };
     }
 
-    // Store complete item definition in database (including variants)
+    // Store complete item definition in database (including variants). Only main type is stored, not types array.
     storeCompleteItem(itemData) {
         try {
             const {
@@ -1557,23 +1588,23 @@ class Inventory {
         }
     }
 
+    // Repair: set type = 'food' for any item with id starting with food_ (fixes stale or wrong type in DB)
+    repairFoodItemTypes(guildId) {
+        try {
+            const result = sql.prepare(
+                'UPDATE items SET type = ? WHERE guild = ? AND id LIKE ?'
+            ).run('food', guildId, 'food_%');
+            return result.changes;
+        } catch (error) {
+            console.error('Error repairing food item types:', error);
+            return 0;
+        }
+    }
 
-
-    // Get complete item definition from database (including variants)
+    // Get complete item definition from database (including variants and types)
     getCompleteItem(itemId, guildId) {
         const item = sql.prepare('SELECT * FROM items WHERE id = ? AND guild = ?').get(itemId, guildId);
-        if (!item) return null;
-
-        // Parse variants if they exist
-        if (item.variants) {
-            try {
-                item.variants = JSON.parse(item.variants);
-            } catch (e) {
-                item.variants = null;
-            }
-        }
-
-        return item;
+        return this._parseItemRow(item);
     }
 
     // Check if user owns a specific upgrade item

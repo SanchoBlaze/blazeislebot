@@ -44,6 +44,8 @@ A feature-rich Discord bot with modular architecture, economy system, loyalty tr
 - **Admin command stability**: All admin commands now handle Discord interactions robustly, preventing double reply errors.
 - **Weeds crop and mechanic**: Weeds can now grow on empty plots (5% chance per hour per plot). Weeds are a harvestable crop with their own emoji and are managed like other crops.
 - **Emoji config requirement**: Whenever you add a new item to data/default-items.json, you must also add a corresponding entry to config/emoji-configs.json with the correct emoji (Unicode or custom).
+- **🍳 Cooking system**: `/cook` to craft food from recipes (fish, crops, ingredients). Food has type `food`; buff foods are consumable, others are sellable. Food is excluded from the shop (crafted only). Recipe embed colour matches result item rarity.
+- **Shop filtering**: Shop excludes fish, crops, and food by type; filter dropdown hides crop and food options in the shop. Use `/economy-admin update-defaults` after changing default-items.json to refresh item definitions.
 
 ## Getting Started
 

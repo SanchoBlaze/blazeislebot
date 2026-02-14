@@ -1,16 +1,76 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, StringSelectMenuBuilder } = require('discord.js');
 const activeRecipeCollectors = {};
 
+const COOKING_BASE_COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
+
+const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'];
+
+function isRecipeUnlocked(recipe, maxRarity, client, guildId) {
+    const resultItem = client.inventory.getItem(recipe.result, guildId);
+    const resultRarity = (resultItem && resultItem.rarity) ? resultItem.rarity : 'common';
+    const maxRank = RARITY_ORDER.indexOf(maxRarity);
+    const resultRank = RARITY_ORDER.indexOf(resultRarity);
+    if (maxRank === -1) return resultRank <= RARITY_ORDER.indexOf('common');
+    if (resultRank === -1) return true;
+    return resultRank <= maxRank;
+}
+
+function getUnlockedRecipes(recipes, bestTool, client, guildId) {
+    const maxRarity = bestTool ? bestTool.rarity : 'common';
+    return recipes.filter(r => isRecipeUnlocked(r, maxRarity, client, guildId));
+}
+
 async function showRecipeList(interaction, client) {
     const userId = interaction.user.id;
     const guildId = interaction.guild.id;
+
+    // Check cooking cooldown
+    const user = client.economy.getUser(userId, guildId);
+    const lastCook = user.last_cook ? new Date(user.last_cook) : null;
+    const cooldownMultiplier = client.inventory.getCookingCooldown(userId, guildId);
+    const actualCooldownMs = COOKING_BASE_COOLDOWN_MS * cooldownMultiplier;
+    if (lastCook) {
+        const elapsed = Date.now() - lastCook.getTime();
+        if (elapsed < actualCooldownMs) {
+            const timeLeftMs = actualCooldownMs - elapsed;
+            const minutes = Math.floor(timeLeftMs / (60 * 1000));
+            const seconds = Math.floor((timeLeftMs % (60 * 1000)) / 1000);
+            const embed = new EmbedBuilder()
+                .setColor(0xFF6B6B)
+                .setTitle('🍳 Cooking Station')
+                .setDescription(`You need to rest your kitchen! You can cook again in **${minutes}m ${seconds}s**.`)
+                .setFooter({ text: 'Buy a cooking tool from the shop to reduce cooldown' })
+                .setTimestamp();
+            const hasReplied = interaction.replied || interaction.deferred;
+            if (hasReplied) {
+                await interaction.editReply({ embeds: [embed], components: [], flags: MessageFlags.Ephemeral });
+            } else {
+                await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+            }
+            return;
+        }
+    }
+
     const recipes = require('../../data/recipes.json');
     if (!recipes || recipes.length === 0) {
         const embed = new EmbedBuilder()
             .setColor(0xFF6B6B)
             .setTitle('🍳 Cooking Station')
-            .setDescription('You don\'t have enough ingredients to craft any recipes!\n\n**To cook items, you need:**\n• Fish from fishing\n• Crops from farming\n• Other ingredients from the shop\n\n**Check your inventory with `/inventory`**')
-            .setFooter({ text: 'Use /fish and /farm to gather ingredients' })
+            .setDescription('No recipes are available at the moment.')
+            .setTimestamp();
+        const hasReplied = interaction.replied || interaction.deferred;
+        if (hasReplied) await interaction.editReply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+        else await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+        return;
+    }
+    const bestToolForUnlock = client.inventory.getBestCookingTool(userId, guildId);
+    const unlockedRecipes = getUnlockedRecipes(recipes, bestToolForUnlock, client, guildId);
+    if (!unlockedRecipes.length) {
+        const embed = new EmbedBuilder()
+            .setColor(0xFF6B6B)
+            .setTitle('🍳 Cooking Station')
+            .setDescription('You have no unlocked recipes. Common recipes are always available; buy a cooking tool from the shop to unlock more.')
+            .setFooter({ text: 'Use /shop to buy cooking tools' })
             .setTimestamp();
         // Track if this is the initial reply
         let hasReplied = interaction.replied || interaction.deferred;
@@ -32,7 +92,7 @@ async function showRecipeList(interaction, client) {
             inventoryLookup[key].quantity += item.quantity;
         }
     }
-    const craftableRecipes = recipes.filter(recipe => {
+    const craftableRecipes = unlockedRecipes.filter(recipe => {
         return recipe.ingredients.every(ingredient => {
             const totalQty = Object.entries(inventoryLookup)
                 .filter(([key, item]) => key === ingredient.item || key.startsWith(ingredient.item + '_'))
@@ -81,6 +141,9 @@ async function showRecipeList(interaction, client) {
         .setCustomId('cook_recipe_select')
         .setPlaceholder('Choose a recipe to cook...')
         .addOptions(recipeOptions);
+    const bestTool = client.inventory.getBestCookingTool(userId, guildId);
+    const actualCooldownMin = Math.ceil((COOKING_BASE_COOLDOWN_MS * client.inventory.getCookingCooldown(userId, guildId)) / (60 * 1000));
+    const toolLabel = bestTool ? `${bestTool.name} (${(bestTool.rarity || 'common').charAt(0).toUpperCase() + (bestTool.rarity || 'common').slice(1)})` : 'None (common recipes only)';
     const row = new ActionRowBuilder().addComponents(selectMenu);
     const embed = new EmbedBuilder()
         .setColor(0x4CAF50)
@@ -89,9 +152,11 @@ async function showRecipeList(interaction, client) {
         .addFields(
             { name: '📦 Available Recipes', value: `${sortedRecipes.length} craftable`, inline: true },
             { name: 'Consumable', value: `${sortedRecipes.filter(r => r.type === 'buff').length}`, inline: true },
-            { name: 'Sellable', value: `${sortedRecipes.filter(r => r.type === 'sellable').length}`, inline: true }
+            { name: 'Sellable', value: `${sortedRecipes.filter(r => r.type === 'sellable').length}`, inline: true },
+            { name: '🍳 Cooking Tool', value: toolLabel, inline: true },
+            { name: '⏱️ Cooldown', value: `${actualCooldownMin} min`, inline: true }
         )
-        .setFooter({ text: 'Select a recipe to begin cooking' })
+        .setFooter({ text: bestTool ? 'Buy better tools from the shop to unlock more recipes and reduce cooldown' : 'You\'re cooking with no tool. Buy a cooking tool from the shop to unlock more recipes and reduce cooldown.' })
         .setTimestamp();
     // Track if this is the initial reply
     let hasReplied = interaction.replied || interaction.deferred;
@@ -234,6 +299,7 @@ module.exports = {
             }
 
             function createRecipePages(recipeList, userId) {
+                const bestTool = client.inventory.getBestCookingTool(userId, guildId);
                 const inventory = client.inventory.getUserInventory(userId, guildId);
                 const inventoryLookup = {};
                 for (const item of inventory) {
@@ -281,8 +347,9 @@ module.exports = {
                     const description = (resultItem && resultItem.description) ? resultItem.description : 'A crafted dish.';
                     const rarity = (resultItem && resultItem.rarity) ? resultItem.rarity : 'common';
                     const rarityName = rarity.charAt(0).toUpperCase() + rarity.slice(1);
-                    const canMakeThis = canMake(recipe);
-                    const statusStr = canMakeThis ? '✅ Can make' : '❌ Cannot make';
+                    const unlocked = isRecipeUnlocked(recipe, bestTool ? bestTool.rarity : 'common', client, guildId);
+                    const canMakeThis = unlocked && canMake(recipe);
+                    const statusStr = !unlocked ? `🔒 Locked - Requires ${rarityName} or better tool` : (canMakeThis ? '✅ Can make' : '❌ Cannot make');
                     const emojiToUse = (resultItem && resultItem.emoji) ? resultItem.emoji : recipe.emoji;
                     const emojiUrl = client.inventory.getEmojiUrl(emojiToUse, client);
                     const embed = new EmbedBuilder()
@@ -297,7 +364,7 @@ module.exports = {
                             { name: '📄 Page', value: `${i + 1}/${recipeList.length}`, inline: true },
                             { name: '🛒 Status', value: statusStr, inline: true }
                         )
-                        .setFooter({ text: 'Use the arrow buttons to navigate • Use /cook make to craft' })
+                        .setFooter({ text: 'Use the arrow buttons to navigate • Use /cook make to craft • Locked recipes require a higher-rarity cooking tool from the shop' })
                         .setTimestamp();
                     if (emojiUrl) embed.setThumbnail(emojiUrl);
                     pages.push({ embed, recipe, pageNumber: i + 1, totalPages: recipeList.length });
@@ -437,8 +504,14 @@ module.exports = {
             resultDescription = `**Sell Value**: ${client.economy.formatCurrency(recipe.sell_value)}`;
         }
 
+        // Get result item for thumbnail and rarity colour
+        const resultItem = client.inventory.getItem(recipe.result, interaction.guild.id);
+        const embedColor = resultItem && resultItem.rarity
+            ? client.inventory.getRarityColour(resultItem.rarity)
+            : (recipe.type === 'buff' ? 0x4CAF50 : 0xFF9800);
+
         const embed = new EmbedBuilder()
-            .setColor(recipe.type === 'buff' ? 0x4CAF50 : 0xFF9800)
+            .setColor(embedColor)
             .setTitle(`${emoji} ${recipe.name}`)
             .setDescription(`**Type**: ${type}\n\n**Result**:\n${resultDescription}`)
             .addFields(
@@ -448,7 +521,6 @@ module.exports = {
             .setTimestamp();
 
         // Set thumbnail to food emoji if available
-        const resultItem = client.inventory.getItem(recipe.result, interaction.guild.id);
         let emojiToUse = (resultItem && resultItem.emoji) ? resultItem.emoji : recipe.emoji;
         let emojiUrl = client.inventory.getEmojiUrl(emojiToUse, client);
         if (emojiUrl) {
@@ -514,6 +586,39 @@ module.exports = {
         const userId = interaction.user.id;
 
         try {
+            // Check cooking cooldown
+            const user = client.economy.getUser(userId, guildId);
+            const lastCook = user.last_cook ? new Date(user.last_cook) : null;
+            const cooldownMultiplier = client.inventory.getCookingCooldown(userId, guildId);
+            const actualCooldownMs = COOKING_BASE_COOLDOWN_MS * cooldownMultiplier;
+            if (lastCook && (Date.now() - lastCook.getTime()) < actualCooldownMs) {
+                const timeLeftMs = actualCooldownMs - (Date.now() - lastCook.getTime());
+                const minutes = Math.floor(timeLeftMs / (60 * 1000));
+                const seconds = Math.floor((timeLeftMs % (60 * 1000)) / 1000);
+                const embed = new EmbedBuilder()
+                    .setColor(0xFF6B6B)
+                    .setTitle('❌ On Cooldown')
+                    .setDescription(`You can cook again in **${minutes}m ${seconds}s**.`)
+                    .setTimestamp();
+                await interaction.editReply({ embeds: [embed], components: [] });
+                return;
+            }
+
+            // Check recipe is unlocked for this user's tool
+            const bestTool = client.inventory.getBestCookingTool(userId, guildId);
+            if (!isRecipeUnlocked(recipe, bestTool ? bestTool.rarity : 'common', client, guildId)) {
+                const resultItem = client.inventory.getItem(recipe.result, guildId);
+                const resultRarity = (resultItem && resultItem.rarity) ? resultItem.rarity : 'common';
+                const rarityName = resultRarity.charAt(0).toUpperCase() + resultRarity.slice(1);
+                const embed = new EmbedBuilder()
+                    .setColor(0xFF6B6B)
+                    .setTitle('❌ Recipe Locked')
+                    .setDescription(`This recipe requires a **${rarityName}** or better cooking tool. Buy one from the shop!`)
+                    .setTimestamp();
+                await interaction.editReply({ embeds: [embed], components: [] });
+                return;
+            }
+
             // Double-check ingredients
             const currentInventory = client.inventory.getUserInventory(userId, guildId);
             const currentInventoryLookup = {};
@@ -575,6 +680,8 @@ module.exports = {
             } else {
                 await client.inventory.addItem(userId, guildId, recipe.result, 1, interaction, client);
             }
+
+            client.economy.setLastCook(userId, guildId);
 
             // Create success embed
             const emoji = recipe.emoji || '🍳';

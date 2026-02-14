@@ -538,6 +538,8 @@ module.exports = {
                     const deleted = interaction.client.inventory.deleteDefaultItemsForGuild(guildId, defaultItemIds);
                     // Repopulate defaults
                     interaction.client.inventory.populateDefaultItems(guildId);
+                    // Ensure all food_ items have type 'food' in DB (repair any stale rows)
+                    interaction.client.inventory.repairFoodItemTypes(guildId);
 
                     const embed = new EmbedBuilder()
                         .setColor(0x00FF00)

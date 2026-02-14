@@ -12,8 +12,8 @@ module.exports = {
 
         try {
             const user = interaction.client.economy.getUser(userId, guildId);
-            // Use SQL to exclude fish and crops from shop for better performance
-            const allItems = interaction.client.inventory.getShopItemsExcludingTypes(guildId, ['fish', 'crop']);
+            // Exclude fish (caught only), crops (farmed only), and food (crafted only)
+            const allItems = interaction.client.inventory.getShopItemsExcludingTypes(guildId, ['fish', 'crop', 'food']);
             
             if (allItems.length === 0) {
                 return interaction.reply({ 
@@ -74,7 +74,7 @@ module.exports = {
                 .addFields(
                     { name: '💰 Price', value: client.economy.formatCurrency(item.price), inline: true },
                     { name: '⭐ Rarity', value: rarityName, inline: true },
-                    { name: '📦 Type', value: item.type.charAt(0).toUpperCase() + item.type.slice(1), inline: true },
+                    { name: '📦 Type', value: item.type.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()), inline: true },
                     { name: '💵 Your Balance', value: client.economy.formatCurrency(user.balance), inline: true },
                     { name: '🏦 Bank Balance', value: client.economy.formatCurrency(user.bank), inline: true },
                     { name: '💎 Net Worth', value: client.economy.formatCurrency(user.balance + user.bank), inline: true },
@@ -327,7 +327,7 @@ module.exports = {
                 new StringSelectMenuBuilder()
                     .setCustomId('shop_filterDropdown')
                     .setPlaceholder('🔍 Filter by item type...')
-                    .addOptions(getDropdownOptions({ includeUpgrades: true }))
+                    .addOptions(getDropdownOptions({ includeUpgrades: true, forShop: true }))
             );
     },
 
@@ -390,6 +390,14 @@ module.exports = {
                 });
                 return false;
             }
+            // Prevent buying food items (crafted only)
+            if (item.type === 'food') {
+                await interaction.followUp({
+                    content: 'Food can only be obtained by cooking with /cook, not by purchasing from the shop!',
+                    flags: MessageFlags.Ephemeral
+                });
+                return false;
+            }
 
             const user = interaction.client.economy.getUser(userId, guildId);
             
@@ -426,7 +434,7 @@ module.exports = {
                     .setTitle('🛒 Purchase Successful!')
                     .setDescription(`You purchased **${emoji} ${item.name}** for ${interaction.client.economy.formatCurrency(item.price)}`)
                     .addFields(
-                        { name: '📦 Item Type', value: item.type.charAt(0).toUpperCase() + item.type.slice(1), inline: true },
+                        { name: '📦 Item Type', value: item.type.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()), inline: true },
                         { name: '⭐ Rarity', value: item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1), inline: true },
                         { name: '💵 New Balance', value: interaction.client.economy.formatCurrency(user.balance - item.price), inline: true }
                     )
@@ -463,6 +471,14 @@ module.exports = {
             if (item.type === 'fish') {
                 await interaction.reply({
                     content: 'Fish can only be obtained by fishing, not by purchasing from the shop!',
+                    flags: MessageFlags.Ephemeral
+                });
+                return false;
+            }
+            // Prevent buying food items (crafted only)
+            if (item.type === 'food') {
+                await interaction.reply({
+                    content: 'Food can only be obtained by cooking with /cook, not by purchasing from the shop!',
                     flags: MessageFlags.Ephemeral
                 });
                 return false;
@@ -504,7 +520,7 @@ module.exports = {
                     .setTitle('🛒 Bulk Purchase Successful!')
                     .setDescription(`You purchased **${quantity}x ${emoji} ${item.name}** for ${interaction.client.economy.formatCurrency(totalCost)}`)
                     .addFields(
-                        { name: '📦 Item Type', value: item.type.charAt(0).toUpperCase() + item.type.slice(1), inline: true },
+                        { name: '📦 Item Type', value: item.type.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()), inline: true },
                         { name: '⭐ Rarity', value: item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1), inline: true },
                         { name: '💵 New Balance', value: interaction.client.economy.formatCurrency(user.balance - totalCost), inline: true },
                         { name: '📊 Total Owned', value: `${currentQuantity + quantity}x`, inline: true }
@@ -563,6 +579,14 @@ module.exports = {
                     });
                     return true;
                 }
+                // Prevent buying food items (crafted only)
+                if (item.type === 'food') {
+                    await interaction.reply({
+                        content: 'Food can only be obtained by cooking with /cook, not by purchasing from the shop!',
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return true;
+                }
 
                 const user = interaction.client.economy.getUser(userId, guildId);
                 
@@ -599,7 +623,7 @@ module.exports = {
                         .setTitle('🛒 Purchase Successful!')
                         .setDescription(`You purchased **${emoji} ${item.name}** for ${interaction.client.economy.formatCurrency(item.price)}`)
                         .addFields(
-                            { name: '📦 Item Type', value: item.type.charAt(0).toUpperCase() + item.type.slice(1), inline: true },
+                            { name: '📦 Item Type', value: item.type.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()), inline: true },
                             { name: '⭐ Rarity', value: item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1), inline: true },
                             { name: '💵 New Balance', value: interaction.client.economy.formatCurrency(user.balance - item.price), inline: true }
                         )

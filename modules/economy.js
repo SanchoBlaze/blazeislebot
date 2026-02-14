@@ -23,6 +23,7 @@ class Economy {
                     last_daily TEXT,
                     last_work TEXT,
                     last_fishing TEXT,
+                    last_cook TEXT,
                     total_earned INTEGER DEFAULT 0,
                     total_spent INTEGER DEFAULT 0,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -43,6 +44,15 @@ class Economy {
                 if (error.message.includes('no such column')) {
                     console.log('Adding last_fishing column to existing economy table...');
                     sql.prepare('ALTER TABLE economy ADD COLUMN last_fishing TEXT').run();
+                }
+            }
+            // Check if last_cook column exists, add it if it doesn't
+            try {
+                sql.prepare('SELECT last_cook FROM economy LIMIT 1').get();
+            } catch (err) {
+                if (err.message.includes('no such column')) {
+                    console.log('Adding last_cook column to existing economy table...');
+                    sql.prepare('ALTER TABLE economy ADD COLUMN last_cook TEXT').run();
                 }
             }
         }
@@ -84,6 +94,7 @@ class Economy {
                 last_daily: null,
                 last_work: null,
                 last_fishing: null,
+                last_cook: null,
                 total_earned: 0,
                 total_spent: 0,
                 created_at: nowISOString,
@@ -97,8 +108,8 @@ class Economy {
     // Create new user
     createUser(userData) {
         return sql.prepare(`
-            INSERT INTO economy (id, user, guild, balance, bank, last_daily, last_work, last_fishing, total_earned, total_spent, created_at, updated_at)
-            VALUES (@id, @user, @guild, @balance, @bank, @last_daily, @last_work, @last_fishing, @total_earned, @total_spent, @created_at, @updated_at)
+            INSERT INTO economy (id, user, guild, balance, bank, last_daily, last_work, last_fishing, last_cook, total_earned, total_spent, created_at, updated_at)
+            VALUES (@id, @user, @guild, @balance, @bank, @last_daily, @last_work, @last_fishing, @last_cook, @total_earned, @total_spent, @created_at, @updated_at)
         `).run(userData);
     }
 
@@ -524,6 +535,17 @@ class Economy {
             fish: caughtFish,
             id: caughtFish.id
         };
+    }
+
+    // Cooking cooldown: set last cook time after a successful craft
+    setLastCook(userId, guildId) {
+        this.getUser(userId, guildId); // ensure user exists
+        const nowISOString = new Date().toISOString();
+        sql.prepare(`
+            UPDATE economy 
+            SET last_cook = ?, updated_at = ?
+            WHERE user = ? AND guild = ?
+        `).run(nowISOString, nowISOString, userId, guildId);
     }
 
     // Get leaderboard

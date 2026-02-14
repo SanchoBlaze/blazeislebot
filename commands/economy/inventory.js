@@ -46,6 +46,10 @@ module.exports = {
                     uniqueItems[key].variants = fullItem.variants;
                 }
             }
+            // Stats from deduplicated data (so totals match what we display)
+            const totalQuantity = Object.values(uniqueItems).reduce((sum, item) => sum + item.quantity, 0);
+            const uniqueCount = Object.keys(uniqueItems).length;
+
             // Group deduplicated items by rarity
             const itemsByRarity = {};
             for (const item of Object.values(uniqueItems)) {
@@ -99,9 +103,8 @@ module.exports = {
                     .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
                     .setDescription(desc)
                     .addFields(
-                        { name: '📊 Total Items', value: inventory.length.toString(), inline: true },
-                        { name: '🎯 Unique Items', value: new Set(inventory.map(i => i.id)).size.toString(), inline: true },
-                        { name: '💎 Total Quantity', value: inventory.reduce((sum, item) => sum + item.quantity, 0).toString(), inline: true }
+                        { name: '💎 Total Quantity', value: totalQuantity.toString(), inline: true },
+                        { name: '🎯 Unique Items', value: uniqueCount.toString(), inline: true }
                     )
                     .setFooter({ text: `Use /use <item> to use items, /shop to buy more | Page ${i + 1} of ${itemPages.length}` })
                     .setTimestamp();
