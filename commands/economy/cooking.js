@@ -40,10 +40,15 @@ async function showRecipeList(interaction, client) {
             return totalQty >= ingredient.quantity;
         });
     });
+    const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6 };
     const sortedRecipes = craftableRecipes.sort((a, b) => {
-        if (a.type !== b.type) {
-            return a.type === 'buff' ? -1 : 1;
-        }
+        const resultA = client.inventory.getItem(a.result, guildId);
+        const resultB = client.inventory.getItem(b.result, guildId);
+        const rarityA = (resultA && resultA.rarity) ? resultA.rarity : 'common';
+        const rarityB = (resultB && resultB.rarity) ? resultB.rarity : 'common';
+        const rankA = rarityOrder[rarityA] || 99;
+        const rankB = rarityOrder[rarityB] || 99;
+        if (rankA !== rankB) return rankA - rankB;
         return a.name.localeCompare(b.name);
     });
     if (sortedRecipes.length === 0) {
@@ -65,7 +70,7 @@ async function showRecipeList(interaction, client) {
     }
     const recipeOptions = sortedRecipes.map(recipe => {
         const emoji = recipe.emoji || '🍳';
-        const type = recipe.type === 'buff' ? '⚡ Buff' : '💰 Sellable';
+        const type = recipe.type === 'buff' ? 'Consumable' : 'Sellable';
         return {
             label: `${emoji} ${recipe.name}`,
             description: `${type} • ${recipe.ingredients.length} ingredients`,
@@ -83,8 +88,8 @@ async function showRecipeList(interaction, client) {
         .setDescription(`You can craft **${sortedRecipes.length}** recipes!\n\nSelect a recipe from the dropdown below to see the ingredients and craft it.`)
         .addFields(
             { name: '📦 Available Recipes', value: `${sortedRecipes.length} craftable`, inline: true },
-            { name: '⚡ Buff Items', value: `${sortedRecipes.filter(r => r.type === 'buff').length}`, inline: true },
-            { name: '💰 Sellable Items', value: `${sortedRecipes.filter(r => r.type === 'sellable').length}`, inline: true }
+            { name: 'Consumable', value: `${sortedRecipes.filter(r => r.type === 'buff').length}`, inline: true },
+            { name: 'Sellable', value: `${sortedRecipes.filter(r => r.type === 'sellable').length}`, inline: true }
         )
         .setFooter({ text: 'Select a recipe to begin cooking' })
         .setTimestamp();
@@ -178,8 +183,8 @@ async function showRecipeList(interaction, client) {
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('cooking')
-        .setDescription('Cooking: craft items using recipes and ingredients from your inventory')
+        .setName('cook')
+        .setDescription('Cook items using recipes and ingredients from your inventory')
         .addSubcommand(sub =>
             sub.setName('recipes')
                 .setDescription('View all available cooking recipes')
@@ -192,7 +197,7 @@ module.exports = {
     async execute(interaction) {
         const sub = interaction.options.getSubcommand(false);
         if (sub === 'recipes') {
-            // Show all recipes, not just craftable
+            // Show all recipes, 1 per page (like shop)
             const recipes = require('../../data/recipes.json');
             if (!recipes || recipes.length === 0) {
                 return interaction.reply({
@@ -200,119 +205,194 @@ module.exports = {
                     flags: MessageFlags.Ephemeral
                 });
             }
-            // Category filter options
+            const client = interaction.client;
+            const guildId = interaction.guild?.id;
+
             const categories = [
                 { label: 'All', value: 'all', emoji: '📋' },
-                { label: 'Buff', value: 'buff', emoji: '⚡' },
+                { label: 'Consumable', value: 'buff', emoji: '⚡' },
                 { label: 'Sellable', value: 'sellable', emoji: '💰' }
             ];
-            // Default filter
-            let currentCategory = 'all';
-            let currentPage = 0;
-            const pageSize = 5;
-            // Helper to get filtered recipes
+
             function getFilteredRecipes(category) {
                 if (category === 'all') return recipes;
                 return recipes.filter(r => r.type === category);
             }
-            // Helper to build embed for a page
-            function buildEmbed(category, page) {
-                const filtered = getFilteredRecipes(category);
-                const totalPages = Math.ceil(filtered.length / pageSize);
-                const start = page * pageSize;
-                const end = start + pageSize;
-                const pageRecipes = filtered.slice(start, end);
-                const recipeList = pageRecipes.map(recipe => {
+
+            function sortRecipesByRarityThenName(recipeList) {
+                const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6 };
+                return recipeList.slice().sort((a, b) => {
+                    const resultA = client.inventory.getItem(a.result, guildId);
+                    const resultB = client.inventory.getItem(b.result, guildId);
+                    const rarityA = (resultA && resultA.rarity) ? resultA.rarity : 'common';
+                    const rarityB = (resultB && resultB.rarity) ? resultB.rarity : 'common';
+                    const rankA = rarityOrder[rarityA] || 99;
+                    const rankB = rarityOrder[rarityB] || 99;
+                    if (rankA !== rankB) return rankA - rankB;
+                    return a.name.localeCompare(b.name);
+                });
+            }
+
+            function createRecipePages(recipeList, userId) {
+                const inventory = client.inventory.getUserInventory(userId, guildId);
+                const inventoryLookup = {};
+                for (const item of inventory) {
+                    const key = item.variant ? `${item.id}_${item.variant}` : item.id;
+                    if (!inventoryLookup[key]) {
+                        inventoryLookup[key] = { ...item };
+                    } else {
+                        inventoryLookup[key].quantity += item.quantity;
+                    }
+                }
+                function canMake(recipe) {
+                    return recipe.ingredients.every(ingredient => {
+                        const totalQty = Object.entries(inventoryLookup)
+                            .filter(([key, item]) => key === ingredient.item || key.startsWith(ingredient.item + '_'))
+                            .reduce((sum, [key, item]) => sum + item.quantity, 0);
+                        return totalQty >= ingredient.quantity;
+                    });
+                }
+                const pages = [];
+                const effectNames = {
+                    fishing_boost: 'Fishing Boost',
+                    work_multiplier: 'Work Multiplier',
+                    luck_boost: 'Luck Boost',
+                    health_boost: 'Health Boost'
+                };
+                for (let i = 0; i < recipeList.length; i++) {
+                    const recipe = recipeList[i];
                     const emoji = recipe.emoji || '🍳';
-                    const type = recipe.type === 'buff' ? '⚡ Buff' : '💰 Sellable';
-                    const ingredients = recipe.ingredients.map(ing => {
-                        const item = interaction.client.inventory.getItem(ing.item, interaction.guild?.id);
-                        const itemEmoji = item ? interaction.client.inventory.getItemEmoji(item) : '❓';
+                    const type = recipe.type === 'buff' ? 'Consumable' : 'Sellable';
+                    const ingredientsStr = recipe.ingredients.map(ing => {
+                        const item = client.inventory.getItem(ing.item, guildId);
+                        const itemEmoji = item ? client.inventory.getItemEmoji(item) : '❓';
                         const itemName = item ? item.name : ing.item;
                         return `${ing.quantity}x ${itemEmoji} ${itemName}`;
                     }).join(', ');
-                    let result = '';
+                    let resultStr = '';
                     if (recipe.type === 'buff') {
                         const buff = recipe.buff;
-                        const effectNames = {
-                            fishing_boost: 'Fishing Boost',
-                            work_multiplier: 'Work Multiplier',
-                            luck_boost: 'Luck Boost',
-                            health_boost: 'Health Boost'
-                        };
                         const effectLabel = effectNames[buff.effect_type] || buff.effect_type;
-                        result = `**${type}**: ${effectLabel}: ${buff.effect_value}x for ${buff.duration_hours} hour${buff.duration_hours === 1 ? '' : 's'}`;
-                    } else if (recipe.type === 'sellable') {
-                        result = `**${type}**: Sells for ${recipe.sell_value}`;
+                        resultStr = `${effectLabel}: ${buff.effect_value}x for ${buff.duration_hours} hour${buff.duration_hours === 1 ? '' : 's'}`;
+                    } else {
+                        resultStr = `Sells for ${client.economy.formatCurrency(recipe.sell_value)}`;
                     }
-                    return `${emoji} **${recipe.name}**\nIngredients: ${ingredients}\n${result}`;
-                }).join('\n\n');
-                return new EmbedBuilder()
-                    .setColor(0x4CAF50)
-                    .setTitle('🍳 All Cooking Recipes')
-                    .setDescription(recipeList.length > 0 ? recipeList : 'No recipes found.')
-                    .setFooter({ text: `Page ${page + 1} of ${totalPages} | Category: ${category.charAt(0).toUpperCase() + category.slice(1)}` })
-                    .setTimestamp();
+                    const resultItem = client.inventory.getItem(recipe.result, guildId);
+                    const description = (resultItem && resultItem.description) ? resultItem.description : 'A crafted dish.';
+                    const rarity = (resultItem && resultItem.rarity) ? resultItem.rarity : 'common';
+                    const rarityName = rarity.charAt(0).toUpperCase() + rarity.slice(1);
+                    const canMakeThis = canMake(recipe);
+                    const statusStr = canMakeThis ? '✅ Can make' : '❌ Cannot make';
+                    const emojiToUse = (resultItem && resultItem.emoji) ? resultItem.emoji : recipe.emoji;
+                    const emojiUrl = client.inventory.getEmojiUrl(emojiToUse, client);
+                    const embed = new EmbedBuilder()
+                        .setColor(client.inventory.getRarityColour(rarity))
+                        .setTitle(`${emoji} ${recipe.name}`)
+                        .setDescription(description)
+                        .addFields(
+                            { name: '🥗 Ingredients', value: ingredientsStr, inline: false },
+                            { name: '⭐ Rarity', value: rarityName, inline: true },
+                            { name: '📋 Type', value: type, inline: true },
+                            { name: '✨ Result', value: resultStr, inline: true },
+                            { name: '📄 Page', value: `${i + 1}/${recipeList.length}`, inline: true },
+                            { name: '🛒 Status', value: statusStr, inline: true }
+                        )
+                        .setFooter({ text: 'Use the arrow buttons to navigate • Use /cook make to craft' })
+                        .setTimestamp();
+                    if (emojiUrl) embed.setThumbnail(emojiUrl);
+                    pages.push({ embed, recipe, pageNumber: i + 1, totalPages: recipeList.length });
+                }
+                return pages;
             }
-            // Build initial components
-            const categoryMenu = new StringSelectMenuBuilder()
-                .setCustomId('cooking_recipes_category')
-                .setPlaceholder('Filter by category...')
-                .addOptions(categories);
-            const prevButton = new ButtonBuilder()
-                .setCustomId('cooking_recipes_prev')
-                .setLabel('Previous')
-                .setStyle(ButtonStyle.Secondary)
-                .setDisabled(true);
-            const nextButton = new ButtonBuilder()
-                .setCustomId('cooking_recipes_next')
-                .setLabel('Next')
-                .setStyle(ButtonStyle.Secondary);
-            // Helper to update button states
-            function updateButtonStates(category, page) {
-                const filtered = getFilteredRecipes(category);
-                const totalPages = Math.ceil(filtered.length / pageSize);
-                prevButton.setDisabled(page === 0);
-                nextButton.setDisabled(page >= totalPages - 1);
+
+            function getRecipePaginationButtons(pageNumber, totalPages) {
+                return new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('cooking_recipes_prev')
+                        .setLabel('◀️')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setDisabled(pageNumber <= 1),
+                    new ButtonBuilder()
+                        .setCustomId('cooking_recipes_next')
+                        .setLabel('▶️')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setDisabled(pageNumber >= totalPages)
+                );
             }
-            updateButtonStates(currentCategory, currentPage);
-            const row1 = new ActionRowBuilder().addComponents(categoryMenu);
-            const row2 = new ActionRowBuilder().addComponents(prevButton, nextButton);
+
+            const categoryMenu = new ActionRowBuilder().addComponents(
+                new StringSelectMenuBuilder()
+                    .setCustomId('cooking_recipes_category')
+                    .setPlaceholder('🔍 Filter by category...')
+                    .addOptions(categories)
+            );
+
+            const userId = interaction.user.id;
+            let currentCategory = 'all';
+            let currentPages = createRecipePages(sortRecipesByRarityThenName(getFilteredRecipes(currentCategory)), userId);
+            let page = 0;
+
+            if (currentPages.length === 0) {
+                return interaction.reply({
+                    content: '❌ No recipes found for this category.',
+                    flags: MessageFlags.Ephemeral
+                });
+            }
+
+            const currentPage = currentPages[page];
+            const paginationRow = getRecipePaginationButtons(currentPage.pageNumber, currentPage.totalPages);
+
             await interaction.reply({
-                embeds: [buildEmbed(currentCategory, currentPage)],
-                components: [row1, row2],
+                embeds: [currentPage.embed],
+                components: [categoryMenu, paginationRow],
                 flags: MessageFlags.Ephemeral
             });
-            // Collector for navigation
+
             const filter = i => i.user.id === interaction.user.id && (i.customId === 'cooking_recipes_category' || i.customId === 'cooking_recipes_prev' || i.customId === 'cooking_recipes_next');
             const collector = interaction.channel.createMessageComponentCollector({ filter, time: 300000 });
+
             collector.on('collect', async i => {
                 try {
+                    await i.deferUpdate();
                     if (i.customId === 'cooking_recipes_category') {
                         currentCategory = i.values[0];
-                        currentPage = 0;
+                        currentPages = createRecipePages(sortRecipesByRarityThenName(getFilteredRecipes(currentCategory)), userId);
+                        page = 0;
+                        if (currentPages.length === 0) {
+                            const noRecipesEmbed = new EmbedBuilder()
+                                .setColor(0xFF6B6B)
+                                .setTitle('🔍 No Recipes Found')
+                                .setDescription(`No recipes in category: **${currentCategory.charAt(0).toUpperCase() + currentCategory.slice(1)}**`)
+                                .setFooter({ text: 'Try a different category' })
+                                .setTimestamp();
+                            await i.editReply({
+                                embeds: [noRecipesEmbed],
+                                components: [categoryMenu, getRecipePaginationButtons(1, 1)]
+                            });
+                            return;
+                        }
                     } else if (i.customId === 'cooking_recipes_prev') {
-                        currentPage = Math.max(0, currentPage - 1);
+                        page = page > 0 ? page - 1 : currentPages.length - 1;
                     } else if (i.customId === 'cooking_recipes_next') {
-                        const filtered = getFilteredRecipes(currentCategory);
-                        const totalPages = Math.ceil(filtered.length / pageSize);
-                        currentPage = Math.min(totalPages - 1, currentPage + 1);
+                        page = page + 1 < currentPages.length ? page + 1 : 0;
                     }
-                    updateButtonStates(currentCategory, currentPage);
-                    await i.update({
-                        embeds: [buildEmbed(currentCategory, currentPage)],
-                        components: [row1, row2]
+                    const display = currentPages[page];
+                    await i.editReply({
+                        embeds: [display.embed],
+                        components: [categoryMenu, getRecipePaginationButtons(display.pageNumber, display.totalPages)]
                     });
                 } catch (err) {
                     if (err.code === 10062 || err.code === 40060) return;
                     throw err;
                 }
             });
+
             collector.on('end', () => {
-                // Disable components after timeout
-                row1.components.forEach(c => c.setDisabled(true));
-                row2.components.forEach(c => c.setDisabled(true));
-                interaction.editReply({ components: [row1, row2] }).catch(() => {});
+                const disabled = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder().setCustomId('cooking_recipes_prev').setLabel('◀️').setStyle(ButtonStyle.Secondary).setDisabled(true),
+                    new ButtonBuilder().setCustomId('cooking_recipes_next').setLabel('▶️').setStyle(ButtonStyle.Secondary).setDisabled(true)
+                );
+                interaction.editReply({ components: [categoryMenu, disabled] }).catch(() => {});
             });
             return;
         }
@@ -325,7 +405,7 @@ module.exports = {
 
     async showRecipeDetails(interaction, recipe, inventoryLookup, client) {
         const emoji = recipe.emoji || '🍳';
-        const type = recipe.type === 'buff' ? '⚡ Buff Item' : '💰 Sellable Item';
+        const type = recipe.type === 'buff' ? 'Consumable Item' : 'Sellable Item';
         
         // Create ingredients list
         const ingredientsList = recipe.ingredients.map(ingredient => {
@@ -498,7 +578,7 @@ module.exports = {
 
             // Create success embed
             const emoji = recipe.emoji || '🍳';
-            const type = recipe.type === 'buff' ? '⚡ Buff Item' : '💰 Sellable Item';
+            const type = recipe.type === 'buff' ? 'Consumable Item' : 'Sellable Item';
             
             let resultDescription = '';
             if (recipe.type === 'buff') {
@@ -527,7 +607,7 @@ module.exports = {
                         return `${itemEmoji} **${itemName}** (${ingredient.quantity}x)`;
                     }).join('\n'), inline: false }
                 )
-                .setFooter({ text: 'Use /use to activate buff items or /sell to sell items' })
+                .setFooter({ text: 'Use /use to activate consumable items or /sell to sell items' })
                 .setTimestamp();
 
             let emojiToUse = (resultItem && resultItem.emoji) ? resultItem.emoji : recipe.emoji;
@@ -538,7 +618,7 @@ module.exports = {
 
             const newCookButton = new ButtonBuilder()
                 .setCustomId('cook_another')
-                .setLabel('🍳 Cook Another')
+                .setLabel('Back to Cooking Station')
                 .setStyle(ButtonStyle.Success);
 
             const row = new ActionRowBuilder().addComponents(newCookButton);

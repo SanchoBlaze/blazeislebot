@@ -465,9 +465,9 @@
     "name": "Elixir of the Ancients",
     "result": "food_elixir_ancients",
     "ingredients": [
-      { "item": "crop_celestial_lotus", "quantity": 1 },
-      { "item": "crop_starlight_grape", "quantity": 1 },
-      { "item": "crop_wheat", "quantity": 2 }
+      { "item": "crop_starlight_grape", "quantity": 2 },
+      { "item": "crop_eclipse_pepper", "quantity": 1 },
+      { "item": "crop_blessed_wheat", "quantity": 2 }
     ],
     "type": "buff",
     "buff": {
@@ -498,7 +498,7 @@
     "result": "food_starlight_wine",
     "ingredients": [
       { "item": "crop_starlight_grape", "quantity": 2 },
-      { "item": "crop_wheat", "quantity": 1 }
+      { "item": "crop_blessed_wheat", "quantity": 1 }
     ],
     "type": "buff",
     "buff": {
@@ -513,7 +513,7 @@
     "result": "food_starlight_tart",
     "ingredients": [
       { "item": "crop_starlight_grape", "quantity": 2 },
-      { "item": "crop_wheat", "quantity": 2 }
+      { "item": "crop_blessed_wheat", "quantity": 2 }
     ],
     "type": "sellable",
     "sell_value": 12500,

@@ -1884,19 +1884,6 @@
         "emoji": "💎"
     },
     {
-        "id": "crop_celestial_lotus",
-        "name": "Celestial Lotus",
-        "description": "A glowing lotus said to bloom only under a blue moon. Used in ancient elixirs.",
-        "type": "crop",
-        "rarity": "mythic",
-        "price": 2000,
-        "max_quantity": 5,
-        "duration_hours": 0,
-        "effect_type": null,
-        "effect_value": null,
-        "emoji": "🪷"
-    },
-    {
         "id": "crop_eclipse_pepper",
         "name": "Eclipse Pepper",
         "description": "A pepper that absorbs the power of a solar eclipse. Said to grant immense energy.",
@@ -1921,6 +1908,19 @@
         "effect_type": null,
         "effect_value": null,
         "emoji": "🍇"
+    },
+    {
+        "id": "crop_blessed_wheat",
+        "name": "Blessed Wheat",
+        "description": "Wheat grown in ideal soil under a harvest moon. The finest grain, prized for mythic recipes.",
+        "type": "crop",
+        "rarity": "mythic",
+        "price": 1500,
+        "max_quantity": 5,
+        "duration_hours": 0,
+        "effect_type": null,
+        "effect_value": null,
+        "emoji": "🌾"
     },
     {
         "id": "food_elixir_ancients",
@@ -1962,19 +1962,6 @@
         "emoji": "🍷✨"
     },
     {
-        "id": "seeds_celestial_lotus",
-        "name": "Celestial Lotus Seeds",
-        "description": "Seeds for planting Celestial Lotus. Extremely rare and valuable.",
-        "type": "seed",
-        "rarity": "mythic",
-        "price": 5000,
-        "max_quantity": 5,
-        "duration_hours": 0,
-        "effect_type": null,
-        "effect_value": null,
-        "emoji": "🪷"
-    },
-    {
         "id": "seeds_eclipse_pepper",
         "name": "Eclipse Pepper Seeds",
         "description": "Seeds for planting Eclipse Pepper. Said to sprout only during eclipses.",
@@ -1999,6 +1986,19 @@
         "effect_type": null,
         "effect_value": null,
         "emoji": "🍇"
+    },
+    {
+        "id": "seeds_blessed_wheat",
+        "name": "Blessed Wheat Seeds",
+        "description": "Seeds for planting Blessed Wheat. Said to thrive only in the most fertile soil.",
+        "type": "seed",
+        "rarity": "mythic",
+        "price": 3500,
+        "max_quantity": 5,
+        "duration_hours": 0,
+        "effect_type": null,
+        "effect_value": null,
+        "emoji": "🌾"
     },
     {
         "id": "food_starlight_tart",
