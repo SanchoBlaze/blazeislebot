@@ -55,7 +55,7 @@ for (const folder of commandFolders) {
 
 
 // Update this when releasing a new version (used for announcement channel)
-const RELEASE_NOTES = '⌨️ **New Command: /whatpulse**\nCheck out your WhatPulse team stats right from Discord! Admin\'s set your team in the bot config and use `/whatpulse` to pull up your team\'s stats at any time.\n\n📢 **New Config: Announcement Channel**\nYou can now configure which channel the bot posts update notices to. No more manual announcements — Blaze Isle handles it for you.\n\n— Blaze Isle Bot 🏝️🔥';
+const RELEASE_NOTES = '🍳 **New Feature: Cooking**\nCook dishes using fish from fishing and crops from farming! Use `/cook make` to open the Cooking Station, pick a recipe, and craft consumable buffs (fishing, luck, health, work) or sellable food for coins. Browse all recipes with `/cook recipes` (filter by All, Consumable, or Sellable).\n\n🛒 **Cooking Tools**\nBuy cooking tools from the shop to unlock higher-rarity recipes and reduce your cooking cooldown (base 10 min). Better tools = more recipes and faster cooking.\n\n— Blaze Isle Bot 🏝️🔥';
 
 client.once('ready', async () => {
     console.log('Blaze Isle Bot Online!');
