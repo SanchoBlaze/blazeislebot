@@ -13,8 +13,15 @@ module.exports = {
         try {
             const user = interaction.client.economy.getUser(userId, guildId);
             // Exclude fish (caught only), crops (farmed only), and food (crafted only)
-            const allItems = interaction.client.inventory.getShopItemsExcludingTypes(guildId, ['fish', 'crop', 'food']);
-            
+            let allItems = interaction.client.inventory.getShopItemsExcludingTypes(guildId, ['fish', 'crop', 'food']);
+            // Deduplicate by item id (defensive: DB may have had duplicates from older schema)
+            const seenIds = new Set();
+            allItems = allItems.filter(item => {
+                if (seenIds.has(item.id)) return false;
+                seenIds.add(item.id);
+                return true;
+            });
+
             if (allItems.length === 0) {
                 return interaction.reply({ 
                     content: 'No items available in the shop! Use `/economy-admin populate-defaults` to add default items.', 
@@ -62,13 +69,13 @@ module.exports = {
             const totalPages = items.length;
             
             const canAfford = user.balance >= item.price;
-            const emoji = client.inventory.getItemEmoji(item);
+            const emoji = client.inventory.getDisplayEmoji(item, item.variant);
             const rarityName = item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1);
             const emojiUrl = client.inventory.getEmojiUrl(emoji, client);
 
             const embed = new EmbedBuilder()
                 .setColor(client.inventory.getRarityColour(item.rarity))
-                .setTitle(`🏪 ${item.name}`)
+                .setTitle(`${emoji} ${item.name}`)
                 .setDescription(item.description)
                 .setThumbnail(emojiUrl)
                 .addFields(
@@ -428,7 +435,7 @@ module.exports = {
                 await interaction.client.economy.updateBalance(userId, guildId, -item.price, 'balance');
                 interaction.client.economy.logTransaction(userId, guildId, 'shop_purchase', -item.price, `Purchased ${item.name}`);
                 
-                const emoji = interaction.client.inventory.getItemEmoji(item);
+                const emoji = interaction.client.inventory.getDisplayEmoji(item, item.variant);
                 const embed = new EmbedBuilder()
                     .setColor(interaction.client.inventory.getRarityColour(item.rarity))
                     .setTitle('🛒 Purchase Successful!')
@@ -514,7 +521,7 @@ module.exports = {
                 await interaction.client.economy.updateBalance(userId, guildId, -totalCost, 'balance');
                 interaction.client.economy.logTransaction(userId, guildId, 'shop_purchase', -totalCost, `Purchased ${quantity}x ${item.name}`);
                 
-                const emoji = interaction.client.inventory.getItemEmoji(item);
+                const emoji = interaction.client.inventory.getDisplayEmoji(item, item.variant);
                 const embed = new EmbedBuilder()
                     .setColor(interaction.client.inventory.getRarityColour(item.rarity))
                     .setTitle('🛒 Bulk Purchase Successful!')
@@ -617,7 +624,7 @@ module.exports = {
                     await interaction.client.economy.updateBalance(userId, guildId, -item.price, 'balance');
                     interaction.client.economy.logTransaction(userId, guildId, 'shop_purchase', -item.price, `Purchased ${item.name}`);
                     
-                    const emoji = interaction.client.inventory.getItemEmoji(item);
+                    const emoji = interaction.client.inventory.getDisplayEmoji(item, item.variant);
                     const embed = new EmbedBuilder()
                         .setColor(interaction.client.inventory.getRarityColour(item.rarity))
                         .setTitle('🛒 Purchase Successful!')

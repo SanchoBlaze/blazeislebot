@@ -129,12 +129,18 @@ async function showRecipeList(interaction, client) {
         return;
     }
     const recipeOptions = sortedRecipes.map(recipe => {
-        const emoji = recipe.emoji || '🍳';
+        const resultItem = client.inventory.getItem(recipe.result, guildId);
+        const emojiRaw = (resultItem && resultItem.emoji) ? resultItem.emoji : (recipe.emoji || '🍳');
         const type = recipe.type === 'buff' ? 'Consumable' : 'Sellable';
+        const customMatch = typeof emojiRaw === 'string' && emojiRaw.match(/^<a?:(\w+):(\d+)>$/);
+        const emojiApi = customMatch
+            ? { id: customMatch[2], name: customMatch[1] }
+            : { name: emojiRaw };
         return {
-            label: `${emoji} ${recipe.name}`,
+            label: recipe.name,
             description: `${type} • ${recipe.ingredients.length} ingredients`,
-            value: recipe.name
+            value: recipe.name,
+            emoji: emojiApi
         };
     });
     const selectMenu = new StringSelectMenuBuilder()
@@ -294,7 +300,9 @@ module.exports = {
                     const rankA = rarityOrder[rarityA] || 99;
                     const rankB = rarityOrder[rarityB] || 99;
                     if (rankA !== rankB) return rankA - rankB;
-                    return a.name.localeCompare(b.name);
+                    const nameCmp = a.name.localeCompare(b.name);
+                    if (nameCmp !== 0) return nameCmp;
+                    return (a.result || '').localeCompare(b.result || '');
                 });
             }
 
@@ -327,7 +335,8 @@ module.exports = {
                 };
                 for (let i = 0; i < recipeList.length; i++) {
                     const recipe = recipeList[i];
-                    const emoji = recipe.emoji || '🍳';
+                    const resultItem = client.inventory.getItem(recipe.result, guildId);
+                    const emoji = (resultItem && resultItem.emoji) ? resultItem.emoji : (recipe.emoji || '🍳');
                     const type = recipe.type === 'buff' ? 'Consumable' : 'Sellable';
                     const ingredientsStr = recipe.ingredients.map(ing => {
                         const item = client.inventory.getItem(ing.item, guildId);
@@ -343,7 +352,6 @@ module.exports = {
                     } else {
                         resultStr = `Sells for ${client.economy.formatCurrency(recipe.sell_value)}`;
                     }
-                    const resultItem = client.inventory.getItem(recipe.result, guildId);
                     const description = (resultItem && resultItem.description) ? resultItem.description : 'A crafted dish.';
                     const rarity = (resultItem && resultItem.rarity) ? resultItem.rarity : 'common';
                     const rarityName = rarity.charAt(0).toUpperCase() + rarity.slice(1);
@@ -471,7 +479,8 @@ module.exports = {
     },
 
     async showRecipeDetails(interaction, recipe, inventoryLookup, client) {
-        const emoji = recipe.emoji || '🍳';
+        const resultItem = client.inventory.getItem(recipe.result, interaction.guild.id);
+        const emoji = (resultItem && resultItem.emoji) ? resultItem.emoji : (recipe.emoji || '🍳');
         const type = recipe.type === 'buff' ? 'Consumable Item' : 'Sellable Item';
         
         // Create ingredients list
@@ -504,8 +513,7 @@ module.exports = {
             resultDescription = `**Sell Value**: ${client.economy.formatCurrency(recipe.sell_value)}`;
         }
 
-        // Get result item for thumbnail and rarity colour
-        const resultItem = client.inventory.getItem(recipe.result, interaction.guild.id);
+        // Get result item for thumbnail and rarity colour (resultItem already fetched above for emoji)
         const embedColor = resultItem && resultItem.rarity
             ? client.inventory.getRarityColour(resultItem.rarity)
             : (recipe.type === 'buff' ? 0x4CAF50 : 0xFF9800);
@@ -684,8 +692,8 @@ module.exports = {
             client.economy.setLastCook(userId, guildId);
 
             // Create success embed
-            const emoji = recipe.emoji || '🍳';
             const type = recipe.type === 'buff' ? 'Consumable Item' : 'Sellable Item';
+            const emojiToUse = (resultItem && resultItem.emoji) ? resultItem.emoji : (recipe.emoji || '🍳');
             
             let resultDescription = '';
             if (recipe.type === 'buff') {
@@ -705,7 +713,7 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setColor(0x4CAF50)
                 .setTitle('✅ Recipe Crafted Successfully!')
-                .setDescription(`${emoji} **${recipe.name}** has been crafted!\n\n**Type**: ${type}\n**Effect**: ${resultDescription}`)
+                .setDescription(`${emojiToUse} **${recipe.name}** has been crafted!\n\n**Type**: ${type}\n**Effect**: ${resultDescription}`)
                 .addFields(
                     { name: '📋 Ingredients Used', value: recipe.ingredients.map(ingredient => {
                         const item = client.inventory.getItem(ingredient.item, guildId);
@@ -716,8 +724,6 @@ module.exports = {
                 )
                 .setFooter({ text: 'Use /use to activate consumable items or /sell to sell items' })
                 .setTimestamp();
-
-            let emojiToUse = (resultItem && resultItem.emoji) ? resultItem.emoji : recipe.emoji;
             let emojiUrl = client.inventory.getEmojiUrl(emojiToUse, client);
             if (emojiUrl) {
                 embed.setThumbnail(emojiUrl);
