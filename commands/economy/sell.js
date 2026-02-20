@@ -40,8 +40,8 @@ module.exports = {
 
             const allItems = Object.values(uniqueItems);
             
-            // Filter out farm upgrades (items with type 'upgrade')
-            const sellableItems = allItems.filter(item => item.type !== 'upgrade');
+            // Filter out farm upgrades and crops (items with type 'upgrade' or 'crop')
+            const sellableItems = allItems.filter(item => item.type !== 'upgrade' && item.type !== 'crop');
             
             // Sort by rarity (common < uncommon < rare < epic < legendary < mythic)
             const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6 };

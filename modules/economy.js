@@ -23,6 +23,7 @@ class Economy {
                     last_daily TEXT,
                     last_work TEXT,
                     last_fishing TEXT,
+                    last_cook TEXT,
                     total_earned INTEGER DEFAULT 0,
                     total_spent INTEGER DEFAULT 0,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -43,6 +44,15 @@ class Economy {
                 if (error.message.includes('no such column')) {
                     console.log('Adding last_fishing column to existing economy table...');
                     sql.prepare('ALTER TABLE economy ADD COLUMN last_fishing TEXT').run();
+                }
+            }
+            // Check if last_cook column exists, add it if it doesn't
+            try {
+                sql.prepare('SELECT last_cook FROM economy LIMIT 1').get();
+            } catch (err) {
+                if (err.message.includes('no such column')) {
+                    console.log('Adding last_cook column to existing economy table...');
+                    sql.prepare('ALTER TABLE economy ADD COLUMN last_cook TEXT').run();
                 }
             }
         }
@@ -84,6 +94,7 @@ class Economy {
                 last_daily: null,
                 last_work: null,
                 last_fishing: null,
+                last_cook: null,
                 total_earned: 0,
                 total_spent: 0,
                 created_at: nowISOString,
@@ -97,8 +108,8 @@ class Economy {
     // Create new user
     createUser(userData) {
         return sql.prepare(`
-            INSERT INTO economy (id, user, guild, balance, bank, last_daily, last_work, last_fishing, total_earned, total_spent, created_at, updated_at)
-            VALUES (@id, @user, @guild, @balance, @bank, @last_daily, @last_work, @last_fishing, @total_earned, @total_spent, @created_at, @updated_at)
+            INSERT INTO economy (id, user, guild, balance, bank, last_daily, last_work, last_fishing, last_cook, total_earned, total_spent, created_at, updated_at)
+            VALUES (@id, @user, @guild, @balance, @bank, @last_daily, @last_work, @last_fishing, @last_cook, @total_earned, @total_spent, @created_at, @updated_at)
         `).run(userData);
     }
 
@@ -280,6 +291,16 @@ class Economy {
                 finalAmount = Math.floor(amount * dailyMultiplier);
                 console.log(`[daily] User ${userId} has daily multiplier ${dailyMultiplier}x: ${amount} -> ${finalAmount} coins`);
             }
+            
+            // Apply luck boost to daily reward
+            const luckBoost = this.client.inventory.getLuckBoost(userId, guildId);
+            if (luckBoost > 1) {
+                const originalAmount = finalAmount;
+                // Luck boost adds a random bonus (10-50% of base amount)
+                const luckBonus = Math.floor(finalAmount * (Math.random() * 0.4 + 0.1) * (luckBoost - 1));
+                finalAmount += luckBonus;
+                console.log(`[daily] User ${userId} has luck boost ${luckBoost}x: ${originalAmount} + ${luckBonus} = ${finalAmount} coins`);
+            }
         }
 
         // Update last daily time and add money
@@ -330,6 +351,16 @@ class Economy {
                 const originalAmount = amount;
                 amount = Math.floor(amount * workMultiplier);
                 console.log(`[work] User ${userId} has work multiplier ${workMultiplier}x: ${originalAmount} -> ${amount} coins`);
+            }
+            
+            // Apply luck boost to final work amount
+            const luckBoost = this.client.inventory.getLuckBoost(userId, guildId);
+            if (luckBoost > 1) {
+                const originalAmount = amount;
+                // Luck boost adds a random bonus (10-50% of final amount)
+                const luckBonus = Math.floor(amount * (Math.random() * 0.4 + 0.1) * (luckBoost - 1));
+                amount += luckBonus;
+                console.log(`[work] User ${userId} has luck boost ${luckBoost}x: ${originalAmount} + ${luckBonus} = ${amount} coins`);
             }
         }
         // Debug logging before updating balance
@@ -449,6 +480,16 @@ class Economy {
                     finalChance = baseChance * baitBoost;
                 }
             }
+            
+            // Apply luck boost to all fish catch rates
+            if (this.client && this.client.inventory) {
+                const luckBoost = this.client.inventory.getLuckBoost(userId, guildId);
+                if (luckBoost > 1) {
+                    // Luck boost increases catch rates by a smaller amount than bait
+                    const luckIncrease = (luckBoost - 1) * 0.3; // 30% of the boost value
+                    finalChance = Math.floor(finalChance * (1 + luckIncrease));
+                }
+            }
             return {
                 ...item, // Spread all properties, including emoji
                 sellPrice: item.price, // Keep for compatibility
@@ -494,6 +535,17 @@ class Economy {
             fish: caughtFish,
             id: caughtFish.id
         };
+    }
+
+    // Cooking cooldown: set last cook time after a successful craft
+    setLastCook(userId, guildId) {
+        this.getUser(userId, guildId); // ensure user exists
+        const nowISOString = new Date().toISOString();
+        sql.prepare(`
+            UPDATE economy 
+            SET last_cook = ?, updated_at = ?
+            WHERE user = ? AND guild = ?
+        `).run(nowISOString, nowISOString, userId, guildId);
     }
 
     // Get leaderboard

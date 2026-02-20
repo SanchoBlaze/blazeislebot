@@ -42,6 +42,16 @@ module.exports = {
                     inline: false
                 });
             }
+            
+            // Add luck boost info if user had luck boost
+            const luckBoost = interaction.client.inventory.getLuckBoost(userId, guildId);
+            if (luckBoost > 1) {
+                embed.addFields({
+                    name: '🍀 Luck Boost Active!',
+                    value: `You received a luck bonus on your daily reward!`,
+                    inline: false
+                });
+            }
 
             await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         } catch (error) {

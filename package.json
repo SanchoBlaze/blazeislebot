@@ -1,6 +1,6 @@
 {
   "name": "blazeislebot",
-  "version": "5.3.0",
+  "version": "6.0.0",
   "description": "A bot for the Blaze Isle Discord server.",
   "main": "blazeislebot.js",
   "scripts": {
@@ -11,7 +11,7 @@
     "eslint": "eslint blazeislebot.js",
     "test": "npm run eslint",
     "version": "",
-    "postversion": "git add . && git commit -m 'Bump version to {version}' && git push",
+    "postversion": "git add . && git commit -m 'Bump version' && git push",
     "deploy:global": "node deploy-commands.js global",
     "deploy:guild": "node deploy-commands.js guild",
     "remove:global": "node remove-commands.js global",

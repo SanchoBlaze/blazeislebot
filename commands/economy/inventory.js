@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
+const paginator = require('../../modules/paginator');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -45,6 +46,10 @@ module.exports = {
                     uniqueItems[key].variants = fullItem.variants;
                 }
             }
+            // Stats from deduplicated data (so totals match what we display)
+            const totalQuantity = Object.values(uniqueItems).reduce((sum, item) => sum + item.quantity, 0);
+            const uniqueCount = Object.keys(uniqueItems).length;
+
             // Group deduplicated items by rarity
             const itemsByRarity = {};
             for (const item of Object.values(uniqueItems)) {
@@ -54,42 +59,57 @@ module.exports = {
                 itemsByRarity[item.rarity].push(item);
             }
 
-            let description = '';
+            // Pagination logic: 10 items per page
+            function paginateItems(items, itemsPerPage = 10) {
+                const pages = [];
+                for (let i = 0; i < items.length; i += itemsPerPage) {
+                    pages.push(items.slice(i, i + itemsPerPage));
+                }
+                return pages;
+            }
+
             const rarities = ['mythic', 'legendary', 'epic', 'rare', 'uncommon', 'common'];
-            
+            const allItems = [];
             for (const rarity of rarities) {
                 if (itemsByRarity[rarity] && itemsByRarity[rarity].length > 0) {
-                    const rarityEmoji = interaction.client.inventory.getRarityEmoji(rarity);
-                    const rarityName = rarity.charAt(0).toUpperCase() + rarity.slice(1);
-                    description += `\n**${rarityEmoji} ${rarityName} Items:**\n`;
-                    
                     for (const item of itemsByRarity[rarity]) {
-                        const quantityText = item.quantity > 1 ? ` (x${item.quantity})` : '';
-                        const sellPercentage = interaction.client.inventory.getSellPricePercentage(item.rarity, item.type);
-                        const sellPrice = Math.floor(item.price * sellPercentage);
-                        const displayName = interaction.client.inventory.getDisplayName(item, item.variant);
-                        const displayEmoji = interaction.client.inventory.getDisplayEmoji(item, item.variant);
-                        description += `• **${displayEmoji} ${displayName}**${quantityText}\n`;
-                        description += `  └ ${item.description}\n`;
-                        description += `  └ 💰 Buy: ${interaction.client.economy.formatCurrency(item.price)} | 💵 Sell: ${interaction.client.economy.formatCurrency(sellPrice)} (${Math.round(sellPercentage * 100)}%)\n\n`;
+                        allItems.push({ rarity, item });
                     }
                 }
             }
-
-            const embed = new EmbedBuilder()
-                .setColor(0x0099FF)
-                .setTitle(`📦 ${targetUser.username}'s Inventory`)
-                .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
-                .setDescription(description)
-                .addFields(
-                    { name: '📊 Total Items', value: inventory.length.toString(), inline: true },
-                    { name: '🎯 Unique Items', value: new Set(inventory.map(i => i.id)).size.toString(), inline: true },
-                    { name: '💎 Total Quantity', value: inventory.reduce((sum, item) => sum + item.quantity, 0).toString(), inline: true }
-                )
-                .setFooter({ text: 'Use /use <item> to use items, /shop to buy more' })
-                .setTimestamp();
-
-            await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+            const itemPages = paginateItems(allItems, 10);
+            const embeds = itemPages.map((pageItems, i) => {
+                let desc = '';
+                let lastRarity = null;
+                for (const { rarity, item } of pageItems) {
+                    if (rarity !== lastRarity) {
+                        const rarityEmoji = interaction.client.inventory.getRarityEmoji(rarity);
+                        const rarityName = rarity.charAt(0).toUpperCase() + rarity.slice(1);
+                        desc += `\n**${rarityEmoji} ${rarityName} Items:**\n`;
+                        lastRarity = rarity;
+                    }
+                    const quantityText = item.quantity > 1 ? ` (x${item.quantity})` : '';
+                    const sellPercentage = interaction.client.inventory.getSellPricePercentage(item.rarity, item.type);
+                    const sellPrice = Math.floor(item.price * sellPercentage);
+                    const displayName = interaction.client.inventory.getDisplayName(item, item.variant);
+                    const displayEmoji = interaction.client.inventory.getDisplayEmoji(item, item.variant);
+                    desc += `• **${displayEmoji} ${displayName}**${quantityText}\n`;
+                    desc += `  └ ${item.description}\n`;
+                    desc += `  └ 💰 Buy: ${interaction.client.economy.formatCurrency(item.price)} | 💵 Sell: ${interaction.client.economy.formatCurrency(sellPrice)} (${Math.round(sellPercentage * 100)}%)\n\n`;
+                }
+                return new EmbedBuilder()
+                    .setColor(0x0099FF)
+                    .setTitle(`📦 ${targetUser.username}'s Inventory`)
+                    .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
+                    .setDescription(desc)
+                    .addFields(
+                        { name: '💎 Total Quantity', value: totalQuantity.toString(), inline: true },
+                        { name: '🎯 Unique Items', value: uniqueCount.toString(), inline: true }
+                    )
+                    .setFooter({ text: `Use /use <item> to use items, /shop to buy more | Page ${i + 1} of ${itemPages.length}` })
+                    .setTimestamp();
+            });
+            await paginator(interaction, embeds, true);
         } catch (error) {
             console.error('Error in inventory command:', error);
             await interaction.reply({ content: 'There was an error fetching the inventory!', flags: MessageFlags.Ephemeral });

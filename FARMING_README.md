@@ -192,7 +192,8 @@ The `/farm view` command provides a complete interactive farming experience:
 
 ### 🛠️ Admin Commands
 - `/economy-admin add-item` - Add custom crops or farming items
-- `/economy-admin populate-defaults` - Add default farming items to the shop
+- `/economy-admin populate-defaults` - Add default farming items to the shop (new guilds)
+- `/economy-admin update-defaults` - Refresh default items from data after changing default-items.json
 
 ## Crop Types
 

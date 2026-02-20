@@ -35,14 +35,23 @@ module.exports = {
             return item.emoji;
         }
 
-        // Multi-level mini-game settings
-        const levels = [
+        // Get health boost multiplier for work mini-game time limits
+        const healthBoost = interaction.client.inventory.getHealthBoost(userId, guildId);
+        
+        // Multi-level mini-game settings (base times in milliseconds)
+        const baseLevels = [
             { time: 10000, multiplier: 1, gridSize: 3, oddCount: 1 },    // 10s, 3x3, 1 odd
             { time: 8000, multiplier: 2, gridSize: 4, oddCount: 2 },     // 8s, 4x4, 2 odds
             { time: 6000, multiplier: 4, gridSize: 4, oddCount: 3 },     // 6s, 4x4, 3 odds
             { time: 5000, multiplier: 8, gridSize: 5, oddCount: 4 },     // 5s, 5x5, 4 odds
             { time: 4000, multiplier: 16, gridSize: 5, oddCount: 5 }     // 4s, 5x5, 5 odds
         ];
+        
+        // Apply health boost to time limits if active
+        const levels = baseLevels.map(level => ({
+            ...level,
+            time: Math.floor(level.time * healthBoost)
+        }));
         const maxBaseReward = 120; // Increase max possible coins for perfect run
 
         // Helper to pick multiple different items (by emoji) from the pool
@@ -135,7 +144,7 @@ module.exports = {
             const promptEmbed = new EmbedBuilder()
                 .setColor(0x00FF00)
                 .setTitle(`💼 Work Mini-Game! Level ${levelIdx + 1}`)
-                .setDescription(`Find and click **${oddCount} odd one${oddCount > 1 ? 's' : ''} out** in the ${gridSize}x${gridSize} emoji grid below! You have **${time / 1000} seconds**.`)
+                .setDescription(`Find and click **${oddCount} odd one${oddCount > 1 ? 's' : ''} out** in the ${gridSize}x${gridSize} emoji grid below! You have **${time / 1000} seconds**.${healthBoost > 1 ? ` ❤️ **Health boost active:** +${Math.round((healthBoost - 1) * 100)}% time!` : ''}`)
                 .setFooter({ text: 'You can work again in 1 hour.' })
                 .setTimestamp();
             if (levelIdx === 0) {
@@ -266,6 +275,8 @@ module.exports = {
             const randomWork = workMessages[Math.floor(Math.random() * workMessages.length)];
             const workMultiplier = interaction.client.inventory.getWorkMultiplier(userId, guildId);
             const hasMultiplier = workMultiplier > 1;
+            const luckBoost = interaction.client.inventory.getLuckBoost(userId, guildId);
+            const hasLuckBoost = luckBoost > 1;
             const embed = new EmbedBuilder()
                 .setColor(lastSuccess ? 0xFFD700 : 0xFFA500)
                 .setTitle(lastSuccess ? '💼 Work Complete!' : '💼 Work Ended')
@@ -296,6 +307,14 @@ module.exports = {
                 embed.addFields({
                     name: '🚀 Work Boost Active!',
                     value: `You're getting ${workMultiplier}x coins from work!`,
+                    inline: false
+                });
+            }
+            
+            if (hasLuckBoost) {
+                embed.addFields({
+                    name: '🍀 Luck Boost Active!',
+                    value: `You received a luck bonus on your work rewards!`,
                     inline: false
                 });
             }

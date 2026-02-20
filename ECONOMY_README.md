@@ -111,6 +111,7 @@ The shop offers various items that users can purchase with their coins. The shop
 
 ### Item Types
 - **Consumable Items**: XP boosts, work multipliers, daily doublers, coin multipliers
+- **Food**: Crafted via `/cook`; buff foods (consumable) and sellable dishes. Not sold in the shop.
 - **Mystery Boxes**: Contain random items when opened
 - **Premium Mystery Boxes**: Guaranteed rare or better items
 
@@ -126,6 +127,8 @@ The shop offers various items that users can purchase with their coins. The shop
 - **Remove Items**: `/economy-admin remove-item` - Remove items from the shop
 - **List Items**: `/economy-admin list-items` - View all shop items
 - **Populate Defaults**: `/economy-admin populate-defaults` - Add default items to new guilds
+- **Update Defaults**: `/economy-admin update-defaults` - Refresh default items from data (keeps custom items; use after changing default-items.json)
+- **Shop exclusions**: Fish (caught only), crops (farmed only), and food (crafted only) are excluded from the shop; they are obtained via `/fish`, `/farm`, and `/cook` respectively.
 
 ### 📦 Item Management
 - **Item Types**: Consumable items, mystery boxes
@@ -201,6 +204,7 @@ The shop offers various items that users can purchase with their coins. The shop
 | `/economy-admin remove-item` | Remove item from shop | `/economy-admin remove-item <id>` |
 | `/economy-admin list-items` | List all shop items | `/economy-admin list-items` |
 | `/economy-admin populate-defaults` | Add default items to shop | `/economy-admin populate-defaults` |
+| `/economy-admin update-defaults` | Refresh default items (preserves custom items) | `/economy-admin update-defaults` |
 
 ## Item System
 

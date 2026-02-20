@@ -12,9 +12,16 @@ module.exports = {
 
         try {
             const user = interaction.client.economy.getUser(userId, guildId);
-            // Use SQL to exclude fish and crops from shop for better performance
-            const allItems = interaction.client.inventory.getShopItemsExcludingTypes(guildId, ['fish', 'crop']);
-            
+            // Exclude fish (caught only), crops (farmed only), and food (crafted only)
+            let allItems = interaction.client.inventory.getShopItemsExcludingTypes(guildId, ['fish', 'crop', 'food']);
+            // Deduplicate by item id (defensive: DB may have had duplicates from older schema)
+            const seenIds = new Set();
+            allItems = allItems.filter(item => {
+                if (seenIds.has(item.id)) return false;
+                seenIds.add(item.id);
+                return true;
+            });
+
             if (allItems.length === 0) {
                 return interaction.reply({ 
                     content: 'No items available in the shop! Use `/economy-admin populate-defaults` to add default items.', 
@@ -62,19 +69,19 @@ module.exports = {
             const totalPages = items.length;
             
             const canAfford = user.balance >= item.price;
-            const emoji = client.inventory.getItemEmoji(item);
+            const emoji = client.inventory.getDisplayEmoji(item, item.variant);
             const rarityName = item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1);
             const emojiUrl = client.inventory.getEmojiUrl(emoji, client);
 
             const embed = new EmbedBuilder()
                 .setColor(client.inventory.getRarityColour(item.rarity))
-                .setTitle(`🏪 ${item.name}`)
+                .setTitle(`${emoji} ${item.name}`)
                 .setDescription(item.description)
                 .setThumbnail(emojiUrl)
                 .addFields(
                     { name: '💰 Price', value: client.economy.formatCurrency(item.price), inline: true },
                     { name: '⭐ Rarity', value: rarityName, inline: true },
-                    { name: '📦 Type', value: item.type.charAt(0).toUpperCase() + item.type.slice(1), inline: true },
+                    { name: '📦 Type', value: item.type.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()), inline: true },
                     { name: '💵 Your Balance', value: client.economy.formatCurrency(user.balance), inline: true },
                     { name: '🏦 Bank Balance', value: client.economy.formatCurrency(user.bank), inline: true },
                     { name: '💎 Net Worth', value: client.economy.formatCurrency(user.balance + user.bank), inline: true },
@@ -327,7 +334,7 @@ module.exports = {
                 new StringSelectMenuBuilder()
                     .setCustomId('shop_filterDropdown')
                     .setPlaceholder('🔍 Filter by item type...')
-                    .addOptions(getDropdownOptions({ includeUpgrades: true }))
+                    .addOptions(getDropdownOptions({ includeUpgrades: true, forShop: true }))
             );
     },
 
@@ -390,6 +397,14 @@ module.exports = {
                 });
                 return false;
             }
+            // Prevent buying food items (crafted only)
+            if (item.type === 'food') {
+                await interaction.followUp({
+                    content: 'Food can only be obtained by cooking with /cook, not by purchasing from the shop!',
+                    flags: MessageFlags.Ephemeral
+                });
+                return false;
+            }
 
             const user = interaction.client.economy.getUser(userId, guildId);
             
@@ -420,13 +435,13 @@ module.exports = {
                 await interaction.client.economy.updateBalance(userId, guildId, -item.price, 'balance');
                 interaction.client.economy.logTransaction(userId, guildId, 'shop_purchase', -item.price, `Purchased ${item.name}`);
                 
-                const emoji = interaction.client.inventory.getItemEmoji(item);
+                const emoji = interaction.client.inventory.getDisplayEmoji(item, item.variant);
                 const embed = new EmbedBuilder()
                     .setColor(interaction.client.inventory.getRarityColour(item.rarity))
                     .setTitle('🛒 Purchase Successful!')
                     .setDescription(`You purchased **${emoji} ${item.name}** for ${interaction.client.economy.formatCurrency(item.price)}`)
                     .addFields(
-                        { name: '📦 Item Type', value: item.type.charAt(0).toUpperCase() + item.type.slice(1), inline: true },
+                        { name: '📦 Item Type', value: item.type.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()), inline: true },
                         { name: '⭐ Rarity', value: item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1), inline: true },
                         { name: '💵 New Balance', value: interaction.client.economy.formatCurrency(user.balance - item.price), inline: true }
                     )
@@ -467,6 +482,14 @@ module.exports = {
                 });
                 return false;
             }
+            // Prevent buying food items (crafted only)
+            if (item.type === 'food') {
+                await interaction.reply({
+                    content: 'Food can only be obtained by cooking with /cook, not by purchasing from the shop!',
+                    flags: MessageFlags.Ephemeral
+                });
+                return false;
+            }
 
             const user = interaction.client.economy.getUser(userId, guildId);
             const totalCost = item.price * quantity;
@@ -498,13 +521,13 @@ module.exports = {
                 await interaction.client.economy.updateBalance(userId, guildId, -totalCost, 'balance');
                 interaction.client.economy.logTransaction(userId, guildId, 'shop_purchase', -totalCost, `Purchased ${quantity}x ${item.name}`);
                 
-                const emoji = interaction.client.inventory.getItemEmoji(item);
+                const emoji = interaction.client.inventory.getDisplayEmoji(item, item.variant);
                 const embed = new EmbedBuilder()
                     .setColor(interaction.client.inventory.getRarityColour(item.rarity))
                     .setTitle('🛒 Bulk Purchase Successful!')
                     .setDescription(`You purchased **${quantity}x ${emoji} ${item.name}** for ${interaction.client.economy.formatCurrency(totalCost)}`)
                     .addFields(
-                        { name: '📦 Item Type', value: item.type.charAt(0).toUpperCase() + item.type.slice(1), inline: true },
+                        { name: '📦 Item Type', value: item.type.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()), inline: true },
                         { name: '⭐ Rarity', value: item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1), inline: true },
                         { name: '💵 New Balance', value: interaction.client.economy.formatCurrency(user.balance - totalCost), inline: true },
                         { name: '📊 Total Owned', value: `${currentQuantity + quantity}x`, inline: true }
@@ -563,6 +586,14 @@ module.exports = {
                     });
                     return true;
                 }
+                // Prevent buying food items (crafted only)
+                if (item.type === 'food') {
+                    await interaction.reply({
+                        content: 'Food can only be obtained by cooking with /cook, not by purchasing from the shop!',
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return true;
+                }
 
                 const user = interaction.client.economy.getUser(userId, guildId);
                 
@@ -593,13 +624,13 @@ module.exports = {
                     await interaction.client.economy.updateBalance(userId, guildId, -item.price, 'balance');
                     interaction.client.economy.logTransaction(userId, guildId, 'shop_purchase', -item.price, `Purchased ${item.name}`);
                     
-                    const emoji = interaction.client.inventory.getItemEmoji(item);
+                    const emoji = interaction.client.inventory.getDisplayEmoji(item, item.variant);
                     const embed = new EmbedBuilder()
                         .setColor(interaction.client.inventory.getRarityColour(item.rarity))
                         .setTitle('🛒 Purchase Successful!')
                         .setDescription(`You purchased **${emoji} ${item.name}** for ${interaction.client.economy.formatCurrency(item.price)}`)
                         .addFields(
-                            { name: '📦 Item Type', value: item.type.charAt(0).toUpperCase() + item.type.slice(1), inline: true },
+                            { name: '📦 Item Type', value: item.type.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()), inline: true },
                             { name: '⭐ Rarity', value: item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1), inline: true },
                             { name: '💵 New Balance', value: interaction.client.economy.formatCurrency(user.balance - item.price), inline: true }
                         )

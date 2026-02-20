@@ -20,6 +20,12 @@ const categoryOptions = [
     emoji: '🌱'
   },
   {
+    label: 'Crops',
+    description: 'Show only crops',
+    value: 'crop',
+    emoji: '🌽'
+  },
+  {
     label: 'Watering Cans',
     description: 'Show only watering cans',
     value: 'watering_can',
@@ -30,12 +36,6 @@ const categoryOptions = [
     description: 'Show only fertilisers',
     value: 'fertiliser',
     emoji: '💩'
-  },
-  {
-    label: 'Crops',
-    description: 'Show only harvested crops',
-    value: 'crop',
-    emoji: '🌽'
   },
   {
     label: 'Farm Upgrades',
@@ -56,10 +56,22 @@ const categoryOptions = [
     emoji: '🎣'
   },
   {
+    label: 'Cooking Tools',
+    description: 'Show only cooking tools',
+    value: 'cooking_tool',
+    emoji: '🍳'
+  },
+  {
     label: 'Consumables',
     description: 'Show only consumable items',
     value: 'consumable',
     emoji: '⚡'
+  },
+  {
+    label: 'Food',
+    description: 'Crafted food (buffs and sellable dishes)',
+    value: 'food',
+    emoji: '🍽️'
   },
   {
     label: 'Mystery Boxes',
@@ -76,12 +88,16 @@ const fishOption = {
   emoji: '🐟'
 };
 
-function getDropdownOptions({ includeFish = false, includeUpgrades = false } = {}) {
+function getDropdownOptions({ includeFish = false, includeUpgrades = false, forShop = false } = {}) {
   let opts = [...categoryOptions];
   
   // Remove upgrade category if not requested
   if (!includeUpgrades) {
     opts = opts.filter(opt => opt.value !== 'upgrade');
+  }
+  // Shop doesn't sell crops (farmed only) or food (crafted only), so hide those filters
+  if (forShop) {
+    opts = opts.filter(opt => opt.value !== 'crop' && opt.value !== 'food');
   }
   
   if (includeFish) {
@@ -111,6 +127,14 @@ function filterItemsByCategory(items, category) {
   }
   if (category === 'fish') {
     return items.filter(item => item.type === 'fish');
+  }
+  if (category === 'crop') {
+    return items.filter(item =>
+      item.type === 'crop' || (item.types && Array.isArray(item.types) && item.types.includes('crop'))
+    );
+  }
+  if (category === 'cooking_tool') {
+    return items.filter(item => item.type === 'cooking_tool');
   }
   if (category === 'upgrade') {
     return items.filter(item => item.type === 'upgrade');
